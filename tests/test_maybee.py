@@ -40,7 +40,32 @@ def test_get_attr():
             return self.data
     assert maybe(Clz(30)).get_data().get() == 30
     assert maybe(Clz(30)).get_data().v == 30
-    maybe(Clz(30)).get_data() == 30
+
+
+def test_eq_ne_comparator():
+    just_hello = maybe("hello")
+    just_hello_2 = maybe("hello")
+    just_world = maybe("world")
+
+    assert just_hello == just_hello_2
+    with pytest.raises(TypeError):
+        assert just_hello == "hello"
+
+    assert just_hello != just_world
+    with pytest.raises(TypeError):
+        assert just_hello != "world"
+
+
+def test_gt_lt_ge_le_comparator():
+    just_100 = maybe(100)
+    just_100_2 = maybe(100)
+    just_200 = maybe(200)
+    assert just_100 < just_200
+    assert just_200 > just_100
+    assert just_100 <= just_200
+    assert just_200 >= just_100
+    assert just_100 <= just_100_2
+    assert just_100 >= just_100_2
 
 
 def test_function():

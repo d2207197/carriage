@@ -170,7 +170,7 @@ class Just(Maybe):
         return False
 
     def __call__(self, *args, **kwargs):
-        return maybe(self.__value(*args, **kwargs))
+        return Just(self.__value(*args, **kwargs))
 
     def __eq__(self, other):
         if other is Nothing:
@@ -232,9 +232,6 @@ class Just(Maybe):
         raise TypeError(
             f"'>=' not supported between instances of 'Just' and {type(other).__name__!r}")
 
-    # def or_empty_list(self):
-    #     return self.or_else([])
-
     def __getattr__(self, name):
         if hasattr(self.__value, name):
             return Just(getattr(self.__value, name))
@@ -252,7 +249,7 @@ class Just(Maybe):
 
     def __getitem__(self, key):
         try:
-            return maybe(self.__value[key])
+            return Just(self.__value[key])
         except (KeyError, TypeError, IndexError):
             return Nothing
 
