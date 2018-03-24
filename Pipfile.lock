@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "11a208e95e61953614b20c532d55b52dc95a72b7477731e18abe585a69fe59d3"
+            "sha256": "587a0d3851977c4a0ec91aaf19a88213593ad000271a65102628013ec5ed3524"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -50,11 +50,25 @@
             ],
             "version": "==4.2.1"
         },
+        "epc": {
+            "hashes": [
+                "sha256:a14d2ea74817955a20eb00812e3a4630a132897eb4d976420240f1152c0d7d25"
+            ],
+            "index": "pypi",
+            "version": "==0.0.5"
+        },
         "future": {
             "hashes": [
                 "sha256:e39ced1ab767b5936646cedba8bcce582398233d6a627067d4c6a454c90cfedb"
             ],
             "version": "==0.16.0"
+        },
+        "importmagic": {
+            "hashes": [
+                "sha256:3f7757a5b74c9a291e20e12023bb3bf71bc2fa3adfb15a08570648ab83eaf8d8"
+            ],
+            "index": "pypi",
+            "version": "==0.1.7"
         },
         "ipykernel": {
             "hashes": [
@@ -132,10 +146,10 @@
         },
         "mypy": {
             "hashes": [
-                "sha256:83d798f66323f2de6191d66d9ae5ab234e4ee5b400010e19c58d75d308049f25",
-                "sha256:884f18f3a40cfcf24cdd5860b84958cfb35e6563e439c5adc1503878df221dc3"
+                "sha256:3bd95a1369810f7693366911d85be9f0a0bd994f6cb7162b7a994e5ded90e3d9",
+                "sha256:7247f9948d7cdaae9408a4ee1662a01853c24e668117b4419acf025b05fbe3ce"
             ],
-            "version": "==0.570"
+            "version": "==0.580"
         },
         "parso": {
             "hashes": [
@@ -286,6 +300,12 @@
                 "sha256:a09edfd2034fd50099a67822f9bd851fbd0f4e98d3b87519f6267b60e50d80d1"
             ],
             "version": "==0.10.7"
+        },
+        "sexpdata": {
+            "hashes": [
+                "sha256:1ac827a616c5e87ebb60fd6686fb86f8a166938c645f4089d92de3ffbdd494e0"
+            ],
+            "version": "==0.0.3"
         },
         "simplegeneric": {
             "hashes": [

@@ -12,6 +12,8 @@ pyls-isort = "*"
 pyls-mypy = "*"
 ipykernel = "*"
 pytest = "*"
+importmagic = "*"
+epc = "*"
 
 [requires]
 python_version = "3.6"
