@@ -14,6 +14,8 @@ ipykernel = "*"
 pytest = "*"
 importmagic = "*"
 epc = "*"
+pylint = "*"
+ipython = "*"
 
 [requires]
 python_version = "3.6"
