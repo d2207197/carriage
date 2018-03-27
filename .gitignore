@@ -2,3 +2,6 @@
 .ropeproject
 maybee.egg-info
 .pytest_cache
+/build
+/carriage.egg-info
+/dist
