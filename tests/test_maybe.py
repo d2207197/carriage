@@ -1,6 +1,6 @@
 import pytest
 
-from maybee import Nothing, NothingError, Optional, Some
+from carriage import Nothing, NothingError, Optional, Some
 
 
 def test_value_noneable_init():

@@ -1,6 +1,6 @@
 
-from .maybe import Nothing_inst as Nothing
-from .maybe import NothingError, Optional, Some
+from .optional import Nothing_inst as Nothing
+from .optional import NothingError, Optional, Some
 
 __all__ = ['Optional', 'Some', 'Nothing',
            'NothingError']
