@@ -28,13 +28,20 @@ def test_call_exceptable():
     def raise_exception():
         raise Exception
     assert Optional.call_exceptable(raise_exception) is Nothing
+    assert Optional.ecall(raise_exception) is Nothing
 
     def raise_typeerror():
         raise TypeError
     assert Optional.call_exceptable(raise_typeerror, TypeError) is Nothing
+    assert Optional.ecall(raise_typeerror, TypeError) is Nothing
 
     with pytest.raises(TypeError):
         Optional.call_exceptable(raise_typeerror, errors=ValueError)
+
+    def identity(x):
+        return x
+
+    assert Optional.ecall(identity, 10).value == 10
 
     def raise_error(error):
         raise error
