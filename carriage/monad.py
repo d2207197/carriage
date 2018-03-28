@@ -1,18 +1,18 @@
-from abc import ABC, abstractmethod, abstractproperty
+from abc import ABC, abstractclassmethod, abstractmethod, abstractproperty
 
 
 class Monad(ABC):
 
-    @abstractmethod
-    def unit(self, value):
+    @abstractclassmethod
+    def unit(cls, value):
         raise NotImplementedError()
 
     @abstractmethod
-    def flat_map(self, monad_action):
+    def flat_map(self, to_monad_action):
         raise NotImplementedError()
 
-    def bind(self, monad_action):
-        raise self.flat_map()
+    def bind(self, to_monad_action):
+        raise self.flat_map(to_monad_action)
 
     @abstractmethod
     def map(self, action):
@@ -29,11 +29,11 @@ class Monad(ABC):
         return self.flatten()
 
     @abstractmethod
-    def then(self, maybe_value):
+    def then(self, monad_value):
         raise NotImplementedError()
 
     @abstractmethod
-    def ap(self, maybe_value):
+    def ap(self, monad_value):
         raise NotImplementedError()
 
     @abstractmethod
@@ -48,12 +48,12 @@ class Monad(ABC):
     def __repr__(self):
         raise NotImplementedError()
 
-    @abstractmethod
-    def __str__(self):
+    @abstractproperty
+    def _base_type(self):
         raise NotImplementedError()
 
     @abstractproperty
-    def _base_type(self):
+    def _value_for_cmp(self):
         raise NotImplementedError()
 
     def __eq__(self, other):

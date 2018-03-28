@@ -77,7 +77,8 @@ class Optional(Monad):
 
         return wrapper
 
-    def unit(self, value):
+    @classmethod
+    def unit(cls, value):
         return Some(value)
 
     @abstractmethod
