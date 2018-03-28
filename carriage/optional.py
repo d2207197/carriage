@@ -1,13 +1,20 @@
 import inspect
 from abc import ABC, abstractmethod, abstractproperty
 from functools import wraps
+from .monad import Monad
 
 
 class NothingError(AttributeError):
     pass
 
 
-class Optional(ABC):
+
+
+class Optional(Monad):
+
+    @property
+    def _base_type(self):
+        return Optional
 
     @classmethod
     def call_exceptable(cls, getter, *args, errors=Exception, **kwargs):
@@ -74,32 +81,7 @@ class Optional(ABC):
         return Some(value)
 
     @abstractmethod
-    def flat_map(self, maybe_action):
-        raise NotImplementedError()
-
-    def bind(self, *args, **kwargs):
-        return self.flat_map(*args, **kwargs)
-
-    @abstractmethod
-    def map(self, action):
-        raise NotImplementedError()
-
-    def fmap(self, *args, **kwargs):
-        return self.map(*args, **kwargs)
-
-    @abstractmethod
-    def flatten(self):
-        raise NotImplementedError()
-
-    def join(self, *args, **kwargs):
-        return self.flatten(*args, **kwargs)
-
-    @abstractmethod
-    def then(self, maybe_value):
-        raise NotImplementedError()
-
-    @abstractmethod
-    def ap(self, maybe_value):
+    def join_noneable(self):
         raise NotImplementedError()
 
     @abstractproperty
@@ -119,76 +101,12 @@ class Optional(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def is_just(self):
+    def is_some(self):
         raise NotImplementedError()
 
     @abstractmethod
     def is_nothing(self):
         raise NotImplementedError()
-
-    @abstractmethod
-    def __len__(self):
-        raise NotImplementedError()
-
-    @abstractmethod
-    def __iter__(self):
-        raise NotImplementedError()
-
-    @abstractmethod
-    def __repr__(self):
-        raise NotImplementedError()
-
-    @abstractmethod
-    def __str__(self):
-        raise NotImplementedError()
-
-    def __eq__(self, other):
-        if isinstance(other, Optional):
-            return self._value_for_cmp == other._value_for_cmp
-
-        raise TypeError(
-            "'==' not supported between instances of "
-            f"'Optional' and {type(other).__name__!r}")
-
-    def __ne__(self, other):
-        if isinstance(other, Optional):
-            return self._value_for_cmp != other._value_for_cmp
-
-        raise TypeError(
-            "'!=' not supported between instances of "
-            f"'Optional' and {type(other).__name__!r}")
-
-    def __gt__(self, other):
-        if isinstance(other, Optional):
-            return self._value_for_cmp > other._value_for_cmp
-
-        raise TypeError(
-            "'>' not supported between instances of "
-            f"'Optional' and {type(other).__name__!r}")
-
-    def __lt__(self, other):
-        if isinstance(other, Optional):
-            return self._value_for_cmp < other._value_for_cmp
-
-        raise TypeError(
-            "'<' not supported between instances of "
-            f"'Optional' and {type(other).__name__!r}")
-
-    def __ge__(self, other):
-        if isinstance(other, Optional):
-            return self._value_for_cmp >= other._value_for_cmp
-
-        raise TypeError(
-            "'>=' not supported between instances of "
-            f"'Optional' and {type(other).__name__!r}")
-
-    def __le__(self, other):
-        if isinstance(other, Optional):
-            return self._value_for_cmp <= other._value_for_cmp
-
-        raise TypeError(
-            "'<=' not supported between instances of "
-            f"'Optional' and {type(other).__name__!r}")
 
 
 class Nothing(Optional):
@@ -212,6 +130,9 @@ class Nothing(Optional):
     def flatten(self):
         return Nothing_inst
 
+    def join_noneable(self):
+        return Nothing_inst
+
     def ap(self, maybe_value):
         return Nothing_inst
 
@@ -227,7 +148,7 @@ class Nothing(Optional):
     def get_or_none(self):
         return None
 
-    def is_just(self):
+    def is_some(self):
         return False
 
     def is_nothing(self):
@@ -255,48 +176,53 @@ def identity(_): return _
 class Some(Optional):
 
     def __init__(self, value):
-        self._just_value = value
+        self._some_value = value
 
     def flat_map(self, maybe_action):
-        value = maybe_action(self._just_value)
+        value = maybe_action(self._some_value)
         if isinstance(value, Optional):
             return value
         else:
             raise TypeError('function should return a Optional')
 
     def map(self, action):
-        return Some(action(self._just_value))
+        return Some(action(self._some_value))
 
     def then(self, maybe_value):
         return maybe_value
 
     def flatten(self):
-        if isinstance(self._just_value, Optional):
-            return self._just_value
+        if isinstance(self._some_value, Optional):
+            return self._some_value
         else:
             raise TypeError('value should be a Optional')
 
+    def join_noneable(self):
+        if self._some_value is None:
+            return Nothing_inst
+        return self
+
     def ap(self, maybe_value):
-        if maybe_value.is_just():
-            return self._just_value(maybe_value.get())
+        if maybe_value.is_some():
+            return self._some_value(maybe_value.get())
         elif maybe_value.is_nothing():
             return Nothing_inst
 
     @property
     def value(self):
-        return self._just_value
+        return self._some_value
 
     @property
     def _value_for_cmp(self):
-        return (self._just_value,)
+        return (self._some_value,)
 
     def get_or(self, else_value=None):
-        return self._just_value
+        return self._some_value
 
     def get_or_none(self):
-        return self._just_value
+        return self._some_value
 
-    def is_just(self):
+    def is_some(self):
         return True
 
     def is_nothing(self):
@@ -306,317 +232,320 @@ class Some(Optional):
         raise 1
 
     def __iter__(self):
-        yield self._just_value
+        yield self._some_value
 
     def __repr__(self):
-        return f'Some({self._just_value!r})'
+        return f'Some({self._some_value!r})'
 
     def __str__(self):
-        return f'Some({self._just_value!s})'
+        return f'Some({self._some_value!s})'
 
+    @property
+    def value_do(self):
+        return SomeOp(self._some_value)
 
 class SomeOp(Some):
 
     def __call__(self, *args, **kwargs):
-        return Some(self._just_value(*args, **kwargs))
+        return Some(self._some_value(*args, **kwargs))
 
     def __getattr__(self, name):
-        if hasattr(self._just_value, name):
-            return Some(getattr(self._just_value, name))
+        if hasattr(self._some_value, name):
+            return Some(getattr(self._some_value, name))
         else:
             return Nothing_inst
 
     def __setattr__(self, name, v):
-        # if name == f"_just_value":
-        #     return super().__setattr__(name, v)
+        if name == f"_some_value":
+            return super().__setattr__(name, v)
 
-        return setattr(self._just_value, name, v)
+        return setattr(self._some_value, name, v)
 
     def __getitem__(self, key):
-        return Some(self._just_value[key])
+        return Some(self._some_value[key])
 
     def __setitem__(self, key, value):
-        self._just_value[key] = value
+        self._some_value[key] = value
 
     def __delitem__(self, key):
-        del self._just_value[key]
+        del self._some_value[key]
 
     def __len__(self):
-        return len(self._just_value)
+        return len(self._some_value)
 
     def __iter__(self):
-        return iter(self._just_value)
+        return iter(self._some_value)
 
     def __reversed__(self):
-        return Some(reversed(self._just_value))
+        return Some(reversed(self._some_value))
 
     # def __missing__(self, key):
-        # klass = self._just_value.__class__
+        # klass = self._some_value.__class__
         # if hasattr(klass, '__missing__') and \
         #         callable(getattr(klass, '__missing__')):
-        #     return Some(self._just_value.__missing__(key))
+        #     return Some(self._some_value.__missing__(key))
 
         # return Nothing_inst
 
     def __repr__(self):
-        return f"{type(self).__name__}({self._just_value!r})"
+        return f"{type(self).__name__}({self._some_value!r})"
 
     def __str__(self):
-        return f"{type(self).__name__}({self._just_value!s})"
+        return f"{type(self).__name__}({self._some_value!s})"
 
     def __int__(self):
-        return int(self._just_value)
+        return int(self._some_value)
 
     def __float__(self):
-        return float(self._just_value)
+        return float(self._some_value)
 
     def __complex__(self):
-        return complex(self._just_value)
+        return complex(self._some_value)
 
     def __oct__(self):
-        return oct(self._just_value)
+        return oct(self._some_value)
 
     def __hex__(self):
-        return hex(self._just_value)
+        return hex(self._some_value)
 
     def __index__(self):
-        return self._just_value.__index__()
+        return self._some_value.__index__()
 
     def __trunc__(self):
-        return self._just_value.__trunc__()
+        return self._some_value.__trunc__()
 
     def __dir__(self):
-        return dir(self._just_value)
+        return dir(self._some_value)
 
     def __add__(self, other):
-        return Some(self._just_value + other)
+        return Some(self._some_value + other)
 
     def __sub__(self, other):
-        return Some(self._just_value - other)
+        return Some(self._some_value - other)
 
     def __mul__(self, other):
-        return Some(self._just_value * other)
+        return Some(self._some_value * other)
 
     def __floordiv__(self, other):
-        return Some(self._just_value // other)
+        return Some(self._some_value // other)
 
     def __div__(self, other):
-        return Some(self._just_value / other)
+        return Some(self._some_value / other)
 
     def __mod__(self, other):
-        return Some(self._just_value % other)
+        return Some(self._some_value % other)
 
     def __divmod__(self, other):
-        return Some(divmod(self._just_value, other))
+        return Some(divmod(self._some_value, other))
 
     def __pow__(self, other):
-        return Some(self._just_value ** other)
+        return Some(self._some_value ** other)
 
     def __lshift__(self, other):
-        return Some(self._just_value << other)
+        return Some(self._some_value << other)
 
     def __rshift__(self, other):
-        return Some(self._just_value >> other)
+        return Some(self._some_value >> other)
 
     def __and__(self, other):
-        return Some(self._just_value & other)
+        return Some(self._some_value & other)
 
     def __or__(self, other):
-        return Some(self._just_value | other)
+        return Some(self._some_value | other)
 
     def __xor__(self, other):
-        return Some(self._just_value ^ other)
+        return Some(self._some_value ^ other)
 
     def __radd__(self, other):
-        return Some(other + self._just_value)
+        return Some(other + self._some_value)
 
     def __rsub__(self, other):
-        return Some(other - self._just_value)
+        return Some(other - self._some_value)
 
     def __rmul__(self, other):
-        return Some(other * self._just_value)
+        return Some(other * self._some_value)
 
     def __rfloordiv__(self, other):
-        return Some(other // self._just_value)
+        return Some(other // self._some_value)
 
     def __rdiv__(self, other):
-        return Some(other / self._just_value)
+        return Some(other / self._some_value)
 
     def __rmod__(self, other):
-        return Some(other % self._just_value)
+        return Some(other % self._some_value)
 
     def __rdivmod__(self, other):
-        return Some(divmod(other, self._just_value))
+        return Some(divmod(other, self._some_value))
 
     def __rpow__(self, other):
-        return Some(other ** self._just_value)
+        return Some(other ** self._some_value)
 
     def __rlshift__(self, other):
-        return Some(other << self._just_value)
+        return Some(other << self._some_value)
 
     def __rrshift__(self, other):
-        return Some(other >> self._just_value)
+        return Some(other >> self._some_value)
 
     def __rand__(self, other):
-        return Some(other & self._just_value)
+        return Some(other & self._some_value)
 
     def __ror__(self, other):
-        return Some(other | self._just_value)
+        return Some(other | self._some_value)
 
     def __rxor__(self, other):
-        return Some(other ^ self._just_value)
+        return Some(other ^ self._some_value)
 
     def __iadd__(self, other):
-        self._just_value += other
+        self._some_value += other
         return self
 
     def __isub__(self, other):
-        self._just_value -= other
+        self._some_value -= other
         return self
 
     def __imul__(self, other):
-        self._just_value *= other
+        self._some_value *= other
         return self
 
     def __ifloordiv__(self, other):
-        self._just_value //= other
+        self._some_value //= other
         return self
 
     def __idiv__(self, other):
-        self._just_value /= other
+        self._some_value /= other
         return self
 
     def __imod__(self, other):
-        self._just_value %= other
+        self._some_value %= other
         return self
 
     def __ipow__(self, other):
-        self._just_value **= other
+        self._some_value **= other
         return self
 
     def __ilshift__(self, other):
-        self._just_value <<= other
+        self._some_value <<= other
         return self
 
     def __irshift__(self, other):
-        self._just_value >>= other
+        self._some_value >>= other
         return self
 
     def __iand__(self, other):
-        self._just_value &= other
+        self._some_value &= other
         return self
 
     def __ior__(self, other):
-        self._just_value |= other
+        self._some_value |= other
         return self
 
     def __ixor__(self, other):
-        self._just_value ^= other
+        self._some_value ^= other
         return self
 
 
 class SomeOptionalNone(Some):
     def __init__(self, value):
-        self._just_value = value
+        self._some_value = value
 
     def __call__(self, *args, **kwargs):
-        return Optional(self._just_value(*args, **kwargs))
+        return Optional(self._some_value(*args, **kwargs))
 
     def __getattr__(self, name):
-        attr = getattr(self._just_value, name)
+        attr = getattr(self._some_value, name)
         if callable(attr):
             return SomeOptionalNone(attr)
         return Optional(attr)
 
     def __getitem__(self, key):
-        return Optional(self._just_value[key])
+        return Optional(self._some_value[key])
 
     def __reversed__(self):
-        return Optional(reversed(self._just_value))
+        return Optional(reversed(self._some_value))
 
     def __missing__(self, key):
         # TODO: review
-        klass = self._just_value.__class__
+        klass = self._some_value.__class__
         if (hasattr(klass, '__missing__') and
                 callable(getattr(klass, '__missing__'))):
-            return Optional(self._just_value.__missing__(key))
+            return Optional(self._some_value.__missing__(key))
 
         return Nothing_inst
 
     def __add__(self, other):
-        return Optional(self._just_value + other)
+        return Optional(self._some_value + other)
 
     def __sub__(self, other):
-        return Optional(self._just_value - other)
+        return Optional(self._some_value - other)
 
     def __mul__(self, other):
-        return Optional(self._just_value * other)
+        return Optional(self._some_value * other)
 
     def __floordiv__(self, other):
-        return Optional(self._just_value // other)
+        return Optional(self._some_value // other)
 
     def __div__(self, other):
-        return Optional(self._just_value / other)
+        return Optional(self._some_value / other)
 
     def __mod__(self, other):
-        return Optional(self._just_value % other)
+        return Optional(self._some_value % other)
 
     def __divmod__(self, other):
-        return Optional(divmod(self._just_value, other))
+        return Optional(divmod(self._some_value, other))
 
     def __pow__(self, other):
-        return Optional(self._just_value ** other)
+        return Optional(self._some_value ** other)
 
     def __lshift__(self, other):
-        return Optional(self._just_value << other)
+        return Optional(self._some_value << other)
 
     def __rshift__(self, other):
-        return Optional(self._just_value >> other)
+        return Optional(self._some_value >> other)
 
     def __and__(self, other):
-        return Optional(self._just_value & other)
+        return Optional(self._some_value & other)
 
     def __or__(self, other):
-        return Optional(self._just_value | other)
+        return Optional(self._some_value | other)
 
     def __xor__(self, other):
-        return Optional(self._just_value ^ other)
+        return Optional(self._some_value ^ other)
 
     def __radd__(self, other):
-        return Optional(other + self._just_value)
+        return Optional(other + self._some_value)
 
     def __rsub__(self, other):
-        return Optional(other - self._just_value)
+        return Optional(other - self._some_value)
 
     def __rmul__(self, other):
-        return Optional(other * self._just_value)
+        return Optional(other * self._some_value)
 
     def __rfloordiv__(self, other):
-        return Optional(other // self._just_value)
+        return Optional(other // self._some_value)
 
     def __rdiv__(self, other):
-        return Optional(other / self._just_value)
+        return Optional(other / self._some_value)
 
     def __rmod__(self, other):
-        return Optional(other % self._just_value)
+        return Optional(other % self._some_value)
 
     def __rdivmod__(self, other):
-        return Optional(divmod(other, self._just_value))
+        return Optional(divmod(other, self._some_value))
 
     def __rpow__(self, other):
-        return Optional(other ** self._just_value)
+        return Optional(other ** self._some_value)
 
     def __rlshift__(self, other):
-        return Optional(other << self._just_value)
+        return Optional(other << self._some_value)
 
     def __rrshift__(self, other):
-        return Optional(other >> self._just_value)
+        return Optional(other >> self._some_value)
 
     def __rand__(self, other):
-        return Optional(other & self._just_value)
+        return Optional(other & self._some_value)
 
     def __ror__(self, other):
-        return Optional(other | self._just_value)
+        return Optional(other | self._some_value)
 
     def __rxor__(self, other):
-        return Optional(other ^ self._just_value)
+        return Optional(other ^ self._some_value)

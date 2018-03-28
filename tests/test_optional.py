@@ -180,6 +180,31 @@ def test_flat_map():
     res = Some(nofoo_adict).flat_map(get_foo_option)
     assert res is Nothing
 
+    res = (Some(nofoo_adict)
+           .map(lambda d: d.get('foo'))
+           .flat_map(Optional.value_noneable))
+    assert res is Nothing
+
+    res = (Some(nofoo_adict)
+           .map(lambda d: Optional.value_noneable(d.get('foo')))
+           .join())
+    assert res is Nothing
+
+    res = (Some(nofoo_adict)
+           .map(lambda d: Optional.value_noneable(d.get('foo')))
+           .flatten())
+    assert res is Nothing
+
+    res = (Some(nofoo_adict)
+           .map(lambda d: d.get('foo'))
+           .join_noneable())
+    assert res is Nothing
+
+    res = (Some(nofoo_adict)
+           .map(lambda d: d.get('bar'))
+           .join_noneable())
+    assert res.value == 'value of bar'
+
 
 def test_comparator():
     some_hello = Some("hello")
@@ -211,10 +236,11 @@ def test_comparator():
         assert some_200 > 100
 
 
-def test_get_attr():
+def test_value_do():
     class Person:
-        def __init__(self, name, father=None, mother=None):
+        def __init__(self, name, age, father=None, mother=None):
             self.name = name
+            self.age = age
             self.father = father
             self.mother = mother
 
@@ -227,9 +253,17 @@ def test_get_attr():
         def __repr__(self):
             return f'Person({self.name!r}, {self.father!r}, {self.mother!r})'
 
-    papa = Person('Papa')
-    mama = Person('Mama')
-    johnny = Person('Johnny', papa, mama)
+        def __eq__(self, other):
+            return (self.name, self.father, self.mother) == (other.name, other.father, other.mother)
+
+    papa = Person('Papa', 45)
+    mama = Person('Mama', 40)
+    johnny = Person('Johnny', 18, papa, mama)
+
+    assert Some(johnny).value_do.mother == Some(mama)
+    assert Some(johnny).value_do.mother.value is mama
+    assert Some(johnny).value_do.age == Some(18)
+    assert Some(johnny).value_do.age < Some(johnny).value_do.mother.value_do.age
 
     # assert maybe_obj.get_data().v == 30
     # assert maybe_obj.get_none().v is None
