@@ -29,6 +29,72 @@ def test_call_exceptable():
         raise Exception
     assert Optional.call_exceptable(raise_exception) is Nothing
 
+    def raise_typeerror():
+        raise TypeError
+    assert Optional.call_exceptable(raise_typeerror, TypeError) is Nothing
+
+    with pytest.raises(TypeError):
+        Optional.call_exceptable(raise_typeerror, errors=ValueError)
+
+    def raise_error(error):
+        raise error
+
+    with pytest.raises(TypeError):
+        Optional.call_exceptable(raise_error, TypeError, errors=ValueError)
+
+    assert Optional.call_exceptable(raise_error, AttributeError,
+                                    errors=AttributeError) is Nothing
+
+
+def test_noneable():
+    @Optional.noneable
+    def odd_return_none(n):
+        if n % 2 == 1:
+            return None
+        return n
+
+    assert odd_return_none(3) is Nothing
+    assert odd_return_none(4).value == 4
+
+
+def test_exceptable():
+    @Optional.exceptable
+    def odd_raise_valueerror(n):
+        if n % 2 == 1:
+            raise ValueError
+        return n
+
+    assert odd_raise_valueerror(3) is Nothing
+    assert odd_raise_valueerror(4).value == 4
+
+    @Optional.exceptable(ValueError)
+    def odd_raise_valueerror(n):
+        if n % 2 == 1:
+            raise ValueError
+        return n
+
+    assert odd_raise_valueerror(3) is Nothing
+    assert odd_raise_valueerror(4).value == 4
+
+    @Optional.exceptable(AttributeError)
+    def odd_raise_valueerror(n):
+        if n % 2 == 1:
+            raise ValueError
+        return n
+
+    with pytest.raises(ValueError):
+        odd_raise_valueerror(3)
+    assert odd_raise_valueerror(4).value == 4
+
+    @Optional.exceptable(AttributeError, ValueError)
+    def odd_raise_valueerror(n):
+        if n % 2 == 1:
+            raise ValueError
+        return n
+
+    assert odd_raise_valueerror(3) is Nothing
+    assert odd_raise_valueerror(4).value == 4
+
 
 def test_some_value():
     assert Some(30).value == 30
@@ -61,7 +127,13 @@ def test_map():
     res = Some(100).map(multiply_2)
     assert res.value == 200
 
+    res = Some(100).fmap(multiply_2)
+    assert res.value == 200
+
     res = Nothing.map(multiply_2)
+    assert res is Nothing
+
+    res = Nothing.fmap(multiply_2)
     assert res is Nothing
 
     def append_1_no_return(alist):
@@ -81,26 +153,24 @@ def test_map():
     res = Some(alist).map(append_1_return)
     assert res.value is alist
 
-    res = Nothing.map(multiply_2)
-    assert res is Nothing
 
-
-def test_bind():
+def test_flat_map():
     def get_foo_option(adict):
         key = 'foo'
         if key in adict:
             return Some(adict[key])
         return Nothing
+
     foo_adict = {'foo': 'value of foo', 'bar': 'value of bar'}
     nofoo_adict = {'no_foo': 'value of foo', 'bar': 'value of bar'}
 
-    res = Some(foo_adict).bind(get_foo_option)
+    res = Some(foo_adict).flat_map(get_foo_option)
     assert res.value == 'value of foo'
 
-    res = Nothing.bind(get_foo_option)
+    res = Nothing.flat_map(get_foo_option)
     assert res is Nothing
 
-    res = Some(nofoo_adict).bind(get_foo_option)
+    res = Some(nofoo_adict).flat_map(get_foo_option)
     assert res is Nothing
 
 

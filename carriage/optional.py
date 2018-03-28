@@ -1,3 +1,4 @@
+import inspect
 from abc import ABC, abstractmethod, abstractproperty
 from functools import wraps
 
@@ -43,17 +44,18 @@ class Optional(ABC):
         return wrapper
 
     @classmethod
-    def exceptable(cls, f_or_errors):
-        if callable(f_or_errors):
-            f = f_or_errors
-            errors = Exception
-            return cls._wrap_exceptable(f, errors)
-        else:
-            errors = f_or_errors
+    def exceptable(cls, f_or_error, *more_errors):
+        if inspect.isclass(f_or_error) and issubclass(f_or_error, Exception):
+            errors = (f_or_error,) + tuple(more_errors)
 
             def deco(f):
                 return cls._wrap_exceptable(f, errors)
+
             return deco
+        if callable(f_or_error):
+            f = f_or_error
+            errors = Exception
+            return cls._wrap_exceptable(f, errors)
 
     @classmethod
     def _wrap_exceptable(cls, f, errors):
@@ -68,20 +70,32 @@ class Optional(ABC):
 
         return wrapper
 
+    def unit(self, value):
+        return Some(value)
+
     @abstractmethod
-    def bind(self, maybe_action):
+    def flat_map(self, maybe_action):
         raise NotImplementedError()
+
+    def bind(self, *args, **kwargs):
+        return self.flat_map(*args, **kwargs)
 
     @abstractmethod
     def map(self, action):
         raise NotImplementedError()
 
-    @abstractmethod
-    def then(self, maybe_value):
-        raise NotImplementedError()
+    def fmap(self, *args, **kwargs):
+        return self.map(*args, **kwargs)
 
     @abstractmethod
-    def join(self):
+    def flatten(self):
+        raise NotImplementedError()
+
+    def join(self, *args, **kwargs):
+        return self.flatten(*args, **kwargs)
+
+    @abstractmethod
+    def then(self, maybe_value):
         raise NotImplementedError()
 
     @abstractmethod
@@ -186,7 +200,7 @@ class Nothing(Optional):
 
         return cls.__instance
 
-    def bind(self, maybe_action):
+    def flat_map(self, maybe_action):
         return Nothing_inst
 
     def map(self, action):
@@ -195,7 +209,7 @@ class Nothing(Optional):
     def then(self, maybe_value):
         return Nothing_inst
 
-    def join(self):
+    def flatten(self):
         return Nothing_inst
 
     def ap(self, maybe_value):
@@ -243,7 +257,7 @@ class Some(Optional):
     def __init__(self, value):
         self._just_value = value
 
-    def bind(self, maybe_action):
+    def flat_map(self, maybe_action):
         value = maybe_action(self._just_value)
         if isinstance(value, Optional):
             return value
@@ -256,7 +270,7 @@ class Some(Optional):
     def then(self, maybe_value):
         return maybe_value
 
-    def join(self):
+    def flatten(self):
         if isinstance(self._just_value, Optional):
             return self._just_value
         else:
