@@ -9,6 +9,7 @@ setup(name='carriage',
       author_email='joseph.yen@gmail.com',
       url='https://github.com/d2207197/carriage',
       packages=find_packages(),
+      install_requires=['attrs'],
       classifiers=[
           # How mature is this project? Common values are
           #   3 - Alpha

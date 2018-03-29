@@ -1,13 +1,12 @@
 import inspect
 from abc import ABC, abstractmethod, abstractproperty
 from functools import wraps
+
 from .monad import Monad
 
 
 class NothingError(AttributeError):
     pass
-
-
 
 
 class Optional(Monad):
@@ -111,6 +110,7 @@ class Optional(Monad):
 
 
 class Nothing(Optional):
+    __slots__ = ()
     __instance = None
 
     def __new__(cls):
@@ -175,6 +175,7 @@ def identity(_): return _
 
 
 class Some(Optional):
+    __slots__ = '_some_value'
 
     def __init__(self, value):
         self._some_value = value
@@ -244,6 +245,7 @@ class Some(Optional):
     @property
     def value_do(self):
         return SomeOp(self._some_value)
+
 
 class SomeOp(Some):
 

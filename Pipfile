@@ -5,6 +5,7 @@ name = "pypi"
 
 [packages]
 "e1839a8" = {path = ".", editable = true}
+attrs = "*"
 
 [dev-packages]
 python-language-server = "*"
@@ -18,6 +19,7 @@ pylint = "*"
 ipython = "*"
 twine = "*"
 "flake8" = "*"
+funcy = "*"
 
 [requires]
 python_version = "3.6"
