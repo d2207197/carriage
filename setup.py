@@ -3,7 +3,7 @@
 from setuptools import find_packages, setup
 
 setup(name='carriage',
-      version='0.1dev',
+      version='0.1dev1',
       description='Enhanced collection classes for programming fluently',
       author='Yen, Tzu-Hsi',
       author_email='joseph.yen@gmail.com',
@@ -19,7 +19,9 @@ setup(name='carriage',
 
           # Indicate who your project is intended for
           'Intended Audience :: Developers',
-          'Software Development :: Libraries :: Python Modules'
+          'Topic :: Software Development :: Libraries :: Python Modules',
+          'Operating System :: OS Independent',
+
 
 
           # Pick your license as you wish (should match "license" above)
