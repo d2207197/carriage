@@ -3,7 +3,7 @@
 from setuptools import find_packages, setup
 
 setup(name='carriage',
-      version='0.1.3',
+      version='0.1.4',
       description='Enhanced collection classes for programming fluently',
       author='Yen, Tzu-Hsi',
       author_email='joseph.yen@gmail.com',
