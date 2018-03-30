@@ -5,22 +5,9 @@ from carriage import List, Nothing, Some
 from carriage.sequence import CurrNext, CurrPrev, ValueIndex
 
 
-def test_list():
+def test_init():
     alist = List([1, 2, 3])
     assert alist == List.range(1, 4)
-
-    def multiply_2(n):
-        return n * 2
-
-    assert alist.map(multiply_2) == List([2, 4, 6])
-
-    def duplicate(v):
-        return [v] * 2
-
-    assert alist.flat_map(duplicate) == List([1, 1, 2, 2, 3, 3])
-
-    assert alist.map(duplicate) == List([[1, 1], [2, 2], [3, 3]])
-    assert alist.map(duplicate).flatten() == List([1, 1, 2, 2, 3, 3])
 
 
 def test_access():
@@ -88,9 +75,93 @@ def test_zip():
             List([(10, 0), (11, 1), (12, None)]))
 
     assert (List.range(10, 13).zip_longest_opt([0, 1]) ==
-            List([(Some(10), Some(0)), (Some(11), Some(1)), (Some(12), Nothing)]))
+            List([(Some(10), Some(0)), (Some(11), Some(1)),
+                  (Some(12), Nothing)]))
 
     assert (List.range(10, 13).zip_prev() == List(
         [CurrPrev(10, None), CurrPrev(11, 10), CurrPrev(12, 11)]))
     assert (List.range(10, 13).zip_next() == List(
         [CurrNext(10, 11), CurrNext(11, 12), CurrNext(12, None)]))
+
+
+def test_basic_transform():
+    alist = List([1, 2, 3])
+
+    def multiply_2(n):
+        return n * 2
+
+    assert alist.map(multiply_2) == List([2, 4, 6])
+
+    def duplicate(v):
+        return [v] * 2
+
+    assert alist.flat_map(duplicate) == List([1, 1, 2, 2, 3, 3])
+
+    assert alist.map(duplicate) == List([[1, 1], [2, 2], [3, 3]])
+    assert alist.map(duplicate).flatten() == List([1, 1, 2, 2, 3, 3])
+
+    alist = List.range(10, 15).zip(List.range(5, 10))
+    assert alist.starmap(lambda a, b: a - b) == List([5] * 5)
+
+    alist = List.range(5)
+
+    def is_even(n):
+        return n % 2 == 0
+
+    assert alist.filter(is_even) == List([0, 2, 4])
+
+
+def test_reorder():
+    alist = List.range(5)
+    assert alist.reverse() is alist
+    assert alist == List([4, 3, 2, 1, 0])
+
+    alist = List.range(5)
+    assert alist.reversed() is not alist
+    assert alist.reversed() == List([4, 3, 2, 1, 0])
+
+    alist = List([5, 2, 3, 4, 1])
+    assert alist.sort(key=lambda n: -n) is alist
+    assert alist == List([5, 4, 3, 2, 1])
+
+    alist = List([5, 2, 3, 4, 1])
+    assert alist.sorted(key=lambda n: -n) is not alist
+    assert alist.sorted(key=lambda n: -n) == List([5, 4, 3, 2, 1])
+
+
+def test_extend():
+    alist = List.range(5)
+    assert alist.extend([5, 6]) is alist
+    assert alist == List([0, 1, 2, 3, 4, 5, 6])
+
+    alist = List.range(5)
+    assert alist.extended([5, 6]) is not alist
+    assert alist.extended([5, 6]) == List([0, 1, 2, 3, 4, 5, 6])
+
+
+def test_append():
+    alist = List.range(5)
+    assert alist.append(5) is alist
+    assert alist == List([0, 1, 2, 3, 4, 5])
+
+    alist = List.range(5)
+    assert alist.appended(5) is not alist
+    assert alist.appended(5) == List([0, 1, 2, 3, 4, 5])
+
+
+def test_distincted():
+    alist = List([3, 2, 2, 1, 5, 1, 7])
+    assert alist.distincted() == List([3, 2, 1, 5, 7])
+
+
+def test_combinatoric():
+    alist = List.range(3)
+    assert alist.product(repeat=1) == List([(0,), (1,), (2,)])
+    assert alist.product(repeat=2) == List([(0, 0), (0, 1), (0, 2),
+                                            (1, 0), (1, 1), (1, 2),
+                                            (2, 0), (2, 1), (2, 2),
+                                            ])
+    assert alist.product([0, 1, 2]) == List([(0, 0), (0, 1), (0, 2),
+                                             (1, 0), (1, 1), (1, 2),
+                                             (2, 0), (2, 1), (2, 2),
+                                             ])
