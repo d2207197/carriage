@@ -11,20 +11,20 @@ from .optional import Optional, Some
 
 
 @attr.s
-class CurPrev:
-    cur = attr.ib()
+class CurrPrev:
+    curr = attr.ib()
     prev = attr.ib()
 
 
 @attr.s
-class CurNext:
-    cur = attr.ib()
+class CurrNext:
+    curr = attr.ib()
     next = attr.ib()
 
 
 @attr.s
-class CurIndex:
-    cur = attr.ib()
+class ValueIndex:
+    value = attr.ib()
     index = attr.ib()
 
 
@@ -214,32 +214,35 @@ class List(Monad):
             yield
 
     def zip(self, *iterable):
-        return List(zip(self._items, iterable))
+        return List(zip(self._items, *iterable))
 
     def zip_longest(self, *iterables, fillvalue=None):
-        return List(itt.zip_longest(self._items, *iterables, fillvalue))
+        return List(itt.zip_longest(self._items, *iterables, fillvalue=fillvalue))
 
     def zip_longest_opt(self, *iterables):
         iterables = [map(Some, it) for it in iterables]
         return List(itt.zip_longest(map(Some, self._items),
                                     *iterables,
-                                    Nothing))
+                                    fillvalue=Nothing))
 
     def zip_prev(self, fillvalue=None):
         prevs = itt.chain([fillvalue], self._items)
-        return List(map(CurPrev, zip(self._items, prevs)))
+        return List(itt.starmap(CurrPrev, zip(self._items, prevs)))
 
     def zip_next(self, fillvalue=None):
         items_itr = iter(self._items)
         next(items_itr)
         nexts = itt.chain(items_itr, [fillvalue])
-        return List(map(CurNext, zip(self._items, nexts)))
+        return List(itt.starmap(CurrNext, zip(self._items, nexts)))
 
     def zip_index(self, start=0):
-        return List(map(CurIndex, zip(self._items, itt.count(start))))
+        return List(itt.starmap(ValueIndex, zip(self._items, itt.count(start))))
 
     def starmap(self, action):
         return List(itt.starmap(action, self._items))
+
+    def filter(self, pred):
+        return List(filter(pred, self._items))
 
     def product(self, repeat=1):
         return List(itt.product(self._items, repeat=repeat))
@@ -252,9 +255,6 @@ class List(Monad):
 
     def combinations_with_replacement(self, r):
         return List(itt.combinations_with_replacement(self._items, r=r))
-
-    def filter(self, pred):
-        return List(filter(pred, self._items))
 
     def copy(self):
         return List(copy(self._items))

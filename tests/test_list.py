@@ -1,6 +1,8 @@
+import attr
 import pytest
 
 from carriage import List, Nothing, Some
+from carriage.sequence import CurrNext, CurrPrev, ValueIndex
 
 
 def test_list():
@@ -72,3 +74,23 @@ def test_slice():
 
     assert alist.takewhile(less_than_15) == List.range(10, 15)
     assert alist.dropwhile(less_than_15) == List.range(15, 20)
+
+
+def test_zip():
+    zip_index_list = List.range(10, 13).zip_index()
+    assert (zip_index_list ==
+            List([ValueIndex(10, 0), ValueIndex(11, 1), ValueIndex(12, 2)]))
+
+    assert (zip_index_list.map(attr.astuple) ==
+            List.range(10, 13).zip([0, 1, 2]))
+
+    assert (List.range(10, 13).zip_longest([0, 1]) ==
+            List([(10, 0), (11, 1), (12, None)]))
+
+    assert (List.range(10, 13).zip_longest_opt([0, 1]) ==
+            List([(Some(10), Some(0)), (Some(11), Some(1)), (Some(12), Nothing)]))
+
+    assert (List.range(10, 13).zip_prev() == List(
+        [CurrPrev(10, None), CurrPrev(11, 10), CurrPrev(12, 11)]))
+    assert (List.range(10, 13).zip_next() == List(
+        [CurrNext(10, 11), CurrNext(11, 12), CurrNext(12, None)]))
