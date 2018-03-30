@@ -1,5 +1,5 @@
 import inspect
-from abc import ABC, abstractmethod, abstractproperty
+from abc import abstractmethod, abstractproperty
 from functools import wraps
 
 from .monad import Monad
@@ -20,7 +20,7 @@ class Optional(Monad):
         try:
             value = getter(*args, **kwargs)
         except errors:
-            return Nothing_inst
+            return Nothing
         else:
             return Some(value)
 
@@ -29,7 +29,7 @@ class Optional(Monad):
     @classmethod
     def value_noneable(cls, value):
         if value is None:
-            return Nothing_inst
+            return Nothing
         return Some(value)
 
     nval = value_noneable
@@ -44,7 +44,7 @@ class Optional(Monad):
         def wrapper(*args, **kwargs):
             res = f(*args, **kwargs)
             if res is None:
-                return Nothing_inst
+                return Nothing
             return Some(res)
 
         return wrapper
@@ -70,7 +70,7 @@ class Optional(Monad):
             try:
                 res = f(*args, **kwargs)
             except errors:
-                return Nothing_inst
+                return Nothing
             else:
                 return Some(res)
 
@@ -108,8 +108,18 @@ class Optional(Monad):
     def is_nothing(self):
         raise NotImplementedError()
 
+    def pluck(self, key):
+        return self.map(lambda d: d[key])
 
-class Nothing(Optional):
+    def pluck_opt(self, key):
+        return self.flat_map(lambda d: Some(d[key])
+                             if key in d else Nothing)
+
+    def pluck_attr(self, attr):
+        return self.map(lambda obj: getattr(obj, attr))
+
+
+class NothingCls(Optional):
     __slots__ = ()
     __instance = None
 
@@ -120,22 +130,22 @@ class Nothing(Optional):
         return cls.__instance
 
     def flat_map(self, maybe_action):
-        return Nothing_inst
+        return Nothing
 
     def map(self, action):
-        return Nothing_inst
+        return Nothing
 
     def then(self, maybe_value):
-        return Nothing_inst
+        return Nothing
 
     def flatten(self):
-        return Nothing_inst
+        return Nothing
 
     def join_noneable(self):
-        return Nothing_inst
+        return Nothing
 
     def ap(self, maybe_value):
-        return Nothing_inst
+        return Nothing
 
     @property
     def value(self):
@@ -168,7 +178,10 @@ class Nothing(Optional):
         return 'Nothing'
 
 
-Nothing_inst = Nothing()
+NothingCls.__name__ = 'Nothing'
+
+
+Nothing = NothingCls()
 
 
 def identity(_): return _
@@ -201,14 +214,14 @@ class Some(Optional):
 
     def join_noneable(self):
         if self._some_value is None:
-            return Nothing_inst
+            return Nothing
         return self
 
     def ap(self, maybe_value):
         if maybe_value.is_some():
             return self._some_value(maybe_value.get())
         elif maybe_value.is_nothing():
-            return Nothing_inst
+            return Nothing
 
     @property
     def value(self):
@@ -256,7 +269,7 @@ class SomeOp(Some):
         if hasattr(self._some_value, name):
             return Some(getattr(self._some_value, name))
         else:
-            return Nothing_inst
+            return Nothing
 
     def __setattr__(self, name, v):
         if name == f"_some_value":
@@ -288,7 +301,7 @@ class SomeOp(Some):
         #         callable(getattr(klass, '__missing__')):
         #     return Some(self._some_value.__missing__(key))
 
-        # return Nothing_inst
+        # return Nothing
 
     def __repr__(self):
         return f"{type(self).__name__}({self._some_value!r})"
@@ -473,7 +486,7 @@ class SomeOptionalNone(Some):
                 callable(getattr(klass, '__missing__'))):
             return Optional(self._some_value.__missing__(key))
 
-        return Nothing_inst
+        return Nothing
 
     def __add__(self, other):
         return Optional(self._some_value + other)

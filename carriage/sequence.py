@@ -6,8 +6,7 @@ from copy import copy
 import attr
 
 from .monad import Monad
-from .optional import Nothing_inst as Nothing
-from .optional import Optional, Some
+from .optional import Nothing, Optional, Some
 
 
 @attr.s

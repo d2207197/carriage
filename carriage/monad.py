@@ -37,6 +37,18 @@ class Monad(ABC):
         raise NotImplementedError()
 
     @abstractmethod
+    def pluck(self, key):
+        raise NotImplementedError()
+
+    @abstractmethod
+    def pluck_opt(self, key):
+        raise NotImplementedError()
+
+    @abstractmethod
+    def pluck_attr(self, attr):
+        raise NotImplementedError()
+
+    @abstractmethod
     def __len__(self):
         raise NotImplementedError()
 

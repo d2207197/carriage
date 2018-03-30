@@ -236,25 +236,40 @@ def test_comparator():
         assert some_200 > 100
 
 
+class Person:
+    def __init__(self, name, age, father=None, mother=None):
+        self.name = name
+        self.age = age
+        self.father = father
+        self.mother = mother
+
+    def get_father(self):
+        return self.father
+
+    def get_mother(self):
+        return self.mother
+
+    def __repr__(self):
+        return f'Person({self.name!r}, {self.father!r}, {self.mother!r})'
+
+    def __eq__(self, other):
+        return (self.name, self.father, self.mother) == (
+            other.name, other.father, other.mother)
+
+
+def test_pluck():
+    d = {'a': 1, 'b': 2}
+
+    assert Some(d).pluck('a') == Some(1)
+    with pytest.raises(KeyError):
+        Some(d).pluck('c')
+
+    assert Some(d).pluck_opt('c') is Nothing
+    johnny = Person('Johnny', 18)
+    assert Some(johnny).pluck_attr('name') == Some('Johnny')
+
+
 def test_value_do():
-    class Person:
-        def __init__(self, name, age, father=None, mother=None):
-            self.name = name
-            self.age = age
-            self.father = father
-            self.mother = mother
-
-        def get_father(self):
-            return self.father
-
-        def get_mother(self):
-            return self.mother
-
-        def __repr__(self):
-            return f'Person({self.name!r}, {self.father!r}, {self.mother!r})'
-
-        def __eq__(self, other):
-            return (self.name, self.father, self.mother) == (other.name, other.father, other.mother)
 
     papa = Person('Papa', 45)
     mama = Person('Mama', 40)
@@ -263,7 +278,8 @@ def test_value_do():
     assert Some(johnny).value_do.mother == Some(mama)
     assert Some(johnny).value_do.mother.value is mama
     assert Some(johnny).value_do.age == Some(18)
-    assert Some(johnny).value_do.age < Some(johnny).value_do.mother.value_do.age
+    assert Some(johnny).value_do.age < Some(
+        johnny).value_do.mother.value_do.age
 
     # assert maybe_obj.get_data().v == 30
     # assert maybe_obj.get_none().v is None
