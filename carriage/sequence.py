@@ -29,15 +29,25 @@ class CurIndex:
 
 
 class List(Monad):
+    @classmethod
+    def range(cls, start, end=None, step=1):
+        if end is None:
+            start, end = 0, start
+
+        return cls(range(start, end, step))
+
     @property
     def _base_type(self):
         return List
 
-    def __init__(self, items):
+    def __init__(self, items=None):
+
         if isinstance(items, list):
             pass
         elif isinstance(items, collections.Iterable):
             items = list(items)
+        elif items is None:
+            items = []
         else:
             raise TypeError("items should be iterable")
 
@@ -86,38 +96,21 @@ class List(Monad):
     def len(self):
         return len(self)
 
-    def take(self, n):
-        return List(self._items[:n])
+    def __getitem__(self, idx):
+        if isinstance(idx, slice):
+            return List(self._items[idx])
+        return self._items[idx]
 
-    def drop(self, n):
-        return List(self._items[n:])
+    def get(self, idx, default=None):
+        if idx < len(self):
+            return self._items[idx]
+        return default
 
-    def dropwhile(self, pred):
-        for idx, item in enumerate(self._items):
-            if not pred(item):
-                return List(self._items[idx:])
+    def get_opt(self, idx):
+        if (idx if idx >= 0 else abs(idx) - 1) < len(self):
+            return Some(self._items[idx])
 
-    def dropright(self, n):
-        return List(self._items[:-n])
-
-    def takeright(self, n):
-        return List(self._items[-n:])
-
-    def find(self, pred):
-        for item in self._items:
-            if pred(item):
-                return item
-
-    def find_opt(self, pred):
-        for item in self._items:
-            if pred(item):
-                return Some(item)
-
-        else:
-            return Nothing
-
-    def slice(self, start, stop, step=None):
-        return self[slice(start, stop, step)]
+        return Nothing
 
     def first(self):
         return self._items[0]
@@ -137,8 +130,53 @@ class List(Monad):
     def last_opt(self):
         return self.get_opt(-1)
 
+    def find(self, pred):
+        for item in self._items:
+            if pred(item):
+                return item
+
+    def find_opt(self, pred):
+        for item in self._items:
+            if pred(item):
+                return Some(item)
+
+        else:
+            return Nothing
+
+    def take(self, n):
+        return List(self._items[:n])
+
+    def drop(self, n):
+        return List(self._items[n:])
+
+    def tail(self):
+        return List(self._items[1:])
+
     def butlast(self):
         return self[:-1]
+
+    def takeright(self, n):
+        return List(self._items[-n:])
+
+    def dropright(self, n):
+        return List(self._items[:-n])
+
+    def slice(self, start, stop, step=None):
+        return self[slice(start, stop, step)]
+
+    def takewhile(self, pred):
+        def _takewhile(items):
+            for item in items:
+                if not pred(item):
+                    break
+                yield item
+
+        return List(_takewhile(self._items))
+
+    def dropwhile(self, pred):
+        for idx, item in enumerate(self._items):
+            if not pred(item):
+                return List(self._items[idx:])
 
     def split_when(self, pred):
         def _split_when(pred, items):
@@ -170,14 +208,10 @@ class List(Monad):
         items = set(items)
         return self.filter(lambda item: item not in items)
 
-    def get(self, idx, default):
-        self._items.get(idx, default)
-
-    def get_opt(self, idx):
-        if idx < len(self):
-            return Some(self._items[idx])
-
-        return Nothing
+    def interpose(self, sep):
+        for item in self._items:
+            yield item
+            yield
 
     def zip(self, *iterable):
         return List(zip(self._items, iterable))
@@ -201,7 +235,7 @@ class List(Monad):
         nexts = itt.chain(items_itr, [fillvalue])
         return List(map(CurNext, zip(self._items, nexts)))
 
-    def zip_index(self, start):
+    def zip_index(self, start=0):
         return List(map(CurIndex, zip(self._items, itt.count(start))))
 
     def starmap(self, action):
@@ -218,9 +252,6 @@ class List(Monad):
 
     def combinations_with_replacement(self, r):
         return List(itt.combinations_with_replacement(self._items, r=r))
-
-    def tail(self):
-        return List(self._items[1:])
 
     def filter(self, pred):
         return List(filter(pred, self._items))
@@ -262,20 +293,6 @@ class List(Monad):
 
     def sorted(self, key=None, reverse=False):
         return List(sorted(self._items, key=key, reverse=reverse))
-
-    def takewhile(self, pred):
-        def _takewhile(items):
-            for item in items:
-                if not pred(item):
-                    break
-                yield item
-
-        return List(_takewhile(self._items))
-
-    def __getitem__(self, idx):
-        if isinstance(idx, slice):
-            return List(self._item[idx])
-        return self._items[idx]
 
 
 class Stream(Monad):
