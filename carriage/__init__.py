@@ -1,6 +1,7 @@
 
+from .array import Array
 from .optional import Nothing, NothingError, Optional, Some
-from .sequence import List
+from .stream import Stream
 
 __all__ = ['Optional', 'Some', 'Nothing',
-           'NothingError', 'List']
+           'NothingError', 'Stream', 'Array']

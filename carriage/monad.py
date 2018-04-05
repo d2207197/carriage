@@ -48,9 +48,9 @@ class Monad(ABC):
     def pluck_attr(self, attr):
         raise NotImplementedError()
 
-    @abstractmethod
-    def __len__(self):
-        raise NotImplementedError()
+    # @abstractmethod
+    # def __len__(self):
+    #     raise NotImplementedError()
 
     @abstractmethod
     def __iter__(self):

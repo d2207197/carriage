@@ -1,42 +1,15 @@
 
+import builtins
 import collections
 import itertools as itt
 from copy import copy
 
-import attr
-
 from .monad import Monad
 from .optional import Nothing, Some
+from .types import CurrNext, CurrPrev, ValueIndex
 
 
-@attr.s(slots=True)
-class CurrPrev:
-    curr = attr.ib()
-    prev = attr.ib()
-
-    def __iter__(self):
-        return iter(attr.astuple(self))
-
-
-@attr.s(slots=True)
-class CurrNext:
-    curr = attr.ib()
-    next = attr.ib()
-
-    def __iter__(self):
-        return iter(attr.astuple(self))
-
-
-@attr.s(slots=True)
-class ValueIndex:
-    value = attr.ib()
-    index = attr.ib()
-
-    def __iter__(self):
-        return iter(attr.astuple(self))
-
-
-class List(Monad):
+class Array(Monad):
     __slots__ = '_items'
 
     @classmethod
@@ -48,7 +21,7 @@ class List(Monad):
 
     @property
     def _base_type(self):
-        return List
+        return Array
 
     def __init__(self, items=None):
 
@@ -65,19 +38,19 @@ class List(Monad):
 
     @classmethod
     def unit(cls, value):
-        return List([value])
+        return Array([value])
 
     def flat_map(self, to_iterable_action):
-        return List(
+        return Array(
             itt.chain.from_iterable(
                 to_iterable_action(item)
                 for item in self._items))
 
     def map(self, action):
-        return List(action(item) for item in self._items)
+        return Array(action(item) for item in self._items)
 
     def flatten(self):
-        return List(itt.chain.from_iterable(self._items))
+        return Array(itt.chain.from_iterable(self._items))
 
     def then(self, alist):
         # TODO
@@ -106,19 +79,19 @@ class List(Monad):
     def len(self):
         return len(self)
 
-    def __getitem__(self, idx):
-        if isinstance(idx, slice):
-            return List(self._items[idx])
-        return self._items[idx]
+    def __getitem__(self, index):
+        if isinstance(index, slice):
+            return Array(self._items[index])
+        return self._items[index]
 
-    def get(self, idx, default=None):
-        if idx < len(self):
-            return self._items[idx]
+    def get(self, index, default=None):
+        if index < len(self):
+            return self._items[index]
         return default
 
-    def get_opt(self, idx):
-        if (idx if idx >= 0 else abs(idx) - 1) < len(self):
-            return Some(self._items[idx])
+    def get_opt(self, index):
+        if (index if index >= 0 else abs(index) - 1) < len(self):
+            return Some(self._items[index])
 
         return Nothing
 
@@ -154,34 +127,34 @@ class List(Monad):
             return Nothing
 
     def take(self, n):
-        return List(self._items[:n])
+        return Array(self._items[:n])
 
     def drop(self, n):
-        return List(self._items[n:])
+        return Array(self._items[n:])
 
     def tail(self):
-        return List(self._items[1:])
+        return Array(self._items[1:])
 
     def butlast(self):
         return self[:-1]
 
     def takeright(self, n):
-        return List(self._items[-n:])
+        return Array(self._items[-n:])
 
     def dropright(self, n):
-        return List(self._items[:-n])
+        return Array(self._items[:-n])
 
     def slice(self, start, stop, step=None):
         return self[slice(start, stop, step)]
 
     def takewhile(self, pred):
-        return List(itt.takewhile(pred, self._items))
+        return Array(itt.takewhile(pred, self._items))
 
     def dropwhile(self, pred):
-        return List(itt.dropwhile(pred, self._items))
+        return Array(itt.dropwhile(pred, self._items))
 
-    def split_when(self, pred):
-        def _split_when(pred, items):
+    def split_before(self, pred):
+        def _split_before(pred, items):
             segment = []
             for item in items:
                 if pred(item) and len(segment) > 0:
@@ -189,7 +162,23 @@ class List(Monad):
                     segment = []
                 segment.append(item)
 
-        return List(_split_when(pred, self._items))
+            yield segment
+
+        return Array(_split_before(pred, self._items))
+
+    def split_after(self, pred):
+        def _split_after(pred, items):
+            segment = []
+            for item in items:
+                if pred(item):
+                    yield segment
+                    segment = []
+                segment.append(item)
+
+            if len(segment) > 0:
+                yield segment
+
+        return Array(_split_after(pred, self._items))
 
     def pluck(self, key):
         return self.map(lambda d: d[key])
@@ -200,6 +189,12 @@ class List(Monad):
 
     def pluck_attr(self, attr):
         return self.map(lambda obj: getattr(obj, attr))
+
+    def filter(self, pred):
+        return Array(builtins.filter(pred, self._items))
+
+    def filterfalse(self, pred):
+        return Array(itt.filterfalse(pred, self._items))
 
     def where(self, **conds):
         return self.filter(lambda d:
@@ -216,61 +211,55 @@ class List(Monad):
             yield
 
     def zip(self, *iterable):
-        return List(zip(self._items, *iterable))
+        return Array(zip(self._items, *iterable))
 
     def zip_longest(self, *iterables, fillvalue=None):
-        return List(itt.zip_longest(
+        return Array(itt.zip_longest(
             self._items, *iterables,
             fillvalue=fillvalue))
 
     def zip_longest_opt(self, *iterables):
         iterables = [map(Some, it) for it in iterables]
-        return List(itt.zip_longest(map(Some, self._items),
-                                    *iterables,
-                                    fillvalue=Nothing))
+        return Array(itt.zip_longest(map(Some, self._items),
+                                     *iterables,
+                                     fillvalue=Nothing))
 
     def zip_prev(self, fillvalue=None):
         prevs = itt.chain([fillvalue], self._items)
-        return List(itt.starmap(CurrPrev, zip(self._items, prevs)))
+        return Array(itt.starmap(CurrPrev, zip(self._items, prevs)))
 
     def zip_next(self, fillvalue=None):
         items_itr = iter(self._items)
         next(items_itr)
         nexts = itt.chain(items_itr, [fillvalue])
-        return List(itt.starmap(CurrNext, zip(self._items, nexts)))
+        return Array(itt.starmap(CurrNext, zip(self._items, nexts)))
 
     def zip_index(self, start=0):
-        return List(itt.starmap(ValueIndex,
-                                zip(self._items, itt.count(start))))
+        return Array(itt.starmap(ValueIndex,
+                                 zip(self._items, itt.count(start))))
 
     def starmap(self, action):
-        return List(itt.starmap(action, self._items))
-
-    def filter(self, pred):
-        return List(filter(pred, self._items))
-
-    def filterfalse(self, pred):
-        return List(itt.filterfalse(pred, self._items))
+        return Array(itt.starmap(action, self._items))
 
     def reverse(self):
         self._items.reverse()
         return self
 
     def reversed(self):
-        return List(reversed(self._items))
+        return Array(reversed(self._items))
 
     def sort(self, key=None, reverse=False):
         self._items.sort(key=key, reverse=reverse)
         return self
 
     def sorted(self, key=None, reverse=False):
-        return List(sorted(self._items, key=key, reverse=reverse))
+        return Array(sorted(self._items, key=key, reverse=reverse))
 
     def sum(self):
         return sum(self)
 
     def accumulate(self, func=None):
-        return List(itt.accumulate(self._items, func))
+        return Array(itt.accumulate(self._items, func))
 
     def extend(self, iterable):
         self._items.extend(iterable)
@@ -291,7 +280,6 @@ class List(Monad):
         return alist
 
     def distincted(self):
-
         def _distincted(items):
             item_set = set()
             for item in items:
@@ -299,22 +287,22 @@ class List(Monad):
                     item_set.add(item)
                     yield item
 
-        return List(_distincted(self._items))
+        return Array(_distincted(self._items))
 
     def product(self, *iterables, repeat=1):
-        return List(itt.product(self._items, *iterables, repeat=repeat))
+        return Array(itt.product(self._items, *iterables, repeat=repeat))
 
     def permutations(self, r=None):
-        return List(itt.permutations(self._items, r=r))
+        return Array(itt.permutations(self._items, r=r))
 
     def combinations(self, r):
-        return List(itt.combinations(self._items, r=r))
+        return Array(itt.combinations(self._items, r=r))
 
     def combinations_with_replacement(self, r):
-        return List(itt.combinations_with_replacement(self._items, r=r))
+        return Array(itt.combinations_with_replacement(self._items, r=r))
 
     def copy(self):
-        return List(copy(self._items))
+        return Array(copy(self._items))
 
     def to_list(self, copy=False):
         if copy:
@@ -337,7 +325,3 @@ class List(Monad):
     def to_stream(self):
         # TODO
         pass
-
-
-class Stream(Monad):
-    pass
