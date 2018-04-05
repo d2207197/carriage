@@ -2,7 +2,7 @@
 import builtins
 import functools as fnt
 import itertools as itt
-from collections import deque
+from collections import Counter, defaultdict, deque
 from copy import copy
 
 from .array import Array
@@ -33,6 +33,35 @@ class Stream(Monad):
             start, end = 0, start
 
         return cls(range(start, end, step))
+
+    @classmethod
+    def count(cls, start, step=1):
+        return cls(itt.count(start, step))
+
+    @classmethod
+    def repeat(cls, elem, times=None):
+        return cls(itt.repeat(elem, times=n))
+
+    @classmethod
+    def cycle(cls, iterable):
+        return cls(itt.cycle(iterable))
+
+    @classmethod
+    def repeatedly(cls, func, times=None):
+        def repeatedly_gen():
+            if times is None:
+                yield func()
+            elif times > 0:
+                yield func()
+                times -= 1
+        return cls(repeatedly_gen())
+
+    @classmethod
+    def iterate(cls, func, x):
+        def iterate_gen():
+            yield x
+            x = func(x)
+        return cls(repeatedly_gen())
 
     @property
     def _base_type(self):
@@ -187,10 +216,13 @@ class Stream(Monad):
     @as_stream
     def takewhile(self, pred):
         return fnt.partial(itt.takewhile, pred)
+    take_while = takewhile
 
     @as_stream
     def dropwhile(self, pred):
         return fnt.partial(itt.dropwhile, pred)
+
+    drop_while = dropwhile
 
     @as_stream
     def split_before(self, pred):
@@ -238,6 +270,8 @@ class Stream(Monad):
     @as_stream
     def filterfalse(self, pred):
         return fnt.partial(itt.filterfalse, pred)
+
+    filter_false = filterfalse
 
     def without(self, *items):
         try:
@@ -322,6 +356,30 @@ class Stream(Monad):
     def fold_left(self, func, zero_value):
         return fnt.reduce(func, self, zero_value)
 
+    @as_stream
+    def groupby(self, key=None):
+        return fnt.partial(itt.groupby, key=key)
+
+    group_by = groupby
+
+    def groupby_as_dict(self, key=None):
+        key_to_grp = defaultdict(list)
+        for elem in self:
+            key_to_grp[key(elem)].append(elem)
+        return dict(key_to_grp)
+
+    group_by_as_dict = groupby_as_dict
+
+    @as_stream
+    def ngram(self, n=2):
+        def ngram_tr(self_):
+            self_itr = iter(self)
+            dq = deque(itt.islice(self_itr, n - 1), maxlen=n)
+            for item in self_itr:
+                dq.append(item)
+                yield tuple(dq)
+        return ngram_tr
+
     def mean(self):
         length, summation = deque(enumerate(itt.accumulate(self), 1), 1).pop()
         return summation / length
@@ -329,6 +387,9 @@ class Stream(Monad):
     @as_stream
     def accumulate(self, func=None):
         return fnt.partial(itt.accumulate, func=func)
+
+    def value_counts(self):
+        return Counter(self)
 
     @as_stream
     def extended(self, iterable):

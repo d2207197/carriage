@@ -1,5 +1,6 @@
 import itertools as itt
 import operator as op
+from collections import Counter, defaultdict
 
 import pandas as pd
 import pytest
@@ -193,3 +194,21 @@ def test_to():
 
     assert list(Stream.range(5, 8)) == [5, 6, 7]
     assert Stream.range(5, 8).to_series().equal(pd.Series([5, 6, 7]))
+
+
+def test_ngram():
+    assert Stream.range(5, 10).ngram(3).to_list() == [
+        (5, 6, 7), (6, 7, 8), (7, 8, 9)]
+
+
+def test_counter():
+    assert Stream([3, 1, 1, 3, 5, 4, 9, 3, 1, 5, 3]).value_counts(
+    ) == Counter([3, 1, 1, 3, 5, 4, 9, 3, 1, 5, 3])
+
+
+def test_groupby():
+    assert Stream.range(10).groupby(lambda n: n // 3).starmap(lambda k, vs: (k, list(vs))).to_list() == [
+        (0, [0, 1, 2]), (1, [3, 4, 5]), (2, [6, 7, 8]), (3, [9])
+    ]
+    assert Stream.range(10).groupby_as_dict(
+        lambda n: n // 3) == {0: [0, 1, 2], 1: [3, 4, 5], 2: [6, 7, 8], 3: [9]}
