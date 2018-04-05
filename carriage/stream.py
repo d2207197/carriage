@@ -370,10 +370,14 @@ class Stream(Monad):
 
     def to_series(self):
         import pandas as pd
-        return pd.Series(self)
+
+        return pd.Series(list(self))
 
     def to_set(self):
         return set(self)
 
     def to_dict(self):
         return {k: v for k, v in self}
+
+    def to_array(self):
+        return Array(self)

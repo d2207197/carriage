@@ -4,8 +4,7 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-"e1839a8" = {path = ".", editable = true}
-attrs = "*"
+"e1839a8" = {path = ".", extras = ["all"], editable = true}
 
 [dev-packages]
 python-language-server = "*"

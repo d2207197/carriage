@@ -315,13 +315,11 @@ class Array(Monad):
         pass
 
     def to_set(self):
-        # TODO
         return set(self._items)
 
     def to_dict(self):
-        # TODO
-        pass
+        return {k: v for k, v in self}
 
     def to_stream(self):
-        # TODO
-        pass
+        from .stream import Stream
+        return Stream(self)

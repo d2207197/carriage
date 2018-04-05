@@ -1,7 +1,7 @@
 import attr
 import pytest
 
-from carriage import Array, Nothing, Some
+from carriage import Array, Nothing, Some, Stream
 from carriage.types import CurrNext, CurrPrev, ValueIndex
 
 
@@ -165,3 +165,9 @@ def test_combinatoric():
                                               (1, 0), (1, 1), (1, 2),
                                               (2, 0), (2, 1), (2, 2),
                                               ])
+
+
+def test_to():
+    stm = Array.range(5, 8).to_stream()
+    assert type(stm) is Stream
+    assert stm.to_list() == [5, 6, 7]

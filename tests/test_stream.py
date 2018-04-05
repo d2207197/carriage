@@ -1,8 +1,8 @@
 import itertools as itt
 import operator as op
 
+import pandas as pd
 import pytest
-
 from carriage import Array, Nothing, Some, Stream
 from carriage.types import CurrNext, CurrPrev, ValueIndex
 
@@ -184,3 +184,12 @@ def test_extend():
 def test_distincted():
     assert Stream([1, 5, 1, 3, 3, 5, 6]
                   ).distincted().to_list() == [1, 5, 3, 6]
+
+
+def test_to():
+    assert Stream.range(5, 8).to_array() == Array([5, 6, 7])
+    assert Stream([(1, 2), (3, 4)]).to_dict() == {1: 2, 3: 4}
+    assert Stream.range(5, 8).to_set() == set([5, 6, 7])
+
+    assert list(Stream.range(5, 8)) == [5, 6, 7]
+    assert Stream.range(5, 8).to_series().equal(pd.Series([5, 6, 7]))
