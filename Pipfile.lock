@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "05cd4fcd2d473b7167b5e60d9d217bfd36d87b25a3ae604c05ba9782b47755a6"
+            "sha256": "5782d80e103fc59e84486bab84a879af682c9cd50eae654a2d18fda8b271cd01"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -179,6 +179,13 @@
             "index": "pypi",
             "version": "==3.5.0"
         },
+        "fn": {
+            "hashes": [
+                "sha256:f8cd80cdabf15367a2f07e7a9951fdc013d7200412743d85b88f2c896c95bada"
+            ],
+            "index": "pypi",
+            "version": "==0.4.3"
+        },
         "funcy": {
             "hashes": [
                 "sha256:c38ef134d34c767b9d631de453e19f710ac0575b9463d55e30f4f93274e089e4"
@@ -191,6 +198,13 @@
                 "sha256:e39ced1ab767b5936646cedba8bcce582398233d6a627067d4c6a454c90cfedb"
             ],
             "version": "==0.16.0"
+        },
+        "icecream": {
+            "hashes": [
+                "sha256:1f90de6bfd5bd47ad453d0a2cc2da5e5df97630a87432c7aef65ad5aa9953ac5"
+            ],
+            "index": "pypi",
+            "version": "==1.3"
         },
         "idna": {
             "hashes": [
@@ -292,6 +306,13 @@
                 "sha256:f460d1ceb0e4a5dcb2a652db0904224f367c9b3c1470d5a7683c0480e582468b"
             ],
             "version": "==1.3.1"
+        },
+        "lipsum": {
+            "hashes": [
+                "sha256:ba5f46cef19104c07f889b14486a3772845fc25afa1eb5e2eee1f2d9badcb8ab"
+            ],
+            "index": "pypi",
+            "version": "==0.1.2"
         },
         "mccabe": {
             "hashes": [

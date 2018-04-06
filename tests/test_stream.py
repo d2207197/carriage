@@ -1,11 +1,11 @@
 import itertools as itt
 import operator as op
-from collections import Counter, defaultdict
+from collections import Counter
 
 import pandas as pd
 import pytest
 from carriage import Array, Nothing, Some, Stream
-from carriage.types import CurrNext, CurrPrev, ValueIndex
+from carriage.rowtype import CurrNext, CurrPrev, ValueIndex
 
 
 class Person:
@@ -135,9 +135,8 @@ def test_zip():
         (5, 1), (6, 2), (7, 3), (None, 4)
     ]
 
-    assert Stream.range(5, 8).zip_longest(range(1, 5), fillvalue=100).to_list() == [
-        (5, 1), (6, 2), (7, 3), (100, 4)
-    ]
+    assert (Stream.range(5, 8).zip_longest(range(1, 5), fillvalue=100)
+            .to_list() == [(5, 1), (6, 2), (7, 3), (100, 4)])
 
     assert Stream.range(5, 8).zip_prev().to_list() == [
         CurrPrev(5, None), CurrPrev(6, 5), CurrPrev(7, 6)
@@ -193,11 +192,11 @@ def test_to():
     assert Stream.range(5, 8).to_set() == set([5, 6, 7])
 
     assert list(Stream.range(5, 8)) == [5, 6, 7]
-    assert Stream.range(5, 8).to_series().equal(pd.Series([5, 6, 7]))
+    assert Stream.range(5, 8).to_series().equals(pd.Series([5, 6, 7]))
 
 
-def test_ngram():
-    assert Stream.range(5, 10).ngram(3).to_list() == [
+def test_sliding_window():
+    assert Stream.range(5, 10).sliding_window(3).to_list() == [
         (5, 6, 7), (6, 7, 8), (7, 8, 9)]
 
 
@@ -207,8 +206,36 @@ def test_counter():
 
 
 def test_groupby():
-    assert Stream.range(10).groupby(lambda n: n // 3).starmap(lambda k, vs: (k, list(vs))).to_list() == [
-        (0, [0, 1, 2]), (1, [3, 4, 5]), (2, [6, 7, 8]), (3, [9])
-    ]
-    assert Stream.range(10).groupby_as_dict(
+    assert (Stream
+            .range(10)
+            .groupby(lambda n: n // 3)
+            .starmap(lambda k, vs: (k, list(vs))).to_list() ==
+            [(0, [0, 1, 2]), (1, [3, 4, 5]), (2, [6, 7, 8]), (3, [9])])
+
+    assert Stream.range(10).dict_group_by(
         lambda n: n // 3) == {0: [0, 1, 2], 1: [3, 4, 5], 2: [6, 7, 8], 3: [9]}
+
+
+@pytest.fixture
+def ipsum():
+    return '''Lorem ipsum dolor sit amet consectetur adipiscing elit tempus luctus pellentesque senectus donec neque convallis, vivamus laoreet morbi mattis ridiculus etiam aptent at lacus penatibus magna blandit odio. Conubia parturient fringilla lobortis maecenas imperdiet habitasse sociosqu litora, nullam integer sed eget nulla penatibus nec, natoque cubilia tempus ut phasellus mollis gravida. Sagittis ornare dis fames duis faucibus class netus lacinia interdum tellus, pretium quis massa arcu non parturient posuere ullamcorper dapibus volutpat, nisi curabitur augue aenean hac viverra per primis diam. Pulvinar volutpat posuere tempor eleifend diam nascetur erat id proin mollis vulputate, leo aliquam bibendum donec in augue vel integer sagittis nullam platea turpis, potenti iaculis sociis hendrerit tellus penatibus arcu himenaeos litora elementum. Integer posuere montes velit euismod id eget sapien congue ullamcorper eleifend, natoque curae magna ac vel conubia nunc ante tellus, sem dapibus iaculis eu ultricies nec luctus viverra aptent. Taciti nibh tincidunt primis fermentum aenean laoreet nostra, ut sollicitudin porta at viverra venenatis ultrices purus, varius dui velit pulvinar cras interdum. Ante massa a venenatis et quis arcu placerat, curabitur dictumst at vehicula netus nascetur, rhoncus ligula ad est lacus ac.
+
+A conubia taciti quisque dignissim leo volutpat euismod, mus maecenas tempus porta tortor fermentum mollis quis, feugiat rutrum hendrerit convallis etiam congue. Iaculis tincidunt porta litora libero luctus himenaeos, vitae ultrices nulla integer ac auctor cubilia, pharetra inceptos eleifend netus curabitur. Urna congue mauris velit iaculis himenaeos egestas fringilla accumsan placerat, nisi mi erat lacus volutpat porta suscipit donec, imperdiet in ad curabitur hendrerit viverra taciti natoque. Nisi tempus dictumst quis risus eros parturient nostra duis ante et nascetur placerat nunc ullamcorper primis, sapien mollis auctor ultrices laoreet nulla enim consequat in vehicula litora molestie donec. Ad tempus faucibus nam magna enim nullam tincidunt natoque accumsan lacinia, pharetra suspendisse varius porttitor potenti taciti nisl mollis nunc risus, erat vivamus pretium nostra felis dis mauris blandit justo. Ridiculus netus curae est arcu scelerisque sociosqu mus, faucibus fermentum praesent elementum facilisis ut, pellentesque posuere ullamcorper etiam maecenas a.
+
+Sem taciti integer pharetra magnis magna morbi ante cursus per, iaculis justo nunc in a vivamus rhoncus scelerisque, tempus laoreet dictumst ornare primis natoque odio proin. Congue arcu tempor penatibus mi tristique dis egestas, viverra ad integer hac accumsan senectus suscipit pretium, mollis leo erat sodales fermentum turpis. Porta nisl dis facilisi gravida magna, magnis sem massa torquent integer, dui tortor non conubia. Tristique non nullam cursus porta semper tincidunt interdum litora per, vestibulum cum elementum lacinia magna erat posuere nostra, sociis condimentum iaculis praesent hendrerit mi vulputate cubilia. Est nulla ut nec phasellus volutpat convallis velit sed porttitor, elementum eros ullamcorper primis taciti condimentum morbi tortor purus ac, class mattis etiam euismod auctor non quis vehicula. Mus elementum sodales eleifend nam condimentum posuere potenti rhoncus libero pretium, imperdiet sem sociosqu dictumst fermentum leo varius aliquam proin integer sociis, a curabitur iaculis vulputate urna aliquet porta placerat dictum. Ullamcorper vestibulum ante nostra curae cras tempor praesent eros nascetur at integer, lectus porttitor nulla ultrices iaculis torquent dis aliquet dictum hac ridiculus, facilisi justo mi netus varius magnis enim euismod felis himenaeos.
+'''
+
+
+def test_general_case(ipsum):
+    from icecream import ic
+    out = (Stream(ipsum.splitlines())
+           .flat_map(lambda line: line.split(' '))
+           .map(lambda word: word.strip(',.'))
+           .filter(lambda word: len(word) > 0)
+           .sorted()
+           .group_by(lambda word: len(word))
+           .map(lambda keyvalues: keyvalues.evolve(values=to_array())
+           .take(100)
+           .to_list()
+           )
+    ic(out)

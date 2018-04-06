@@ -19,6 +19,9 @@ ipython = "*"
 twine = "*"
 "flake8" = "*"
 funcy = "*"
+lipsum = "*"
+fn = "*"
+icecream = "*"
 
 [requires]
 python_version = "3.6"

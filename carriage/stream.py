@@ -3,12 +3,11 @@ import builtins
 import functools as fnt
 import itertools as itt
 from collections import Counter, defaultdict, deque
-from copy import copy
 
 from .array import Array
 from .monad import Monad
 from .optional import Nothing, Some
-from .types import CurrNext, CurrPrev, ValueIndex
+from .rowtype import CurrNext, CurrPrev, KeyValues, ValueIndex
 
 
 def as_stream(f):
@@ -40,7 +39,7 @@ class Stream(Monad):
 
     @classmethod
     def repeat(cls, elem, times=None):
-        return cls(itt.repeat(elem, times=n))
+        return cls(itt.repeat(elem, times=times))
 
     @classmethod
     def cycle(cls, iterable):
@@ -48,20 +47,22 @@ class Stream(Monad):
 
     @classmethod
     def repeatedly(cls, func, times=None):
-        def repeatedly_gen():
-            if times is None:
-                yield func()
-            elif times > 0:
-                yield func()
-                times -= 1
+        def repeatedly_gen(times):
+            while True:
+                if times is None:
+                    yield func()
+                elif times > 0:
+                    yield func()
+                    times -= 1
         return cls(repeatedly_gen())
 
     @classmethod
     def iterate(cls, func, x):
-        def iterate_gen():
-            yield x
-            x = func(x)
-        return cls(repeatedly_gen())
+        def iterate_gen(x):
+            while True:
+                yield x
+                x = func(x)
+        return cls(iterate_gen(x))
 
     @property
     def _base_type(self):
@@ -74,11 +75,11 @@ class Stream(Monad):
     def to_list(self):
         return list(self)
 
+    @as_stream
     def flat_map(self, to_iterable_action):
-        def flat_map_trfmr(iterable):
+        def flat_map_tr(iterable):
             return itt.chain.from_iterable(map(to_iterable_action, iterable))
-
-        return Stream(self, flat_map_trfmr)
+        return flat_map_tr
 
     @as_stream
     def map(self, action):
@@ -108,7 +109,8 @@ class Stream(Monad):
         return iter(self._transformer(self._iterable))
 
     def __repr__(self):
-        return f'{type(self).__name__}({self._iterable!r}, {self._transformer!r})'
+        return (f'{type(self).__name__}'
+                f'({self._iterable!r}, {self._transformer!r})')
 
     @property
     def _value_for_cmp(self):
@@ -323,7 +325,8 @@ class Stream(Monad):
         def zip_next_tr(items):
             items, nexts = itt.tee(items)
             next(nexts, None)
-            return itt.starmap(CurrNext, itt.zip_longest(items, nexts, fillvalue=fillvalue))
+            return itt.starmap(
+                CurrNext, itt.zip_longest(items, nexts, fillvalue=fillvalue))
         return zip_next_tr
 
     def zip_index(self, start=0):
@@ -356,29 +359,40 @@ class Stream(Monad):
     def fold_left(self, func, zero_value):
         return fnt.reduce(func, self, zero_value)
 
+    # def key_by(self, func):
+    #     return self.map(lambda elem: Row(key=func(elem), value=elem))
+
     @as_stream
-    def groupby(self, key=None):
-        return fnt.partial(itt.groupby, key=key)
+    def group_by(self, key=None):
+        def group_by_tr(self_):
+            for k, vs in itt.groupby(self_, key=key):
+                yield KeyValues(key=k, values=Stream(vs))
+        return group_by_tr
 
-    group_by = groupby
+    groupby = group_by
 
-    def groupby_as_dict(self, key=None):
+    def dict_group_by(self, key=None):
         key_to_grp = defaultdict(list)
         for elem in self:
             key_to_grp[key(elem)].append(elem)
         return dict(key_to_grp)
 
-    group_by_as_dict = groupby_as_dict
+    def dict_multi_group_by(self, key=None):
+        key_to_grp = defaultdict(list)
+        for elem in self:
+            for k in key(elem):
+                key_to_grp[k].append(elem)
+        return dict(key_to_grp)
 
     @as_stream
-    def ngram(self, n=2):
-        def ngram_tr(self_):
+    def sliding_window(self, n=2):
+        def sliding_window_tr(self_):
             self_itr = iter(self)
             dq = deque(itt.islice(self_itr, n - 1), maxlen=n)
             for item in self_itr:
                 dq.append(item)
                 yield tuple(dq)
-        return ngram_tr
+        return sliding_window_tr
 
     def mean(self):
         length, summation = deque(enumerate(itt.accumulate(self), 1), 1).pop()
@@ -442,3 +456,21 @@ class Stream(Monad):
 
     def to_array(self):
         return Array(self)
+
+
+# @attr.s(slots=True)
+# class CurrNext:
+#     curr = attr.ib()
+#     next = attr.ib()
+
+#     def __iter__(self):
+#         return iter(attr.astuple(self))
+
+
+# @attr.s(slots=True)
+# class ValueIndex:
+#     value = attr.ib()
+#     index = attr.ib()
+
+#     def __iter__(self):
+#         return iter(attr.astuple(self))

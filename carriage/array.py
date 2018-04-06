@@ -6,7 +6,7 @@ from copy import copy
 
 from .monad import Monad
 from .optional import Nothing, Some
-from .types import CurrNext, CurrPrev, ValueIndex
+from .rowtype import CurrNext, CurrPrev, ValueIndex
 
 
 class Array(Monad):

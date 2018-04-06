@@ -1,8 +1,7 @@
 import attr
 import pytest
-
 from carriage import Array, Nothing, Some, Stream
-from carriage.types import CurrNext, CurrPrev, ValueIndex
+from carriage.rowtype import CurrNext, CurrPrev, ValueIndex
 
 
 def test_init():
@@ -68,8 +67,8 @@ def test_zip():
     assert (zip_index_list ==
             Array([ValueIndex(10, 0), ValueIndex(11, 1), ValueIndex(12, 2)]))
 
-    assert (zip_index_list.map(attr.astuple) ==
-            Array.range(10, 13).zip([0, 1, 2]))
+    assert (zip_index_list ==
+            Array.range(10, 13).zip([0, 1, 2]).starmap(lambda a, b: ValueIndex(a, b)))
 
     assert (Array.range(10, 13).zip_longest([0, 1]) ==
             Array([(10, 0), (11, 1), (12, None)]))
