@@ -1,63 +1,14 @@
 
 
-import attr
-
-
-@attr.s(slots=True)
-class Tuple:
-
-    def __getitem__(self, item_key):
-        return attr.astuple(self)[item_key]
-
-    def __iter__(self):
-        return iter(attr.astuple(self))
-
-    def evolve(self, **kwargs):
-        return attr.evolve(self, **kwargs)
-
-    def transform(self, **kwargs):
-        return attr.evolve(
-            self,
-            {k: f(getattr(self, k))for k, f in kwargs.items()})
-
-    def asdict(self):
-        return attr.asdict(self)
-
-
-# @attr.s(slots=True)
-# class CurrPrev(Tuple):
-#     curr = attr.ib()
-#     prev = attr.ib()
-
-
-# @attr.s(slots=True)
-# class CurrNext(Tuple):
-#     curr = attr.ib()
-#     next = attr.ib()
-
-
-# @attr.s(slots=True)
-# class ValueIndex(Tuple):
-#     value = attr.ib()
-#     index = attr.ib()
-
-
-# @attr.s(slots=True)
-# class KeyValues(Tuple):
-#     key = attr.ib()
-#     values = attr.ib()
-
-
 class Row(tuple):
     def __new__(self, **kwargs):
         row = tuple.__new__(self, kwargs.values())
         row._dict = kwargs
-        row._fields = set(kwargs.keys())
 
         return row
 
     def __getattribute__(self, name):
-        if name in tuple.__getattribute__(self, '_fields'):
+        if name in tuple.__getattribute__(self, '_dict'):
             # Accessing Row fields has higher priority
             # than accessing tuple methods
             return tuple.__getattribute__(self, '_dict')[name]
