@@ -1,6 +1,7 @@
 
 import builtins
 import functools as fnt
+import heapq
 import itertools as itt
 from collections import Counter, defaultdict, deque
 
@@ -16,13 +17,46 @@ def as_stream(f):
         trfmr = f(self, *args, **kwargs)
         return Stream(self, trfmr)
 
+    wraped.call = f
+
     return wraped
 
 
 class Stream(Monad):
+    '''An iterable wrapper for building a lazy-evaluating sequence
+    transformation pipeline.
+
+    Stream is initiated by providing any iterable object like list, tuple,
+    iterator and even an infinite one.
+
+    >> strm = Stream(iterable)
+    >> strm = Stream([1, 2, 3])
+
+    Some classmethods are provided for creating common Stream instances.
+
+    >> strm = Stream.range(start, stop, step)
+    >> strm = Stream.count(start, step)
+
+    Stream instance is immutable. Calling a transforamtion function would
+    create a new Stream instance everytime.
+
+    >> strm1 = Stream.range(5, 10)
+    >> strm2 = strm1.map(lambda n: n * 2)
+    >> strm3 = strm1.map(lambda n: n * 3)
+    >> strm1 is strm2 or strm1 is strm3 or strm2 is strm3
+    False
+
+    To evaluate a Stream instance, call an action function.
+    >> strm = Stream.range(5, 10).map(lambda n: n * 2).take(3)
+    >> strm.sum()
+    3
+
+    '''
     __slots__ = '_iterable', '_transformer'
 
     def __init__(self, iterable, transformer=None):
+        '''Parameter'''
+
         self._iterable = iterable
         self._transformer = transformer
 
@@ -439,6 +473,31 @@ class Stream(Monad):
 
     def combinations_with_replacement(self, r):
         return fnt.partial(itt.combinations_with_replacement, r=r)
+
+    @as_stream
+    def nsmallest(self, n, key=None):
+        def nsmallest_tr(self_):
+            return heapq.nsmallest(n, iter(self_), key=key)
+        return nsmallest_tr
+
+    @as_stream
+    def nlargest(self, n, key=None):
+        def nlargest_tr(self_):
+            return heapq.nlargest(n, iter(self_), key=key)
+        return nlargest_tr
+
+    def tee(self, n=2):
+        itrs = itt.tee(self, n=2)
+        return tuple(map(Stream, itrs))
+
+    @as_stream
+    def tap(self, n=5, tag='', msg_format='{tag}:{index}: {elem}'):
+        def tap_tr(self_):
+            for index, elem in enumerate(self_):
+                if index < n:
+                    print(msg_format.format(tag=tag, index=index, elem=elem))
+                yield elem
+        return tap_tr
 
     # def copy(self):
     #     return Array(copy(self._items))

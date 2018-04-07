@@ -22,6 +22,8 @@ funcy = "*"
 lipsum = "*"
 fn = "*"
 icecream = "*"
+sphinx = "*"
+pytest-pudb = "*"
 
 [requires]
 python_version = "3.6"

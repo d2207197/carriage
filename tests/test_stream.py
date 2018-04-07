@@ -5,7 +5,7 @@ from collections import Counter
 import pandas as pd
 import pytest
 from carriage import Array, Nothing, Some, Stream
-from carriage.rowtype import CurrNext, CurrPrev, ValueIndex
+from carriage.rowtype import CurrNext, CurrPrev, Row, ValueIndex
 
 
 class Person:
@@ -226,16 +226,26 @@ Sem taciti integer pharetra magnis magna morbi ante cursus per, iaculis justo nu
 '''
 
 
-def test_general_case(ipsum):
-    from icecream import ic
+def test_general_case(ipsum, capsys):
     out = (Stream(ipsum.splitlines())
            .flat_map(lambda line: line.split(' '))
            .map(lambda word: word.strip(',.'))
            .filter(lambda word: len(word) > 0)
-           .sorted()
+           .distincted()
+           .sorted(key=lambda word: len(word))
            .group_by(lambda word: len(word))
-           .map(lambda keyvalues: keyvalues.evolve(values=to_array())
-           .take(100)
+           .map(lambda keyvalues:
+                keyvalues.transform(values=lambda stream: stream.to_array()))
+           .map(lambda keyvalues: Row(
+               length=keyvalues.key, count=keyvalues.values.len()))
+           .tap(2, tag='length count')
+           .nlargest(3, key=lambda row: row.count)
+           .pluck_attr('length')
            .to_list()
            )
-    ic(out)
+    assert out == [6, 7, 8]
+    captured = capsys.readouterr()
+    assert captured.out == '''length count:0: Row(length=1, count=2)
+length count:1: Row(length=2, count=10)
+'''
+    assert captured.err == ''
