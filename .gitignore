@@ -5,4 +5,4 @@ maybee.egg-info
 /build
 /carriage.egg-info
 /dist
-/doc/_build/
+/docs/_build/
