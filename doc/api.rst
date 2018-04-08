@@ -3,4 +3,4 @@ API Reference
 =============
 
 .. automodule:: carriage
-   :members:
+   :members: Map, Stream, Array

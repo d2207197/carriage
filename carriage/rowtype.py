@@ -1,6 +1,15 @@
 
 
 class Row(tuple):
+
+    @classmethod
+    def from_values(cls, *args):
+        return cls.from_iterable(args)
+
+    @classmethod
+    def from_iterable(cls, iterable):
+        return cls(**{f'v{i}': v for i, v in enumerate(iterable)})
+
     def __new__(self, **kwargs):
         row = tuple.__new__(self, kwargs.values())
         row._dict = kwargs
@@ -61,3 +70,4 @@ CurrPrev = namedrow('curr', 'prev')
 CurrNext = namedrow('curr', 'prev')
 ValueIndex = namedrow('value', 'index')
 KeyValues = namedrow('key', 'values')
+KeyValue = namedrow('key', 'value')
