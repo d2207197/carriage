@@ -37,6 +37,7 @@
  <a href="#A"><strong>A</strong></a>
  | <a href="#C"><strong>C</strong></a>
  | <a href="#D"><strong>D</strong></a>
+ | <a href="#E"><strong>E</strong></a>
  | <a href="#F"><strong>F</strong></a>
  | <a href="#G"><strong>G</strong></a>
  | <a href="#I"><strong>I</strong></a>
@@ -50,6 +51,7 @@
  | <a href="#S"><strong>S</strong></a>
  | <a href="#T"><strong>T</strong></a>
  | <a href="#U"><strong>U</strong></a>
+ | <a href="#V"><strong>V</strong></a>
  | <a href="#W"><strong>W</strong></a>
  | <a href="#Z"><strong>Z</strong></a>
  
@@ -57,6 +59,12 @@
 <h2 id="A">A</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api.html#carriage.Stream.accumulate">accumulate() (carriage.Stream method)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api.html#carriage.Stream.appended">appended() (carriage.Stream method)</a>
+</li>
       <li><a href="api.html#carriage.Array">Array (class in carriage)</a>
 </li>
   </ul></td>
@@ -79,6 +87,8 @@
 <h2 id="D">D</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api.html#carriage.Stream.distincted">distincted() (carriage.Stream method)</a>
+</li>
       <li><a href="api.html#carriage.Stream.drop">drop() (carriage.Stream method)</a>
 </li>
   </ul></td>
@@ -86,6 +96,14 @@
       <li><a href="api.html#carriage.Stream.drop_while">drop_while() (carriage.Stream method)</a>
 </li>
       <li><a href="api.html#carriage.Stream.dropwhile">dropwhile() (carriage.Stream method)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="E">E</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api.html#carriage.Stream.extended">extended() (carriage.Stream method)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -135,6 +153,8 @@
 </li>
       <li><a href="api.html#carriage.Map.flip">flip() (carriage.Map method)</a>
 </li>
+      <li><a href="api.html#carriage.Stream.fold_left">fold_left() (carriage.Stream method)</a>
+</li>
   </ul></td>
 </tr></table>
 
@@ -152,6 +172,12 @@
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api.html#carriage.Map.group_by">group_by() (carriage.Map method)</a>
+
+      <ul>
+        <li><a href="api.html#carriage.Stream.group_by">(carriage.Stream method)</a>
+</li>
+      </ul></li>
+      <li><a href="api.html#carriage.Stream.groupby">groupby() (carriage.Stream method)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -219,9 +245,13 @@
       </ul></li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api.html#carriage.Stream.map_group_by">map_group_by() (carriage.Stream method)</a>
+</li>
       <li><a href="api.html#carriage.Map.map_keys">map_keys() (carriage.Map method)</a>
 </li>
       <li><a href="api.html#carriage.Map.map_values">map_values() (carriage.Map method)</a>
+</li>
+      <li><a href="api.html#carriage.Stream.mean">mean() (carriage.Stream method)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -229,10 +259,14 @@
 <h2 id="N">N</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="api.html#carriage.Map.nth">nth() (carriage.Map method)</a>
+      <li><a href="api.html#carriage.Stream.nlargest">nlargest() (carriage.Stream method)</a>
+</li>
+      <li><a href="api.html#carriage.Stream.nsmallest">nsmallest() (carriage.Stream method)</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api.html#carriage.Map.nth">nth() (carriage.Map method)</a>
+</li>
       <li><a href="api.html#carriage.Map.nth_opt">nth_opt() (carriage.Map method)</a>
 </li>
   </ul></td>
@@ -259,6 +293,8 @@
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api.html#carriage.Stream.range">range() (carriage.Stream class method)</a>
 </li>
+      <li><a href="api.html#carriage.Stream.reduce">reduce() (carriage.Stream method)</a>
+</li>
       <li><a href="api.html#carriage.Map.remove">remove() (carriage.Map method)</a>
 </li>
       <li><a href="api.html#carriage.Stream.repeat">repeat() (carriage.Stream class method)</a>
@@ -277,6 +313,8 @@
 </li>
       <li><a href="api.html#carriage.Map.revamp_values">revamp_values() (carriage.Map method)</a>
 </li>
+      <li><a href="api.html#carriage.Stream.reversed">reversed() (carriage.Stream method)</a>
+</li>
   </ul></td>
 </tr></table>
 
@@ -289,13 +327,21 @@
 </li>
       <li><a href="api.html#carriage.Stream.slice">slice() (carriage.Stream method)</a>
 </li>
+      <li><a href="api.html#carriage.Stream.sliding_window">sliding_window() (carriage.Stream method)</a>
+</li>
+      <li><a href="api.html#carriage.Stream.sorted">sorted() (carriage.Stream method)</a>
+</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api.html#carriage.Stream.split_after">split_after() (carriage.Stream method)</a>
 </li>
       <li><a href="api.html#carriage.Stream.split_before">split_before() (carriage.Stream method)</a>
 </li>
+      <li><a href="api.html#carriage.Stream.starmap">starmap() (carriage.Stream method)</a>
+</li>
       <li><a href="api.html#carriage.Stream">Stream (class in carriage)</a>
+</li>
+      <li><a href="api.html#carriage.Stream.sum">sum() (carriage.Stream method)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -313,13 +359,25 @@
       </ul></li>
       <li><a href="api.html#carriage.Stream.take_while">take_while() (carriage.Stream method)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api.html#carriage.Stream.takewhile">takewhile() (carriage.Stream method)</a>
 </li>
+      <li><a href="api.html#carriage.Stream.tap">tap() (carriage.Stream method)</a>
+</li>
+      <li><a href="api.html#carriage.Stream.tee">tee() (carriage.Stream method)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api.html#carriage.Map.to_array">to_array() (carriage.Map method)</a>
 </li>
+      <li><a href="api.html#carriage.Stream.to_dict">to_dict() (carriage.Stream method)</a>
+</li>
       <li><a href="api.html#carriage.Stream.to_list">to_list() (carriage.Stream method)</a>
+</li>
+      <li><a href="api.html#carriage.Stream.to_map">to_map() (carriage.Stream method)</a>
+</li>
+      <li><a href="api.html#carriage.Stream.to_series">to_series() (carriage.Stream method)</a>
+</li>
+      <li><a href="api.html#carriage.Stream.to_set">to_set() (carriage.Stream method)</a>
 </li>
       <li><a href="api.html#carriage.Map.to_stream">to_stream() (carriage.Map method)</a>
 </li>
@@ -334,6 +392,14 @@
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api.html#carriage.Map.updated">updated() (carriage.Map method)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="V">V</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api.html#carriage.Stream.value_counts">value_counts() (carriage.Stream method)</a>
 </li>
   </ul></td>
 </tr></table>

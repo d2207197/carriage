@@ -698,7 +698,7 @@ last return value.</p>
 <dl class="method">
 <dt id="carriage.Stream.map">
 <code class="descname">map</code><span class="sig-paren">(</span><em>func</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/carriage/stream.html#Stream.map"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#carriage.Stream.map" title="Permalink to this definition">¶</a></dt>
-<dd><p>Apply function to each element</p>
+<dd><p>Create a new Stream by applying function to each element</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -709,6 +709,13 @@ last return value.</p>
 </tr>
 </tbody>
 </table>
+</dd></dl>
+
+<dl class="method">
+<dt id="carriage.Stream.starmap">
+<code class="descname">starmap</code><span class="sig-paren">(</span><em>func</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/carriage/stream.html#Stream.starmap"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#carriage.Stream.starmap" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a new Stream by evaluating function using argument tulpe
+from each element. i.e. <code class="docutils literal notranslate"><span class="pre">func(*elem)</span></code>.</p>
 </dd></dl>
 
 <dl class="method">
@@ -963,6 +970,193 @@ as long as possible.</p>
 <dt id="carriage.Stream.zip_index">
 <code class="descname">zip_index</code><span class="sig-paren">(</span><em>start=0</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/carriage/stream.html#Stream.zip_index"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#carriage.Stream.zip_index" title="Permalink to this definition">¶</a></dt>
 <dd><p>Create a new Stream by zipping elements with index.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="carriage.Stream.reversed">
+<code class="descname">reversed</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/carriage/stream.html#Stream.reversed"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#carriage.Stream.reversed" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a new reversed Stream.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="carriage.Stream.sorted">
+<code class="descname">sorted</code><span class="sig-paren">(</span><em>key=None</em>, <em>reverse=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/carriage/stream.html#Stream.sorted"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#carriage.Stream.sorted" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a new sorted Stream.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="carriage.Stream.sum">
+<code class="descname">sum</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/carriage/stream.html#Stream.sum"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#carriage.Stream.sum" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get sum of elements</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="carriage.Stream.reduce">
+<code class="descname">reduce</code><span class="sig-paren">(</span><em>func</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/carriage/stream.html#Stream.reduce"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#carriage.Stream.reduce" title="Permalink to this definition">¶</a></dt>
+<dd><p>Apply a function of two arguments cumulatively to the elements
+in Stream from left to right.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="carriage.Stream.fold_left">
+<code class="descname">fold_left</code><span class="sig-paren">(</span><em>func</em>, <em>initial</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/carriage/stream.html#Stream.fold_left"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#carriage.Stream.fold_left" title="Permalink to this definition">¶</a></dt>
+<dd><p>Apply a function of two arguments cumulatively to the elements
+in Stream from left to right.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="carriage.Stream.group_by">
+<code class="descname">group_by</code><span class="sig-paren">(</span><em>key=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/carriage/stream.html#Stream.group_by"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#carriage.Stream.group_by" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a new Stream using the builtin itertools.groupby,
+which sequentially groups elements as long as the key function
+evaluates to the same value.</p>
+<p>Comparing to <code class="docutils literal notranslate"><span class="pre">map_group_by</span></code>, there’re some pros and cons.</p>
+<p>Cons:</p>
+<ul class="simple">
+<li>Elements should be sorted by the key function first,
+or elements with the same key may be broken into different groups.</li>
+</ul>
+<p>Pros:</p>
+<ul class="simple">
+<li>Key function doesn’t have to be evaluated to a hashable value.
+It can be any type which supports <code class="docutils literal notranslate"><span class="pre">__eq__</span></code>.</li>
+<li>Lazy-evaluating. Consume less memory while grouping.
+Yield a group as soon as possible.</li>
+</ul>
+</dd></dl>
+
+<dl class="method">
+<dt id="carriage.Stream.groupby">
+<code class="descname">groupby</code><span class="sig-paren">(</span><em>key=None</em><span class="sig-paren">)</span><a class="headerlink" href="#carriage.Stream.groupby" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a new Stream using the builtin itertools.groupby,
+which sequentially groups elements as long as the key function
+evaluates to the same value.</p>
+<p>Comparing to <code class="docutils literal notranslate"><span class="pre">map_group_by</span></code>, there’re some pros and cons.</p>
+<p>Cons:</p>
+<ul class="simple">
+<li>Elements should be sorted by the key function first,
+or elements with the same key may be broken into different groups.</li>
+</ul>
+<p>Pros:</p>
+<ul class="simple">
+<li>Key function doesn’t have to be evaluated to a hashable value.
+It can be any type which supports <code class="docutils literal notranslate"><span class="pre">__eq__</span></code>.</li>
+<li>Lazy-evaluating. Consume less memory while grouping.
+Yield a group as soon as possible.</li>
+</ul>
+</dd></dl>
+
+<dl class="method">
+<dt id="carriage.Stream.map_group_by">
+<code class="descname">map_group_by</code><span class="sig-paren">(</span><em>key=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/carriage/stream.html#Stream.map_group_by"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#carriage.Stream.map_group_by" title="Permalink to this definition">¶</a></dt>
+<dd><p>Group values in to a Map by the value of key function evaluation
+result.</p>
+<p>Comparing to <code class="docutils literal notranslate"><span class="pre">map_group_by</span></code>, there’re some pros and cons.</p>
+<p>Pros:</p>
+<ul class="simple">
+<li>Elements don’t need to be sorted by the key function first.
+You can call <code class="docutils literal notranslate"><span class="pre">map_group_by</span></code> anytime and correct grouping result.</li>
+</ul>
+<p>Cons:</p>
+<ul class="simple">
+<li>Key function has to be evaluated to a hashable value.</li>
+<li>Lazy-evaluating. Consume less memory while grouping.
+Yield a group as soon as possible.</li>
+</ul>
+</dd></dl>
+
+<dl class="method">
+<dt id="carriage.Stream.sliding_window">
+<code class="descname">sliding_window</code><span class="sig-paren">(</span><em>n=2</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/carriage/stream.html#Stream.sliding_window"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#carriage.Stream.sliding_window" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a new Stream instance that all elements are sliding windows
+of source elements.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="carriage.Stream.mean">
+<code class="descname">mean</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/carriage/stream.html#Stream.mean"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#carriage.Stream.mean" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the average of elements.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="carriage.Stream.accumulate">
+<code class="descname">accumulate</code><span class="sig-paren">(</span><em>func=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/carriage/stream.html#Stream.accumulate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#carriage.Stream.accumulate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a new Stream of calling <code class="docutils literal notranslate"><span class="pre">itertools.accumulate</span></code></p>
+</dd></dl>
+
+<dl class="method">
+<dt id="carriage.Stream.value_counts">
+<code class="descname">value_counts</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/carriage/stream.html#Stream.value_counts"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#carriage.Stream.value_counts" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get a Counter instance of elements counts</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="carriage.Stream.extended">
+<code class="descname">extended</code><span class="sig-paren">(</span><em>iterable</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/carriage/stream.html#Stream.extended"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#carriage.Stream.extended" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a new Stream that extends source Stream with another
+iterable</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="carriage.Stream.appended">
+<code class="descname">appended</code><span class="sig-paren">(</span><em>elem</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/carriage/stream.html#Stream.appended"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#carriage.Stream.appended" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a new Stream that extends source Stream with another element.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="carriage.Stream.distincted">
+<code class="descname">distincted</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/carriage/stream.html#Stream.distincted"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#carriage.Stream.distincted" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a new Stream with non-repeating elements. And elements are
+with the same order of first occurence in the source Stream.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="carriage.Stream.nsmallest">
+<code class="descname">nsmallest</code><span class="sig-paren">(</span><em>n</em>, <em>key=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/carriage/stream.html#Stream.nsmallest"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#carriage.Stream.nsmallest" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the n smallest elements.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="carriage.Stream.nlargest">
+<code class="descname">nlargest</code><span class="sig-paren">(</span><em>n</em>, <em>key=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/carriage/stream.html#Stream.nlargest"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#carriage.Stream.nlargest" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the n largest elements.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="carriage.Stream.tee">
+<code class="descname">tee</code><span class="sig-paren">(</span><em>n=2</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/carriage/stream.html#Stream.tee"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#carriage.Stream.tee" title="Permalink to this definition">¶</a></dt>
+<dd><p>Copy the Stream into multiple Stream with the same elements.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="carriage.Stream.tap">
+<code class="descname">tap</code><span class="sig-paren">(</span><em>n=5</em>, <em>tag=''</em>, <em>msg_format='{tag}:{index}: {elem}'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/carriage/stream.html#Stream.tap"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#carriage.Stream.tap" title="Permalink to this definition">¶</a></dt>
+<dd><p>A debugging tool. This method create a new Stream with the same
+elements. And while evaluating Stream, it print first n elements.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="carriage.Stream.to_series">
+<code class="descname">to_series</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/carriage/stream.html#Stream.to_series"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#carriage.Stream.to_series" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convert to a pandas Series</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="carriage.Stream.to_set">
+<code class="descname">to_set</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/carriage/stream.html#Stream.to_set"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#carriage.Stream.to_set" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convert to a set</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="carriage.Stream.to_dict">
+<code class="descname">to_dict</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/carriage/stream.html#Stream.to_dict"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#carriage.Stream.to_dict" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convert to a dict</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="carriage.Stream.to_map">
+<code class="descname">to_map</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/carriage/stream.html#Stream.to_map"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#carriage.Stream.to_map" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convert to a Map</p>
 </dd></dl>
 
 </dd></dl>

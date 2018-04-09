@@ -148,13 +148,20 @@ class Stream(Monad):
 
     @as_stream
     def map(self, func):
-        '''Apply function to each element
+        '''Create a new Stream by applying function to each element
 
         Returns
         -------
         Stream
         '''
         return fnt.partial(map, func)
+
+    @as_stream
+    def starmap(self, func):
+        '''Create a new Stream by evaluating function using argument tulpe
+        from each element. i.e. ``func(*elem)``.
+        '''
+        return fnt.partial(itt.starmap, func)
 
     @as_stream
     def flatten(self):
@@ -503,11 +510,9 @@ class Stream(Monad):
         return self.zip(itt.count(start)).starmap(ValueIndex)
 
     @as_stream
-    def starmap(self, func):
-        return fnt.partial(itt.starmap, func)
-
-    @as_stream
     def reversed(self):
+        '''Create a new reversed Stream.
+        '''
         def reversed_tr(items):
             try:
                 return reversed(items)
@@ -518,22 +523,54 @@ class Stream(Monad):
 
     @as_stream
     def sorted(self, key=None, reverse=False):
+        '''Create a new sorted Stream.
+        '''
         return fnt.partial(sorted, key=key, reverse=reverse)
 
     def sum(self):
+        '''Get sum of elements'''
         return sum(self)
 
     def reduce(self, func):
+        '''Apply a function of two arguments cumulatively to the elements
+        in Stream from left to right.
+
+        '''
         return fnt.reduce(func, self)
 
-    def fold_left(self, func, zero_value):
-        return fnt.reduce(func, self, zero_value)
+    def fold_left(self, func, initial):
+        '''Apply a function of two arguments cumulatively to the elements
+        in Stream from left to right.
+
+        '''
+        return fnt.reduce(func, self, initial)
 
     # def key_by(self, func):
     #     return self.map(lambda elem: Row(key=func(elem), value=elem))
 
     @as_stream
     def group_by(self, key=None):
+        '''Create a new Stream using the builtin itertools.groupby,
+        which sequentially groups elements as long as the key function
+        evaluates to the same value.
+
+        Comparing to ``map_group_by``, there're some pros and cons.
+
+        Cons:
+
+        - Elements should be sorted by the key function first,
+          or elements with the same key may be broken into different groups.
+
+        Pros:
+
+        - Key function doesn't have to be evaluated to a hashable value.
+          It can be any type which supports ``__eq__``.
+
+        - Lazy-evaluating. Consume less memory while grouping.
+          Yield a group as soon as possible.
+
+        '''
+
         def group_by_tr(self_):
             for k, vs in itt.groupby(self_, key=key):
                 yield KeyValues(key=k, values=Stream(vs))
@@ -541,13 +578,32 @@ class Stream(Monad):
 
     groupby = group_by
 
-    def dict_group_by(self, key=None):
+    def map_group_by(self, key=None):
+        '''Group values in to a Map by the value of key function evaluation
+        result.
+
+        Comparing to ``map_group_by``, there're some pros and cons.
+
+        Pros:
+
+        * Elements don't need to be sorted by the key function first. 
+          You can call ``map_group_by`` anytime and correct grouping result.
+
+        Cons:
+
+        * Key function has to be evaluated to a hashable value.
+
+        * Lazy-evaluating. Consume less memory while grouping. 
+          Yield a group as soon as possible.
+        '''
+
+        from .map import Map
         key_to_grp = defaultdict(list)
         for elem in self:
             key_to_grp[key(elem)].append(elem)
-        return dict(key_to_grp)
+        return Map(key_to_grp)
 
-    def dict_multi_group_by(self, key=None):
+    def map_multi_group_by(self, key=None):
         key_to_grp = defaultdict(list)
         for elem in self:
             for k in key(elem):
@@ -556,6 +612,9 @@ class Stream(Monad):
 
     @as_stream
     def sliding_window(self, n=2):
+        '''Create a new Stream instance that all elements are sliding windows
+        of source elements.'''
+
         def sliding_window_tr(self_):
             self_itr = iter(self)
             dq = deque(itt.islice(self_itr, n - 1), maxlen=n)
@@ -565,27 +624,38 @@ class Stream(Monad):
         return sliding_window_tr
 
     def mean(self):
+        '''Get the average of elements.'''
         length, summation = deque(enumerate(itt.accumulate(self), 1), 1).pop()
         return summation / length
 
     @as_stream
     def accumulate(self, func=None):
+        '''Create a new Stream of calling ``itertools.accumulate``'''
         return fnt.partial(itt.accumulate, func=func)
 
     def value_counts(self):
+        '''Get a Counter instance of elements counts'''
         return Counter(self)
 
     @as_stream
     def extended(self, iterable):
+        '''Create a new Stream that extends source Stream with another
+        iterable'''
+
         def extended_tr(self_):
             return itt.chain(self_, iterable)
         return extended_tr
 
-    def appended(self, item):
-        return self.extended((item,))
+    def appended(self, elem):
+        '''Create a new Stream that extends source Stream with another element.
+        '''
+
+        return self.extended((elem,))
 
     @as_stream
     def distincted(self):
+        '''Create a new Stream with non-repeating elements. And elements are
+        with the same order of first occurence in the source Stream. '''
         def distincted_tr(items):
             item_set = set()
             for item in items:
@@ -612,22 +682,30 @@ class Stream(Monad):
 
     @as_stream
     def nsmallest(self, n, key=None):
+        '''Get the n smallest elements.'''
+
         def nsmallest_tr(self_):
             return heapq.nsmallest(n, iter(self_), key=key)
         return nsmallest_tr
 
     @as_stream
     def nlargest(self, n, key=None):
+        '''Get the n largest elements.'''
+
         def nlargest_tr(self_):
             return heapq.nlargest(n, iter(self_), key=key)
         return nlargest_tr
 
     def tee(self, n=2):
+        '''Copy the Stream into multiple Stream with the same elements.'''
         itrs = itt.tee(self, n=2)
         return tuple(map(Stream, itrs))
 
     @as_stream
     def tap(self, n=5, tag='', msg_format='{tag}:{index}: {elem}'):
+        '''A debugging tool. This method create a new Stream with the same
+        elements. And while evaluating Stream, it print first n elements.'''
+
         def tap_tr(self_):
             for index, elem in enumerate(self_):
                 if index < n:
@@ -639,18 +717,26 @@ class Stream(Monad):
     #     return Array(copy(self._items))
 
     def to_series(self):
+        '''Convert to a pandas Series'''
         import pandas as pd
-
         return pd.Series(list(self))
 
     def to_set(self):
+        '''Convert to a set'''
         return set(self)
 
     def to_dict(self):
+        '''Convert to a dict'''
         return {k: v for k, v in self}
+
+    def to_map(self):
+        '''Convert to a Map'''
+        from .map import Map
+        return Map(self)
 
     def to_array(self):
         return Array(self)
 
     def grouped(self):
+        # TODO
         pass
