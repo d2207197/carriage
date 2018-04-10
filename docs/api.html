@@ -33,6 +33,60 @@
   <div class="section" id="module-carriage">
 <span id="api-reference"></span><h1>API Reference<a class="headerlink" href="#module-carriage" title="Permalink to this headline">¶</a></h1>
 <dl class="class">
+<dt id="carriage.Row">
+<em class="property">class </em><code class="descclassname">carriage.</code><code class="descname">Row</code><a class="reference internal" href="_modules/carriage/row.html#Row"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#carriage.Row" title="Permalink to this definition">¶</a></dt>
+<dd><p>A named tuple like type without the need of declaring field names.</p>
+<p>A Row object can be created anytime when you need it.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">Row</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;Joe&#39;</span><span class="p">,</span> <span class="n">age</span><span class="o">=</span><span class="mi">30</span><span class="p">,</span> <span class="n">height</span><span class="o">=</span><span class="mi">170</span><span class="p">)</span>
+<span class="go">Row(name=&#39;Joe&#39;, age=30, height=170)</span>
+</pre></div>
+</div>
+<p>If you are too lazy to name the fields.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">Row</span><span class="o">.</span><span class="n">from_values</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;a&#39;</span><span class="p">,</span> <span class="mi">9</span><span class="p">)</span>
+<span class="go">Row(v0=1, v1=&#39;a&#39;, v2=9)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">Row</span><span class="o">.</span><span class="n">from_iterable</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">))</span>
+<span class="go">Row(v0=0, v1=1, v2=2)</span>
+</pre></div>
+</div>
+<p>You can access field using index or field name in <code class="docutils literal notranslate"><span class="pre">O(1)</span></code>.
+&gt;&gt;&gt; row = Row(name=’Joe’, age=30, height=170)
+&gt;&gt;&gt; row.name
+‘Joe’
+&gt;&gt;&gt; row[2]
+170</p>
+<p>And it provides some useful method for transforming, converting.
+Because Row is immutable type, all these method create a new Row object.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">row</span><span class="o">.</span><span class="n">evolve</span><span class="p">(</span><span class="n">height</span><span class="o">=</span><span class="mi">180</span><span class="p">)</span>  <span class="c1"># I hope so</span>
+<span class="go">Row(name=&#39;Joe&#39;, age=30, height=180)</span>
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">row</span><span class="o">.</span><span class="n">evolve</span><span class="p">(</span><span class="n">age</span><span class="o">=</span><span class="n">row</span><span class="o">.</span><span class="n">age</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+<span class="go">Row(name=&#39;Joe&#39;, age=31, height=170)</span>
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">row</span><span class="o">.</span><span class="n">asdict</span><span class="p">()</span>
+<span class="go">{&#39;name&#39;: &#39;Joe&#39;, &#39;age&#39;: 30, &#39;height&#39;: 170}</span>
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">row</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span>
+<span class="go">{&#39;name&#39;: &#39;Joe&#39;, &#39;age&#39;: 30, &#39;height&#39;: 170}</span>
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">row</span><span class="o">.</span><span class="n">to_map</span><span class="p">()</span>
+<span class="go">Map({&#39;name&#39;: &#39;Joe&#39;, &#39;age&#39;: 30, &#39;height&#39;: 170})</span>
+</pre></div>
+</div>
+<p>Row is iterable. You can unpack it.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">name</span><span class="p">,</span> <span class="n">age</span><span class="p">,</span> <span class="n">height</span> <span class="o">=</span> <span class="n">row</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">name</span>
+<span class="go">&#39;Joe&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">age</span>
+<span class="go">30</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="class">
 <dt id="carriage.Map">
 <em class="property">class </em><code class="descclassname">carriage.</code><code class="descname">Map</code><span class="sig-paren">(</span><em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/carriage/map.html#Map"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#carriage.Map" title="Permalink to this definition">¶</a></dt>
 <dd><p>A mutable dictionary enhanced with a bulk of useful methods.</p>
