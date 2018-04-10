@@ -2,6 +2,7 @@
 import builtins
 import collections
 import itertools as itt
+import reprlib
 from copy import copy
 
 from .monad import Monad
@@ -70,7 +71,7 @@ class Array(Monad):
         return iter(self._items)
 
     def __repr__(self):
-        return f'{type(self).__name__}({self._items!r})'
+        return f'{type(self).__name__}({reprlib.repr(self._items)})'
 
     @property
     def _value_for_cmp(self):

@@ -249,3 +249,8 @@ def test_general_case(ipsum, capsys):
 length count:1: Row(length=2, count=10)
 '''
     assert captured.err == ''
+
+
+def test_repr():
+    assert repr(Stream([1, 2, 3, 4])) == 'Stream([1, 2, 3, 4])'
+    assert repr(Stream(list(range(100)))) == 'Stream([0, 1, 2, 3, 4, ...])'

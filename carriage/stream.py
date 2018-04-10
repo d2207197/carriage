@@ -3,6 +3,7 @@ import builtins
 import functools as fnt
 import heapq
 import itertools as itt
+import reprlib
 from collections import Counter, defaultdict, deque
 
 from .array import Array
@@ -322,9 +323,14 @@ class Stream(Monad):
 
         return iter(self._transformer(self._iterable))
 
+    @reprlib.recursive_repr()
     def __repr__(self):
-        return (f'{type(self).__name__}'
-                f'({self._iterable!r}, {self._transformer!r})')
+        if self._transformer is None:
+            return (f'{type(self).__name__}'
+                    f'({reprlib.repr(self._iterable)})')
+        else:
+            return (f'{type(self).__name__}'
+                    f'({reprlib.repr(self._iterable)}, {self._transformer!r})')
 
     @property
     def _value_for_cmp(self):
