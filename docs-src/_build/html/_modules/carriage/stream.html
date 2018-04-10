@@ -1,0 +1,979 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>carriage.stream &#8212; carriage 0.1.6 documentation</title>
+    <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" src="../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for carriage.stream</h1><div class="highlight"><pre>
+<span></span>
+<span class="kn">import</span> <span class="nn">builtins</span>
+<span class="kn">import</span> <span class="nn">functools</span> <span class="k">as</span> <span class="nn">fnt</span>
+<span class="kn">import</span> <span class="nn">heapq</span>
+<span class="kn">import</span> <span class="nn">itertools</span> <span class="k">as</span> <span class="nn">itt</span>
+<span class="kn">import</span> <span class="nn">reprlib</span>
+<span class="kn">from</span> <span class="nn">collections</span> <span class="k">import</span> <span class="n">Counter</span><span class="p">,</span> <span class="n">defaultdict</span><span class="p">,</span> <span class="n">deque</span>
+
+<span class="kn">from</span> <span class="nn">.array</span> <span class="k">import</span> <span class="n">Array</span>
+<span class="kn">from</span> <span class="nn">.monad</span> <span class="k">import</span> <span class="n">Monad</span>
+<span class="kn">from</span> <span class="nn">.optional</span> <span class="k">import</span> <span class="n">Nothing</span><span class="p">,</span> <span class="n">Some</span>
+<span class="kn">from</span> <span class="nn">.repr</span> <span class="k">import</span> <span class="n">short_repr</span>
+<span class="kn">from</span> <span class="nn">.row</span> <span class="k">import</span> <span class="n">CurrNext</span><span class="p">,</span> <span class="n">CurrPrev</span><span class="p">,</span> <span class="n">KeyValues</span><span class="p">,</span> <span class="n">ValueIndex</span>
+
+
+<span class="k">def</span> <span class="nf">as_stream</span><span class="p">(</span><span class="n">f</span><span class="p">):</span>
+    <span class="nd">@fnt</span><span class="o">.</span><span class="n">wraps</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">wraped</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="n">trfmr</span> <span class="o">=</span> <span class="n">f</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">Stream</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">trfmr</span><span class="p">)</span>
+
+    <span class="n">wraped</span><span class="o">.</span><span class="n">call</span> <span class="o">=</span> <span class="n">f</span>
+
+    <span class="k">return</span> <span class="n">wraped</span>
+
+
+<div class="viewcode-block" id="Stream"><a class="viewcode-back" href="../../api.html#carriage.Stream">[docs]</a><span class="k">class</span> <span class="nc">Stream</span><span class="p">(</span><span class="n">Monad</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;An iterable wrapper for building a lazy-evaluating sequence</span>
+<span class="sd">    transformation pipeline.</span>
+
+
+<span class="sd">    Stream is initiated by providing any iterable object like list, tuple,</span>
+<span class="sd">    iterator and even an infinite one.</span>
+
+<span class="sd">    &gt;&gt;&gt; strm = Stream(range(10))</span>
+<span class="sd">    &gt;&gt;&gt; strm = Stream([1, 2, 3])</span>
+
+<span class="sd">    Some classmethods are provided for creating common Stream instances.</span>
+
+<span class="sd">    &gt;&gt;&gt; strm = Stream.range(0, 10, 2)</span>
+<span class="sd">    &gt;&gt;&gt; strm = Stream.count(0, 5)</span>
+
+<span class="sd">    Stream instance is immutable. Calling a transforamtion function would</span>
+<span class="sd">    create a new Stream instance everytime. But don&#39;t worry, because of</span>
+<span class="sd">    it&#39;s lazy-evaluating characteristic, no duplicated data are generated.</span>
+
+<span class="sd">    &gt;&gt;&gt; strm1 = Stream.range(5, 10)</span>
+<span class="sd">    &gt;&gt;&gt; strm2 = strm1.map(lambda n: n * 2)</span>
+<span class="sd">    &gt;&gt;&gt; strm3 = strm1.map(lambda n: n * 3)</span>
+<span class="sd">    &gt;&gt;&gt; strm1 is strm2 or strm1 is strm3 or strm2 is strm3</span>
+<span class="sd">    False</span>
+
+<span class="sd">    To evaluate a Stream instance, call an action function.</span>
+
+<span class="sd">    &gt;&gt;&gt; strm = Stream.range(5, 10).map(lambda n: n * 2).take(3)</span>
+<span class="sd">    &gt;&gt;&gt; strm.sum()</span>
+<span class="sd">    36</span>
+<span class="sd">    &gt;&gt;&gt; strm.to_list()</span>
+<span class="sd">    [10, 12, 14]</span>
+
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="vm">__slots__</span> <span class="o">=</span> <span class="s1">&#39;_iterable&#39;</span><span class="p">,</span> <span class="s1">&#39;_transformer&#39;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">iterable</span><span class="p">,</span> <span class="n">transformer</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Create a Stream from any iterable object.</span>
+
+<span class="sd">        &gt;&gt;&gt; strm = Stream([1,2,3])</span>
+<span class="sd">        &gt;&gt;&gt; strm = Stream(range(10, 15))</span>
+<span class="sd">        &gt;&gt;&gt; adict = {&#39;a&#39;: 1, &#39;b&#39;: 2}</span>
+<span class="sd">        &gt;&gt;&gt; strm = Stream(adict.items())</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        iterable : any iterable. list, tuple, iterator</span>
+<span class="sd">            Input iterable object.</span>
+<span class="sd">        transformer : function of type ``iterable -&gt; iterable``</span>
+<span class="sd">            This is for internal use only.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_iterable</span> <span class="o">=</span> <span class="n">iterable</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_transformer</span> <span class="o">=</span> <span class="n">transformer</span>
+
+<div class="viewcode-block" id="Stream.range"><a class="viewcode-back" href="../../api.html#carriage.Stream.range">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">range</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Create a Stream from range.</span>
+
+<span class="sd">        &gt;&gt;&gt; Stream.range(2, 10, 2).to_list()</span>
+<span class="sd">        [2, 4, 6, 8]</span>
+<span class="sd">        &gt;&gt;&gt; Stream.range(3).to_list()</span>
+<span class="sd">        [0, 1, 2]</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+
+        <span class="k">if</span> <span class="n">end</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">start</span><span class="p">,</span> <span class="n">end</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">start</span>
+
+        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">,</span> <span class="n">step</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="Stream.count"><a class="viewcode-back" href="../../api.html#carriage.Stream.count">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">count</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Create a infinite consecutive Stream</span>
+
+<span class="sd">        &gt;&gt;&gt; Stream.count(0, 3).take(3).to_list()</span>
+<span class="sd">        [0, 3, 6]</span>
+
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">itt</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">step</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="Stream.repeat"><a class="viewcode-back" href="../../api.html#carriage.Stream.repeat">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">repeat</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">elems</span><span class="p">,</span> <span class="n">times</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Create a Stream repeating elems</span>
+
+<span class="sd">        &gt;&gt;&gt; Stream.repeat(1, 3).to_list()</span>
+<span class="sd">        [1, 1, 1]</span>
+<span class="sd">        &gt;&gt;&gt; Stream.repeat([1, 2, 3], 2).to_list()</span>
+<span class="sd">        [[1, 2, 3], [1, 2, 3]]</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">itt</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="n">elems</span><span class="p">,</span> <span class="n">times</span><span class="o">=</span><span class="n">times</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="Stream.cycle"><a class="viewcode-back" href="../../api.html#carriage.Stream.cycle">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">cycle</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">iterable</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Create a Stream cycling a iterable</span>
+
+<span class="sd">        &gt;&gt;&gt; Stream.cycle([1,2]).take(5).to_list()</span>
+<span class="sd">        [1, 2, 1, 2, 1]</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+
+        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">itt</span><span class="o">.</span><span class="n">cycle</span><span class="p">(</span><span class="n">iterable</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="Stream.repeatedly"><a class="viewcode-back" href="../../api.html#carriage.Stream.repeatedly">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">repeatedly</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">func</span><span class="p">,</span> <span class="n">times</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Create a Stream repeatedly calling a zero parameter function</span>
+
+<span class="sd">        &gt;&gt;&gt; def counter():</span>
+<span class="sd">        ...     counter.num += 1</span>
+<span class="sd">        ...     return counter.num</span>
+<span class="sd">        &gt;&gt;&gt; counter.num = -1</span>
+<span class="sd">        &gt;&gt;&gt; Stream.repeatedly(counter, 5).to_list()</span>
+<span class="sd">        [0, 1, 2, 3, 4]</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">def</span> <span class="nf">repeatedly_gen</span><span class="p">(</span><span class="n">times</span><span class="p">):</span>
+            <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">times</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="k">yield</span> <span class="n">func</span><span class="p">()</span>
+                <span class="k">elif</span> <span class="n">times</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="k">yield</span> <span class="n">func</span><span class="p">()</span>
+                    <span class="n">times</span> <span class="o">-=</span> <span class="mi">1</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">return</span>
+
+        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">repeatedly_gen</span><span class="p">(</span><span class="n">times</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="Stream.iterate"><a class="viewcode-back" href="../../api.html#carriage.Stream.iterate">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">iterate</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">func</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Create a Stream recursively applying a function to</span>
+<span class="sd">        last return value.</span>
+
+<span class="sd">        &gt;&gt;&gt; def multiply2(x): return x * 2</span>
+<span class="sd">        &gt;&gt;&gt; Stream.iterate(multiply2, 3).take(4).to_list()</span>
+<span class="sd">        [3, 6, 12, 24]</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">def</span> <span class="nf">iterate_gen</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+            <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+                <span class="k">yield</span> <span class="n">x</span>
+                <span class="n">x</span> <span class="o">=</span> <span class="n">func</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">iterate_gen</span><span class="p">(</span><span class="n">x</span><span class="p">))</span></div>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">_base_type</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">Stream</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">unit</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">Stream</span><span class="p">([</span><span class="n">value</span><span class="p">])</span>
+
+<div class="viewcode-block" id="Stream.to_list"><a class="viewcode-back" href="../../api.html#carriage.Stream.to_list">[docs]</a>    <span class="k">def</span> <span class="nf">to_list</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Convert to a list.</span>
+
+<span class="sd">        &gt;&gt;&gt; Stream.range(5, 10, 2).to_list()</span>
+<span class="sd">        [5, 7, 9]</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        list</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Stream.to_series"><a class="viewcode-back" href="../../api.html#carriage.Stream.to_series">[docs]</a>    <span class="k">def</span> <span class="nf">to_series</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Convert to a pandas Series</span>
+
+<span class="sd">        &gt;&gt;&gt; Stream.range(5, 10, 2).to_series()</span>
+<span class="sd">        0    5</span>
+<span class="sd">        1    7</span>
+<span class="sd">        2    9</span>
+<span class="sd">        dtype: int64</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        pandas.Series</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+        <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="Stream.to_set"><a class="viewcode-back" href="../../api.html#carriage.Stream.to_set">[docs]</a>    <span class="k">def</span> <span class="nf">to_set</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Convert to a set</span>
+
+<span class="sd">        &gt;&gt;&gt; Stream.cycle([1, 2, 3]).take(5).to_set()</span>
+<span class="sd">        {1, 2, 3}</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">return</span> <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Stream.to_dict"><a class="viewcode-back" href="../../api.html#carriage.Stream.to_dict">[docs]</a>    <span class="k">def</span> <span class="nf">to_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Convert to a dict</span>
+
+<span class="sd">        &gt;&gt;&gt; Stream.range(5, 10, 2).zip_index().to_dict()</span>
+<span class="sd">        {5: 0, 7: 1, 9: 2}</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        dict</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">return</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">}</span></div>
+
+<div class="viewcode-block" id="Stream.to_map"><a class="viewcode-back" href="../../api.html#carriage.Stream.to_map">[docs]</a>    <span class="k">def</span> <span class="nf">to_map</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Convert to a Map</span>
+
+<span class="sd">        &gt;&gt;&gt; Stream.range(5, 10, 2).zip_index().to_map()</span>
+<span class="sd">        Map({5: 0, 7: 1, 9: 2})</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        Map</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="kn">from</span> <span class="nn">.map</span> <span class="k">import</span> <span class="n">Map</span>
+        <span class="k">return</span> <span class="n">Map</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Stream.to_array"><a class="viewcode-back" href="../../api.html#carriage.Stream.to_array">[docs]</a>    <span class="k">def</span> <span class="nf">to_array</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Convert to a Map</span>
+
+<span class="sd">        &gt;&gt;&gt; Stream.range(5, 8, 2).zip_index().to_array()</span>
+<span class="sd">        Array([Row(value=5, index=0), Row(value=7, index=1)])</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        Array</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">return</span> <span class="n">Array</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Stream.map"><a class="viewcode-back" href="../../api.html#carriage.Stream.map">[docs]</a>    <span class="nd">@as_stream</span>
+    <span class="k">def</span> <span class="nf">map</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">func</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Create a new Stream by applying function to each element</span>
+
+<span class="sd">        &gt;&gt;&gt; Stream.range(5, 8).map(lambda x: x * 2).to_list()</span>
+<span class="sd">        [10, 12, 14]</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        Stream</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">return</span> <span class="n">fnt</span><span class="o">.</span><span class="n">partial</span><span class="p">(</span><span class="nb">map</span><span class="p">,</span> <span class="n">func</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Stream.starmap"><a class="viewcode-back" href="../../api.html#carriage.Stream.starmap">[docs]</a>    <span class="nd">@as_stream</span>
+    <span class="k">def</span> <span class="nf">starmap</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">func</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Create a new Stream by evaluating function using argument tulpe</span>
+<span class="sd">        from each element. i.e. ``func(*elem)``. It&#39;s convenient that</span>
+<span class="sd">        if all elements in Stream are iterable and you want to treat</span>
+<span class="sd">        each element in elemnts as separate argument while calling the</span>
+<span class="sd">        function.</span>
+
+<span class="sd">        &gt;&gt;&gt; Stream([(1, 2), (3, 4)]).starmap(lambda a, b: a+b).to_list()</span>
+<span class="sd">        [3, 7]</span>
+<span class="sd">        &gt;&gt;&gt; Stream([(1, 2), (3, 4)]).map(lambda a_b: a_b[0]+a_b[1]).to_list()</span>
+<span class="sd">        [3, 7]</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">return</span> <span class="n">fnt</span><span class="o">.</span><span class="n">partial</span><span class="p">(</span><span class="n">itt</span><span class="o">.</span><span class="n">starmap</span><span class="p">,</span> <span class="n">func</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Stream.flatten"><a class="viewcode-back" href="../../api.html#carriage.Stream.flatten">[docs]</a>    <span class="nd">@as_stream</span>
+    <span class="k">def</span> <span class="nf">flatten</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;flatten each element</span>
+
+<span class="sd">        &gt;&gt;&gt; Stream([(1, 2), (3, 4)]).flatten().to_list()</span>
+<span class="sd">        [1, 2, 3, 4]</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        Stream</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">return</span> <span class="n">itt</span><span class="o">.</span><span class="n">chain</span><span class="o">.</span><span class="n">from_iterable</span></div>
+
+<div class="viewcode-block" id="Stream.flat_map"><a class="viewcode-back" href="../../api.html#carriage.Stream.flat_map">[docs]</a>    <span class="nd">@as_stream</span>
+    <span class="k">def</span> <span class="nf">flat_map</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">to_iterable_func</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Apply function to each element, then flatten the result.</span>
+
+<span class="sd">        &gt;&gt;&gt; Stream([1, 2, 3]).flat_map(range).to_list()</span>
+<span class="sd">        [0, 0, 1, 0, 1, 2]</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        Stream</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+
+        <span class="k">def</span> <span class="nf">flat_map_tr</span><span class="p">(</span><span class="n">iterable</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">itt</span><span class="o">.</span><span class="n">chain</span><span class="o">.</span><span class="n">from_iterable</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="n">to_iterable_func</span><span class="p">,</span> <span class="n">iterable</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">flat_map_tr</span></div>
+
+    <span class="k">def</span> <span class="nf">then</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">alist</span><span class="p">):</span>
+        <span class="c1"># TODO</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_items</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">alist</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span>
+
+    <span class="k">def</span> <span class="nf">ap</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">avalue</span><span class="p">):</span>
+        <span class="c1"># TODO</span>
+        <span class="k">pass</span>
+
+    <span class="c1"># def __len__(self):</span>
+
+    <span class="k">def</span> <span class="nf">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_transformer</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">iter</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_iterable</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="nb">iter</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_transformer</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_iterable</span><span class="p">))</span>
+
+    <span class="nd">@reprlib</span><span class="o">.</span><span class="n">recursive_repr</span><span class="p">()</span>
+    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_transformer</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">(</span><span class="n">f</span><span class="s1">&#39;{type(self).__name__}&#39;</span>
+                    <span class="n">f</span><span class="s1">&#39;({short_repr.repr(self._iterable)})&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">(</span><span class="n">f</span><span class="s1">&#39;{type(self).__name__}&#39;</span>
+                    <span class="n">f</span><span class="s1">&#39;({short_repr.repr(self._iterable)}, </span><span class="si">{self._transformer!r}</span><span class="s1">)&#39;</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">_value_for_cmp</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Stream.len"><a class="viewcode-back" href="../../api.html#carriage.Stream.len">[docs]</a>    <span class="k">def</span> <span class="nf">len</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Get the length of the Stream&#39;&#39;&#39;</span>
+        <span class="k">return</span> <span class="nb">sum</span><span class="p">(</span><span class="mi">1</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">)</span></div>
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">_check_index_range</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">index</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">index</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">index</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s1">&#39;Stream index should be greater than 0. &#39;</span>
+                <span class="s1">&#39;Be aware of that indexing an iterator would &#39;</span>
+                <span class="s1">&#39;consume items from it.&#39;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Get the item in the nth position if index is integer.</span>
+<span class="sd">        Get a Stream of a slice of items if index is a slice object.</span>
+
+<span class="sd">        Be aware of that if the source iterable is an iterator, you might get</span>
+<span class="sd">        different item for the index if you call multiple times.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        index : int, slice</span>
+<span class="sd">            index of target item or a slice object</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+
+        <span class="c1"># TODO: support negative index</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">index</span><span class="p">,</span> <span class="nb">slice</span><span class="p">):</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">slice</span><span class="p">(</span><span class="n">index</span><span class="o">.</span><span class="n">start</span><span class="p">,</span> <span class="n">index</span><span class="o">.</span><span class="n">stop</span><span class="p">,</span> <span class="n">index</span><span class="o">.</span><span class="n">step</span><span class="p">)</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">next</span><span class="p">(</span><span class="n">itt</span><span class="o">.</span><span class="n">islice</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">,</span> <span class="kc">None</span><span class="p">))</span>
+        <span class="k">except</span> <span class="ne">StopIteration</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">IndexError</span><span class="p">(</span>
+                <span class="s1">&#39;Stream index out of range. &#39;</span>
+                <span class="s1">&#39;Be aware of that indexing an iterator would &#39;</span>
+                <span class="s1">&#39;consume items from it.&#39;</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Stream.get"><a class="viewcode-back" href="../../api.html#carriage.Stream.get">[docs]</a>    <span class="k">def</span> <span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Get item of the index. Return default value if not exists.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="c1"># TODO: support negative index</span>
+        <span class="c1"># dd = deque(aa, maxlen=1)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_check_index_range</span><span class="p">(</span><span class="n">index</span><span class="p">)</span>
+        <span class="k">return</span> <span class="nb">next</span><span class="p">(</span><span class="n">itt</span><span class="o">.</span><span class="n">islice</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span> <span class="n">default</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Stream.get_opt"><a class="viewcode-back" href="../../api.html#carriage.Stream.get_opt">[docs]</a>    <span class="k">def</span> <span class="nf">get_opt</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Optionally get item of the index.</span>
+<span class="sd">        Return Some(value) if exists.</span>
+<span class="sd">        Otherwise return Nothing.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">Some</span><span class="p">(</span><span class="bp">self</span><span class="p">[</span><span class="n">index</span><span class="p">])</span>
+        <span class="k">except</span> <span class="ne">IndexError</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">Nothing</span></div>
+
+<div class="viewcode-block" id="Stream.slice"><a class="viewcode-back" href="../../api.html#carriage.Stream.slice">[docs]</a>    <span class="nd">@as_stream</span>
+    <span class="k">def</span> <span class="nf">slice</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Create a Stream from the slice of items.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        Stream</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_check_index_range</span><span class="p">(</span><span class="n">start</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_check_index_range</span><span class="p">(</span><span class="n">stop</span><span class="p">)</span>
+        <span class="k">return</span> <span class="k">lambda</span> <span class="n">iterable</span><span class="p">:</span> <span class="n">itt</span><span class="o">.</span><span class="n">islice</span><span class="p">(</span><span class="n">iterable</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">step</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Stream.first"><a class="viewcode-back" href="../../api.html#carriage.Stream.first">[docs]</a>    <span class="k">def</span> <span class="nf">first</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Get first element</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span></div>
+
+<div class="viewcode-block" id="Stream.second"><a class="viewcode-back" href="../../api.html#carriage.Stream.second">[docs]</a>    <span class="k">def</span> <span class="nf">second</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Get second element</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span></div>
+
+<div class="viewcode-block" id="Stream.last"><a class="viewcode-back" href="../../api.html#carriage.Stream.last">[docs]</a>    <span class="k">def</span> <span class="nf">last</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Get last element</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">return</span> <span class="n">deque</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="mi">1</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span></div>
+
+<div class="viewcode-block" id="Stream.first_opt"><a class="viewcode-back" href="../../api.html#carriage.Stream.first_opt">[docs]</a>    <span class="k">def</span> <span class="nf">first_opt</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Get first element as Some(element), or Nothing if not exists</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_opt</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Stream.second_opt"><a class="viewcode-back" href="../../api.html#carriage.Stream.second_opt">[docs]</a>    <span class="k">def</span> <span class="nf">second_opt</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Get second element as Some(element), or Nothing if not exists</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_opt</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Stream.last_opt"><a class="viewcode-back" href="../../api.html#carriage.Stream.last_opt">[docs]</a>    <span class="k">def</span> <span class="nf">last_opt</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Get last element as Some(element), or Nothing if not exists</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">dq</span> <span class="o">=</span> <span class="n">deque</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">dq</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">Some</span><span class="p">(</span><span class="n">dq</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+
+        <span class="k">return</span> <span class="n">Nothing</span></div>
+
+<div class="viewcode-block" id="Stream.find"><a class="viewcode-back" href="../../api.html#carriage.Stream.find">[docs]</a>    <span class="k">def</span> <span class="nf">find</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pred</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Get first element satifying predicate</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">pred</span><span class="p">(</span><span class="n">item</span><span class="p">):</span>
+                <span class="k">return</span> <span class="n">item</span></div>
+
+<div class="viewcode-block" id="Stream.find_opt"><a class="viewcode-back" href="../../api.html#carriage.Stream.find_opt">[docs]</a>    <span class="k">def</span> <span class="nf">find_opt</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pred</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Optionally get first element satifying predicate.</span>
+<span class="sd">        Return Some(element) if exist</span>
+<span class="sd">        Otherwise return Nothing</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">pred</span><span class="p">(</span><span class="n">item</span><span class="p">):</span>
+                <span class="k">return</span> <span class="n">Some</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">Nothing</span></div>
+
+<div class="viewcode-block" id="Stream.take"><a class="viewcode-back" href="../../api.html#carriage.Stream.take">[docs]</a>    <span class="k">def</span> <span class="nf">take</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Create a new Stream contains only first n element</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="p">[:</span><span class="n">n</span><span class="p">]</span></div>
+
+<div class="viewcode-block" id="Stream.drop"><a class="viewcode-back" href="../../api.html#carriage.Stream.drop">[docs]</a>    <span class="k">def</span> <span class="nf">drop</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Create a new Stream with first n element dropped</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="p">[</span><span class="n">n</span><span class="p">:]</span></div>
+
+<div class="viewcode-block" id="Stream.tail"><a class="viewcode-back" href="../../api.html#carriage.Stream.tail">[docs]</a>    <span class="k">def</span> <span class="nf">tail</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Create a new Stream with first element dropped</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span></div>
+
+    <span class="c1"># def butlast(self):</span>
+    <span class="c1">#     # TODO</span>
+    <span class="c1">#     return self[:-1]</span>
+
+    <span class="c1"># def takeright(self, n):</span>
+    <span class="c1">#     # TODO</span>
+    <span class="c1">#     return Array(self._items[-n:])</span>
+
+    <span class="c1"># def dropright(self, n):</span>
+    <span class="c1">#     # TODO</span>
+    <span class="c1">#     return Array(self._items[:-n])</span>
+
+<div class="viewcode-block" id="Stream.take_while"><a class="viewcode-back" href="../../api.html#carriage.Stream.take_while">[docs]</a>    <span class="nd">@as_stream</span>
+    <span class="k">def</span> <span class="nf">take_while</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pred</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Create a new Stream with successive elements as long as</span>
+<span class="sd">        predicate evaluates to true.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">return</span> <span class="n">fnt</span><span class="o">.</span><span class="n">partial</span><span class="p">(</span><span class="n">itt</span><span class="o">.</span><span class="n">takewhile</span><span class="p">,</span> <span class="n">pred</span><span class="p">)</span></div>
+
+    <span class="n">takewhile</span> <span class="o">=</span> <span class="n">take_while</span>
+
+<div class="viewcode-block" id="Stream.drop_while"><a class="viewcode-back" href="../../api.html#carriage.Stream.drop_while">[docs]</a>    <span class="nd">@as_stream</span>
+    <span class="k">def</span> <span class="nf">drop_while</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pred</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Create a new Stream without elements as long as predicate</span>
+<span class="sd">        evaluates to true.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">return</span> <span class="n">fnt</span><span class="o">.</span><span class="n">partial</span><span class="p">(</span><span class="n">itt</span><span class="o">.</span><span class="n">dropwhile</span><span class="p">,</span> <span class="n">pred</span><span class="p">)</span></div>
+
+    <span class="n">dropwhile</span> <span class="o">=</span> <span class="n">drop_while</span>
+
+<div class="viewcode-block" id="Stream.split_before"><a class="viewcode-back" href="../../api.html#carriage.Stream.split_before">[docs]</a>    <span class="nd">@as_stream</span>
+    <span class="k">def</span> <span class="nf">split_before</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pred</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Create a new Stream of Arrays by splitting before each element</span>
+<span class="sd">        passing predicate.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">def</span> <span class="nf">split_before_tr</span><span class="p">(</span><span class="n">iterable</span><span class="p">):</span>
+            <span class="n">segment</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">iterable</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">pred</span><span class="p">(</span><span class="n">item</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">segment</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="k">yield</span> <span class="n">Array</span><span class="p">(</span><span class="n">segment</span><span class="p">)</span>
+                    <span class="n">segment</span> <span class="o">=</span> <span class="p">[]</span>
+                <span class="n">segment</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
+
+            <span class="k">yield</span> <span class="n">Array</span><span class="p">(</span><span class="n">segment</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">split_before_tr</span></div>
+
+<div class="viewcode-block" id="Stream.split_after"><a class="viewcode-back" href="../../api.html#carriage.Stream.split_after">[docs]</a>    <span class="nd">@as_stream</span>
+    <span class="k">def</span> <span class="nf">split_after</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pred</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Create a new Stream of Arrays by splitting after each element</span>
+<span class="sd">        passing predicate.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">def</span> <span class="nf">split_after_tr</span><span class="p">(</span><span class="n">iterable</span><span class="p">):</span>
+            <span class="n">segment</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">iterable</span><span class="p">:</span>
+                <span class="n">segment</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">pred</span><span class="p">(</span><span class="n">item</span><span class="p">):</span>
+                    <span class="k">yield</span> <span class="n">Array</span><span class="p">(</span><span class="n">segment</span><span class="p">)</span>
+                    <span class="n">segment</span> <span class="o">=</span> <span class="p">[]</span>
+
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">segment</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">yield</span> <span class="n">Array</span><span class="p">(</span><span class="n">segment</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">split_after_tr</span></div>
+
+<div class="viewcode-block" id="Stream.pluck"><a class="viewcode-back" href="../../api.html#carriage.Stream.pluck">[docs]</a>    <span class="k">def</span> <span class="nf">pluck</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Create a new Stream of values by evaluating ``elem[key]`` of each</span>
+<span class="sd">        element.&#39;&#39;&#39;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">d</span><span class="p">:</span> <span class="n">d</span><span class="p">[</span><span class="n">key</span><span class="p">])</span></div>
+
+<div class="viewcode-block" id="Stream.pluck_opt"><a class="viewcode-back" href="../../api.html#carriage.Stream.pluck_opt">[docs]</a>    <span class="k">def</span> <span class="nf">pluck_opt</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Create a new Stream of Optional values by evaluating ``elem[key]`` of</span>
+<span class="sd">        each element.</span>
+<span class="sd">        Get ``Some(value)`` if the key exists for that element, otherwise get</span>
+<span class="sd">        Nothing singleton.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">d</span><span class="p">:</span> <span class="n">Some</span><span class="p">(</span><span class="n">d</span><span class="p">[</span><span class="n">key</span><span class="p">])</span>
+                        <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">d</span> <span class="k">else</span> <span class="n">Nothing</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Stream.pluck_attr"><a class="viewcode-back" href="../../api.html#carriage.Stream.pluck_attr">[docs]</a>    <span class="k">def</span> <span class="nf">pluck_attr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attr</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Create a new Stream of Optional values by evaluating ``elem.attr`` of</span>
+<span class="sd">        each element.</span>
+<span class="sd">        Get ``Some(value)`` if attr exists for that element, otherwise get</span>
+<span class="sd">        Nothing singleton.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">obj</span><span class="p">:</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">attr</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="Stream.filter"><a class="viewcode-back" href="../../api.html#carriage.Stream.filter">[docs]</a>    <span class="nd">@as_stream</span>
+    <span class="k">def</span> <span class="nf">filter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pred</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Create a new Stream contains only elements passing predicate&#39;&#39;&#39;</span>
+        <span class="k">return</span> <span class="n">fnt</span><span class="o">.</span><span class="n">partial</span><span class="p">(</span><span class="nb">filter</span><span class="p">,</span> <span class="n">pred</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Stream.filter_false"><a class="viewcode-back" href="../../api.html#carriage.Stream.filter_false">[docs]</a>    <span class="nd">@as_stream</span>
+    <span class="k">def</span> <span class="nf">filter_false</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pred</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Create a new Stream contains only elements not passing predicate&#39;&#39;&#39;</span>
+        <span class="k">return</span> <span class="n">fnt</span><span class="o">.</span><span class="n">partial</span><span class="p">(</span><span class="n">itt</span><span class="o">.</span><span class="n">filterfalse</span><span class="p">,</span> <span class="n">pred</span><span class="p">)</span></div>
+
+    <span class="n">filterfalse</span> <span class="o">=</span> <span class="n">filter_false</span>
+
+<div class="viewcode-block" id="Stream.without"><a class="viewcode-back" href="../../api.html#carriage.Stream.without">[docs]</a>    <span class="k">def</span> <span class="nf">without</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">elems</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Create a new Stream without specified elements.&#39;&#39;&#39;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">elems</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">elems</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">TypeError</span><span class="p">:</span>
+            <span class="c1"># TODO: warn bad performance</span>
+            <span class="k">pass</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="k">lambda</span> <span class="n">elem</span><span class="p">:</span> <span class="n">elem</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">elems</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Stream.where"><a class="viewcode-back" href="../../api.html#carriage.Stream.where">[docs]</a>    <span class="k">def</span> <span class="nf">where</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">conds</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Create a new Stream contains only mapping pass all conditions.</span>
+
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="k">lambda</span> <span class="n">d</span><span class="p">:</span>
+                           <span class="nb">all</span><span class="p">(</span><span class="n">key</span> <span class="ow">in</span> <span class="n">d</span> <span class="ow">and</span> <span class="n">d</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">==</span> <span class="n">value</span>
+                               <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">conds</span><span class="o">.</span><span class="n">items</span><span class="p">()))</span></div>
+
+<div class="viewcode-block" id="Stream.interpose"><a class="viewcode-back" href="../../api.html#carriage.Stream.interpose">[docs]</a>    <span class="nd">@as_stream</span>
+    <span class="k">def</span> <span class="nf">interpose</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sep</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Create a new Stream by interposing separater between elemens.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">def</span> <span class="nf">interpose_tr</span><span class="p">(</span><span class="n">iterable</span><span class="p">):</span>
+            <span class="n">iterator</span> <span class="o">=</span> <span class="nb">iter</span><span class="p">(</span><span class="n">iterable</span><span class="p">)</span>
+            <span class="k">yield</span> <span class="nb">next</span><span class="p">(</span><span class="n">iterator</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">iterator</span><span class="p">:</span>
+                <span class="k">yield</span> <span class="n">sep</span>
+                <span class="k">yield</span> <span class="n">item</span>
+
+        <span class="k">return</span> <span class="n">interpose_tr</span></div>
+
+<div class="viewcode-block" id="Stream.zip"><a class="viewcode-back" href="../../api.html#carriage.Stream.zip">[docs]</a>    <span class="nd">@as_stream</span>
+    <span class="k">def</span> <span class="nf">zip</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">iterables</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Create a new Stream by zipping elements with other iterables.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">def</span> <span class="nf">zip_tr</span><span class="p">(</span><span class="n">items</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">builtins</span><span class="o">.</span><span class="n">zip</span><span class="p">(</span><span class="n">items</span><span class="p">,</span> <span class="o">*</span><span class="n">iterables</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">zip_tr</span></div>
+
+<div class="viewcode-block" id="Stream.zip_longest"><a class="viewcode-back" href="../../api.html#carriage.Stream.zip_longest">[docs]</a>    <span class="nd">@as_stream</span>
+    <span class="k">def</span> <span class="nf">zip_longest</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">iterables</span><span class="p">,</span> <span class="n">fillvalue</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Create a new Stream by zipping elements with other iterables</span>
+<span class="sd">        as long as possible.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">def</span> <span class="nf">zip_longest_tr</span><span class="p">(</span><span class="n">items</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">itt</span><span class="o">.</span><span class="n">zip_longest</span><span class="p">(</span><span class="n">items</span><span class="p">,</span> <span class="o">*</span><span class="n">iterables</span><span class="p">,</span> <span class="n">fillvalue</span><span class="o">=</span><span class="n">fillvalue</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">zip_longest_tr</span></div>
+
+<div class="viewcode-block" id="Stream.zip_prev"><a class="viewcode-back" href="../../api.html#carriage.Stream.zip_prev">[docs]</a>    <span class="nd">@as_stream</span>
+    <span class="k">def</span> <span class="nf">zip_prev</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fillvalue</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Create a new Stream by zipping elements with previous one.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">def</span> <span class="nf">zip_prev_tr</span><span class="p">(</span><span class="n">items</span><span class="p">):</span>
+            <span class="n">items</span><span class="p">,</span> <span class="n">prevs</span> <span class="o">=</span> <span class="n">itt</span><span class="o">.</span><span class="n">tee</span><span class="p">(</span><span class="n">items</span><span class="p">)</span>
+            <span class="n">prevs</span> <span class="o">=</span> <span class="n">itt</span><span class="o">.</span><span class="n">chain</span><span class="p">([</span><span class="n">fillvalue</span><span class="p">],</span> <span class="n">prevs</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">itt</span><span class="o">.</span><span class="n">starmap</span><span class="p">(</span><span class="n">CurrPrev</span><span class="p">,</span> <span class="n">builtins</span><span class="o">.</span><span class="n">zip</span><span class="p">(</span><span class="n">items</span><span class="p">,</span> <span class="n">prevs</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">zip_prev_tr</span></div>
+
+<div class="viewcode-block" id="Stream.zip_next"><a class="viewcode-back" href="../../api.html#carriage.Stream.zip_next">[docs]</a>    <span class="nd">@as_stream</span>
+    <span class="k">def</span> <span class="nf">zip_next</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fillvalue</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Create a new Stream by zipping elements with next one.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">def</span> <span class="nf">zip_next_tr</span><span class="p">(</span><span class="n">items</span><span class="p">):</span>
+            <span class="n">items</span><span class="p">,</span> <span class="n">nexts</span> <span class="o">=</span> <span class="n">itt</span><span class="o">.</span><span class="n">tee</span><span class="p">(</span><span class="n">items</span><span class="p">)</span>
+            <span class="nb">next</span><span class="p">(</span><span class="n">nexts</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">itt</span><span class="o">.</span><span class="n">starmap</span><span class="p">(</span>
+                <span class="n">CurrNext</span><span class="p">,</span> <span class="n">itt</span><span class="o">.</span><span class="n">zip_longest</span><span class="p">(</span><span class="n">items</span><span class="p">,</span> <span class="n">nexts</span><span class="p">,</span> <span class="n">fillvalue</span><span class="o">=</span><span class="n">fillvalue</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">zip_next_tr</span></div>
+
+<div class="viewcode-block" id="Stream.zip_index"><a class="viewcode-back" href="../../api.html#carriage.Stream.zip_index">[docs]</a>    <span class="k">def</span> <span class="nf">zip_index</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Create a new Stream by zipping elements with index.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">zip</span><span class="p">(</span><span class="n">itt</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="n">start</span><span class="p">))</span><span class="o">.</span><span class="n">starmap</span><span class="p">(</span><span class="n">ValueIndex</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Stream.reversed"><a class="viewcode-back" href="../../api.html#carriage.Stream.reversed">[docs]</a>    <span class="nd">@as_stream</span>
+    <span class="k">def</span> <span class="nf">reversed</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Create a new reversed Stream.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">def</span> <span class="nf">reversed_tr</span><span class="p">(</span><span class="n">items</span><span class="p">):</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="k">return</span> <span class="nb">reversed</span><span class="p">(</span><span class="n">items</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">TypeError</span><span class="p">:</span>
+                <span class="k">return</span> <span class="nb">reversed</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">items</span><span class="p">))</span>
+
+        <span class="k">return</span> <span class="n">reversed_tr</span></div>
+
+<div class="viewcode-block" id="Stream.sorted"><a class="viewcode-back" href="../../api.html#carriage.Stream.sorted">[docs]</a>    <span class="nd">@as_stream</span>
+    <span class="k">def</span> <span class="nf">sorted</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">reverse</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Create a new sorted Stream.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">return</span> <span class="n">fnt</span><span class="o">.</span><span class="n">partial</span><span class="p">(</span><span class="nb">sorted</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="n">key</span><span class="p">,</span> <span class="n">reverse</span><span class="o">=</span><span class="n">reverse</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Stream.sum"><a class="viewcode-back" href="../../api.html#carriage.Stream.sum">[docs]</a>    <span class="k">def</span> <span class="nf">sum</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Get sum of elements&#39;&#39;&#39;</span>
+        <span class="k">return</span> <span class="nb">sum</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Stream.reduce"><a class="viewcode-back" href="../../api.html#carriage.Stream.reduce">[docs]</a>    <span class="k">def</span> <span class="nf">reduce</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">func</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Apply a function of two arguments cumulatively to the elements</span>
+<span class="sd">        in Stream from left to right.</span>
+
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">return</span> <span class="n">fnt</span><span class="o">.</span><span class="n">reduce</span><span class="p">(</span><span class="n">func</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Stream.fold_left"><a class="viewcode-back" href="../../api.html#carriage.Stream.fold_left">[docs]</a>    <span class="k">def</span> <span class="nf">fold_left</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">func</span><span class="p">,</span> <span class="n">initial</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Apply a function of two arguments cumulatively to the elements</span>
+<span class="sd">        in Stream from left to right.</span>
+
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">return</span> <span class="n">fnt</span><span class="o">.</span><span class="n">reduce</span><span class="p">(</span><span class="n">func</span><span class="p">,</span> <span class="bp">self</span><span class="p">,</span> <span class="n">initial</span><span class="p">)</span></div>
+
+    <span class="c1"># def key_by(self, func):</span>
+    <span class="c1">#     return self.map(lambda elem: Row(key=func(elem), value=elem))</span>
+
+<div class="viewcode-block" id="Stream.group_by"><a class="viewcode-back" href="../../api.html#carriage.Stream.group_by">[docs]</a>    <span class="nd">@as_stream</span>
+    <span class="k">def</span> <span class="nf">group_by</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Create a new Stream using the builtin itertools.groupby,</span>
+<span class="sd">        which sequentially groups elements as long as the key function</span>
+<span class="sd">        evaluates to the same value.</span>
+
+<span class="sd">        Comparing to ``group_by_as_map``, there&#39;re some pros and cons.</span>
+
+<span class="sd">        Cons:</span>
+
+<span class="sd">        - Elements should be sorted by the key function first,</span>
+<span class="sd">          or elements with the same key may be broken into different groups.</span>
+
+<span class="sd">        Pros:</span>
+
+<span class="sd">        - Key function doesn&#39;t have to be evaluated to a hashable value.</span>
+<span class="sd">          It can be any type which supports ``__eq__``.</span>
+
+<span class="sd">        - Lazy-evaluating. Consume less memory while grouping.</span>
+<span class="sd">          Yield a group as soon as possible.</span>
+
+<span class="sd">        &#39;&#39;&#39;</span>
+
+        <span class="k">def</span> <span class="nf">group_by_tr</span><span class="p">(</span><span class="n">self_</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">vs</span> <span class="ow">in</span> <span class="n">itt</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="n">self_</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="n">key</span><span class="p">):</span>
+                <span class="k">yield</span> <span class="n">KeyValues</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="n">k</span><span class="p">,</span> <span class="n">values</span><span class="o">=</span><span class="n">Stream</span><span class="p">(</span><span class="n">vs</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">group_by_tr</span></div>
+
+    <span class="n">groupby</span> <span class="o">=</span> <span class="n">group_by</span>
+
+<div class="viewcode-block" id="Stream.group_by_as_map"><a class="viewcode-back" href="../../api.html#carriage.Stream.group_by_as_map">[docs]</a>    <span class="k">def</span> <span class="nf">group_by_as_map</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Group values in to a Map by the value of key function evaluation</span>
+<span class="sd">        result.</span>
+
+<span class="sd">        Comparing to ``group_by``, there&#39;re some pros and cons.</span>
+
+<span class="sd">        Pros:</span>
+
+<span class="sd">        * Elements don&#39;t need to be sorted by the key function first. </span>
+<span class="sd">          You can call ``map_group_by`` anytime and correct grouping result.</span>
+
+<span class="sd">        Cons:</span>
+
+<span class="sd">        * Key function has to be evaluated to a hashable value.</span>
+
+<span class="sd">        * Lazy-evaluating. Consume less memory while grouping. </span>
+<span class="sd">          Yield a group as soon as possible.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+
+        <span class="kn">from</span> <span class="nn">.map</span> <span class="k">import</span> <span class="n">Map</span>
+        <span class="n">key_to_grp</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">list</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">elem</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">:</span>
+            <span class="n">key_to_grp</span><span class="p">[</span><span class="n">key</span><span class="p">(</span><span class="n">elem</span><span class="p">)]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">elem</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">Map</span><span class="p">(</span><span class="n">key_to_grp</span><span class="p">)</span></div>
+
+    <span class="k">def</span> <span class="nf">multi_group_by_as_map</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="n">key_to_grp</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">list</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">elem</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">key</span><span class="p">(</span><span class="n">elem</span><span class="p">):</span>
+                <span class="n">key_to_grp</span><span class="p">[</span><span class="n">k</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">elem</span><span class="p">)</span>
+        <span class="k">return</span> <span class="nb">dict</span><span class="p">(</span><span class="n">key_to_grp</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Stream.sliding_window"><a class="viewcode-back" href="../../api.html#carriage.Stream.sliding_window">[docs]</a>    <span class="nd">@as_stream</span>
+    <span class="k">def</span> <span class="nf">sliding_window</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Create a new Stream instance that all elements are sliding windows</span>
+<span class="sd">        of source elements.&#39;&#39;&#39;</span>
+
+        <span class="k">def</span> <span class="nf">sliding_window_tr</span><span class="p">(</span><span class="n">self_</span><span class="p">):</span>
+            <span class="n">self_itr</span> <span class="o">=</span> <span class="nb">iter</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+            <span class="n">dq</span> <span class="o">=</span> <span class="n">deque</span><span class="p">(</span><span class="n">itt</span><span class="o">.</span><span class="n">islice</span><span class="p">(</span><span class="n">self_itr</span><span class="p">,</span> <span class="n">n</span> <span class="o">-</span> <span class="mi">1</span><span class="p">),</span> <span class="n">maxlen</span><span class="o">=</span><span class="n">n</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">self_itr</span><span class="p">:</span>
+                <span class="n">dq</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
+                <span class="k">yield</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">dq</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">sliding_window_tr</span></div>
+
+<div class="viewcode-block" id="Stream.mean"><a class="viewcode-back" href="../../api.html#carriage.Stream.mean">[docs]</a>    <span class="k">def</span> <span class="nf">mean</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Get the average of elements.&#39;&#39;&#39;</span>
+        <span class="n">length</span><span class="p">,</span> <span class="n">summation</span> <span class="o">=</span> <span class="n">deque</span><span class="p">(</span><span class="nb">enumerate</span><span class="p">(</span><span class="n">itt</span><span class="o">.</span><span class="n">accumulate</span><span class="p">(</span><span class="bp">self</span><span class="p">),</span> <span class="mi">1</span><span class="p">),</span> <span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">pop</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">summation</span> <span class="o">/</span> <span class="n">length</span></div>
+
+<div class="viewcode-block" id="Stream.accumulate"><a class="viewcode-back" href="../../api.html#carriage.Stream.accumulate">[docs]</a>    <span class="nd">@as_stream</span>
+    <span class="k">def</span> <span class="nf">accumulate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">func</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Create a new Stream of calling ``itertools.accumulate``&#39;&#39;&#39;</span>
+        <span class="k">return</span> <span class="n">fnt</span><span class="o">.</span><span class="n">partial</span><span class="p">(</span><span class="n">itt</span><span class="o">.</span><span class="n">accumulate</span><span class="p">,</span> <span class="n">func</span><span class="o">=</span><span class="n">func</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Stream.value_counts"><a class="viewcode-back" href="../../api.html#carriage.Stream.value_counts">[docs]</a>    <span class="k">def</span> <span class="nf">value_counts</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Get a Counter instance of elements counts&#39;&#39;&#39;</span>
+        <span class="k">return</span> <span class="n">Counter</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Stream.extended"><a class="viewcode-back" href="../../api.html#carriage.Stream.extended">[docs]</a>    <span class="nd">@as_stream</span>
+    <span class="k">def</span> <span class="nf">extended</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">iterable</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Create a new Stream that extends source Stream with another</span>
+<span class="sd">        iterable&#39;&#39;&#39;</span>
+
+        <span class="k">def</span> <span class="nf">extended_tr</span><span class="p">(</span><span class="n">self_</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">itt</span><span class="o">.</span><span class="n">chain</span><span class="p">(</span><span class="n">self_</span><span class="p">,</span> <span class="n">iterable</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">extended_tr</span></div>
+
+<div class="viewcode-block" id="Stream.appended"><a class="viewcode-back" href="../../api.html#carriage.Stream.appended">[docs]</a>    <span class="k">def</span> <span class="nf">appended</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">elem</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Create a new Stream that extends source Stream with another element.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">extended</span><span class="p">((</span><span class="n">elem</span><span class="p">,))</span></div>
+
+<div class="viewcode-block" id="Stream.distincted"><a class="viewcode-back" href="../../api.html#carriage.Stream.distincted">[docs]</a>    <span class="nd">@as_stream</span>
+    <span class="k">def</span> <span class="nf">distincted</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Create a new Stream with non-repeating elements. And elements are</span>
+<span class="sd">        with the same order of first occurence in the source Stream.</span>
+
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">def</span> <span class="nf">distincted_tr</span><span class="p">(</span><span class="n">items</span><span class="p">):</span>
+            <span class="n">item_set</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+            <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">items</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">item</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">item_set</span><span class="p">:</span>
+                    <span class="n">item_set</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
+                    <span class="k">yield</span> <span class="n">item</span>
+
+        <span class="k">return</span> <span class="n">distincted_tr</span></div>
+
+    <span class="nd">@as_stream</span>
+    <span class="k">def</span> <span class="nf">product</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">iterables</span><span class="p">,</span> <span class="n">repeat</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+        <span class="k">def</span> <span class="nf">product_tr</span><span class="p">(</span><span class="n">self_</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">itt</span><span class="o">.</span><span class="n">product</span><span class="p">(</span><span class="n">self_</span><span class="p">,</span> <span class="o">*</span><span class="n">iterables</span><span class="p">,</span> <span class="n">repeat</span><span class="o">=</span><span class="n">repeat</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">product_tr</span>
+
+    <span class="nd">@as_stream</span>
+    <span class="k">def</span> <span class="nf">permutations</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">r</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">fnt</span><span class="o">.</span><span class="n">partial</span><span class="p">(</span><span class="n">itt</span><span class="o">.</span><span class="n">permutations</span><span class="p">,</span> <span class="n">r</span><span class="o">=</span><span class="n">r</span><span class="p">)</span>
+
+    <span class="nd">@as_stream</span>
+    <span class="k">def</span> <span class="nf">combinations</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">r</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">fnt</span><span class="o">.</span><span class="n">partial</span><span class="p">(</span><span class="n">itt</span><span class="o">.</span><span class="n">combinations</span><span class="p">,</span> <span class="n">r</span><span class="o">=</span><span class="n">r</span><span class="p">)</span>
+
+    <span class="nd">@as_stream</span>
+    <span class="k">def</span> <span class="nf">combinations_with_replacement</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">r</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">fnt</span><span class="o">.</span><span class="n">partial</span><span class="p">(</span><span class="n">itt</span><span class="o">.</span><span class="n">combinations_with_replacement</span><span class="p">,</span> <span class="n">r</span><span class="o">=</span><span class="n">r</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Stream.nsmallest"><a class="viewcode-back" href="../../api.html#carriage.Stream.nsmallest">[docs]</a>    <span class="nd">@as_stream</span>
+    <span class="k">def</span> <span class="nf">nsmallest</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Get the n smallest elements.</span>
+
+<span class="sd">        &gt;&gt;&gt; Stream([1, 5, 2, 3, 6]).nsmallest(2).to_list()</span>
+<span class="sd">        [1, 2]</span>
+
+<span class="sd">        &#39;&#39;&#39;</span>
+
+        <span class="k">def</span> <span class="nf">nsmallest_tr</span><span class="p">(</span><span class="n">self_</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">heapq</span><span class="o">.</span><span class="n">nsmallest</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="nb">iter</span><span class="p">(</span><span class="n">self_</span><span class="p">),</span> <span class="n">key</span><span class="o">=</span><span class="n">key</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">nsmallest_tr</span></div>
+
+<div class="viewcode-block" id="Stream.nlargest"><a class="viewcode-back" href="../../api.html#carriage.Stream.nlargest">[docs]</a>    <span class="nd">@as_stream</span>
+    <span class="k">def</span> <span class="nf">nlargest</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Get the n largest elements.</span>
+
+<span class="sd">        &gt;&gt;&gt; Stream([1, 5, 2, 3, 6]).nlargest(2).to_list()</span>
+<span class="sd">        [6, 5]</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+
+        <span class="k">def</span> <span class="nf">nlargest_tr</span><span class="p">(</span><span class="n">self_</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">heapq</span><span class="o">.</span><span class="n">nlargest</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="nb">iter</span><span class="p">(</span><span class="n">self_</span><span class="p">),</span> <span class="n">key</span><span class="o">=</span><span class="n">key</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">nlargest_tr</span></div>
+
+<div class="viewcode-block" id="Stream.tee"><a class="viewcode-back" href="../../api.html#carriage.Stream.tee">[docs]</a>    <span class="k">def</span> <span class="nf">tee</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n</span><span class="o">=</span><span class="mi">2</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Copy the Stream into multiple Stream with the same elements.</span>
+
+<span class="sd">        &gt;&gt;&gt; itr = iter(range(3, 6))</span>
+<span class="sd">        &gt;&gt;&gt; s1 = Stream(itr).map(lambda x: x * 2)</span>
+<span class="sd">        &gt;&gt;&gt; s2, s3 = s1.tee(2)</span>
+<span class="sd">        &gt;&gt;&gt; s2.map(lambda x: x * 2).to_list()</span>
+<span class="sd">        [12, 16, 20]</span>
+<span class="sd">        &gt;&gt;&gt; s3.map(lambda x: x * 3).to_list()</span>
+<span class="sd">        [18, 24, 30]</span>
+
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">itrs</span> <span class="o">=</span> <span class="n">itt</span><span class="o">.</span><span class="n">tee</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="n">Stream</span><span class="p">,</span> <span class="n">itrs</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="Stream.tap"><a class="viewcode-back" href="../../api.html#carriage.Stream.tap">[docs]</a>    <span class="nd">@as_stream</span>
+    <span class="k">def</span> <span class="nf">tap</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tag</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">n</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">msg_format</span><span class="o">=</span><span class="s1">&#39;</span><span class="si">{tag}</span><span class="s1">:</span><span class="si">{index}</span><span class="s1">: </span><span class="si">{elem}</span><span class="s1">&#39;</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;A debugging tool. This method create a new Stream with the same</span>
+<span class="sd">        elements. While evaluating Stream, it print first n elements.</span>
+
+<span class="sd">        &gt;&gt;&gt; (Stream.range(3).tap(&#39;orig&#39;)</span>
+<span class="sd">        ...  .map(lambda x: x * 2).tap(&#39;x2&#39;)</span>
+<span class="sd">        ...  .accumulate(lambda a, b: a + b).tap(&#39;acc&#39;)</span>
+<span class="sd">        ...  .to_list())</span>
+<span class="sd">        orig:0: 0</span>
+<span class="sd">        x2:0: 0</span>
+<span class="sd">        acc:0: 0</span>
+<span class="sd">        orig:1: 1</span>
+<span class="sd">        x2:1: 2</span>
+<span class="sd">        acc:1: 2</span>
+<span class="sd">        orig:2: 2</span>
+<span class="sd">        x2:2: 4</span>
+<span class="sd">        acc:2: 6</span>
+<span class="sd">        [0, 2, 6]</span>
+
+<span class="sd">        &#39;&#39;&#39;</span>
+
+        <span class="k">def</span> <span class="nf">tap_tr</span><span class="p">(</span><span class="n">self_</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">index</span><span class="p">,</span> <span class="n">elem</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">self_</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">index</span> <span class="o">&lt;</span> <span class="n">n</span><span class="p">:</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="n">msg_format</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">tag</span><span class="o">=</span><span class="n">tag</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="n">index</span><span class="p">,</span> <span class="n">elem</span><span class="o">=</span><span class="n">elem</span><span class="p">))</span>
+                <span class="k">yield</span> <span class="n">elem</span>
+        <span class="k">return</span> <span class="n">tap_tr</span></div>
+
+    <span class="c1"># def copy(self):</span>
+    <span class="c1">#     return Array(copy(self._items))</span>
+
+    <span class="k">def</span> <span class="nf">grouped</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c1"># TODO</span>
+        <span class="k">pass</span>
+
+    <span class="k">def</span> <span class="nf">for_each</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">pass</span></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2018, Yen, Tzu-Hsi.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.2</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>
