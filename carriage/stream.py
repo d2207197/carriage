@@ -30,13 +30,13 @@ class Stream(Monad):
     Stream is initiated by providing any iterable object like list, tuple,
     iterator and even an infinite one.
 
-    >>> strm = Stream(iterable)
+    >>> strm = Stream(range(10))
     >>> strm = Stream([1, 2, 3])
 
     Some classmethods are provided for creating common Stream instances.
 
-    >>> strm = Stream.range(start, stop, step)
-    >>> strm = Stream.count(start, step)
+    >>> strm = Stream.range(0, 10, 2)
+    >>> strm = Stream.count(0, 5)
 
     Stream instance is immutable. Calling a transforamtion function would
     create a new Stream instance everytime. But don't worry, because of
@@ -49,15 +49,23 @@ class Stream(Monad):
     False
 
     To evaluate a Stream instance, call an action function.
+
     >>> strm = Stream.range(5, 10).map(lambda n: n * 2).take(3)
     >>> strm.sum()
-    3
+    36
+    >>> strm.to_list()
+    [10, 12, 14]
 
     '''
     __slots__ = '_iterable', '_transformer'
 
     def __init__(self, iterable, transformer=None):
         '''Create a Stream from any iterable object.
+
+        >>> strm = Stream([1,2,3])
+        >>> strm = Stream(range(10, 15))
+        >>> adict = {'a': 1, 'b': 2}
+        >>> strm = Stream(adict.items())
 
         Parameters
         ----------
@@ -72,7 +80,13 @@ class Stream(Monad):
 
     @classmethod
     def range(cls, start, end=None, step=1):
-        '''Create a Stream from range.'''
+        '''Create a Stream from range.
+
+        >>> Stream.range(2, 10, 2).to_list()
+        [2, 4, 6, 8]
+        >>> Stream.range(3).to_list()
+        [0, 1, 2]
+        '''
 
         if end is None:
             start, end = 0, start
@@ -81,22 +95,46 @@ class Stream(Monad):
 
     @classmethod
     def count(cls, start, step=1):
-        '''Create a infinite consecutive Stream'''
+        '''Create a infinite consecutive Stream
+
+        >>> Stream.count(0, 3).take(3).to_list()
+        [0, 3, 6]
+
+        '''
         return cls(itt.count(start, step))
 
     @classmethod
     def repeat(cls, elems, times=None):
-        '''Create a Stream repeating elems'''
+        '''Create a Stream repeating elems
+
+        >>> Stream.repeat(1, 3).to_list()
+        [1, 1, 1]
+        >>> Stream.repeat([1, 2, 3], 2).to_list()
+        [[1, 2, 3], [1, 2, 3]]
+        '''
         return cls(itt.repeat(elems, times=times))
 
     @classmethod
     def cycle(cls, iterable):
-        '''Create a Stream cycling a iterable'''
+        '''Create a Stream cycling a iterable
+
+        >>> Stream.cycle([1,2]).take(5).to_list()
+        [1, 2, 1, 2, 1]
+        '''
+
         return cls(itt.cycle(iterable))
 
     @classmethod
     def repeatedly(cls, func, times=None):
-        '''Create a Stream repeatedly calling a zero parameter function'''
+        '''Create a Stream repeatedly calling a zero parameter function
+
+        >>> def counter():
+        ...     counter.num += 1
+        ...     return counter.num
+        >>> counter.num = -1
+        >>> Stream.repeatedly(counter, 5).to_list()
+        [0, 1, 2, 3, 4]
+        '''
         def repeatedly_gen(times):
             while True:
                 if times is None:
@@ -104,12 +142,20 @@ class Stream(Monad):
                 elif times > 0:
                     yield func()
                     times -= 1
-        return cls(repeatedly_gen())
+                else:
+                    return
+
+        return cls(repeatedly_gen(times))
 
     @classmethod
     def iterate(cls, func, x):
         '''Create a Stream recursively applying a function to
-        last return value.'''
+        last return value.
+
+        >>> def multiply2(x): return x * 2
+        >>> Stream.iterate(multiply2, 3).take(4).to_list()
+        [3, 6, 12, 24]
+        '''
         def iterate_gen(x):
             while True:
                 yield x
@@ -127,28 +173,85 @@ class Stream(Monad):
     def to_list(self):
         '''Convert to a list.
 
+        >>> Stream.range(5, 10, 2).to_list()
+        [5, 7, 9]
+
         Returns
         -------
         list
         '''
         return list(self)
 
-    @as_stream
-    def flat_map(self, to_iterable_func):
-        '''Apply function to each element, then flatten the result.
+    def to_series(self):
+        '''Convert to a pandas Series
+
+        >>> Stream.range(5, 10, 2).to_series()
+        0    5
+        1    7
+        2    9
+        dtype: int64
 
         Returns
         -------
-        Stream
+        pandas.Series
         '''
+        import pandas as pd
+        return pd.Series(list(self))
 
-        def flat_map_tr(iterable):
-            return itt.chain.from_iterable(map(to_iterable_func, iterable))
-        return flat_map_tr
+    def to_set(self):
+        '''Convert to a set
+
+        >>> Stream.cycle([1, 2, 3]).take(5).to_set()
+        {1, 2, 3}
+
+        Returns
+        -------
+        '''
+        return set(self)
+
+    def to_dict(self):
+        '''Convert to a dict
+
+        >>> Stream.range(5, 10, 2).zip_index().to_dict()
+        {5: 0, 7: 1, 9: 2}
+
+        Returns
+        -------
+        dict
+        '''
+        return {k: v for k, v in self}
+
+    def to_map(self):
+        '''Convert to a Map
+
+        >>> Stream.range(5, 10, 2).zip_index().to_map()
+        Map({5: 0, 7: 1, 9: 2})
+
+        Returns
+        -------
+        Map
+        '''
+        from .map import Map
+        return Map(self)
+
+    def to_array(self):
+        '''Convert to a Map
+
+        >>> Stream.range(5, 8, 2).zip_index().to_array()
+        Array([Row(value=5, index=0), Row(value=7, index=1)])
+
+        Returns
+        -------
+        Array
+        '''
+        return Array(self)
 
     @as_stream
     def map(self, func):
         '''Create a new Stream by applying function to each element
+
+        >>> Stream.range(5, 8).map(lambda x: x * 2).to_list()
+        [10, 12, 14]
 
         Returns
         -------
@@ -159,7 +262,15 @@ class Stream(Monad):
     @as_stream
     def starmap(self, func):
         '''Create a new Stream by evaluating function using argument tulpe
-        from each element. i.e. ``func(*elem)``.
+        from each element. i.e. ``func(*elem)``. It's convenient that
+        if all elements in Stream are iterable and you want to treat
+        each element in elemnts as separate argument while calling the
+        function.
+
+        >>> Stream([(1, 2), (3, 4)]).starmap(lambda a, b: a+b).to_list()
+        [3, 7]
+        >>> Stream([(1, 2), (3, 4)]).map(lambda a_b: a_b[0]+a_b[1]).to_list()
+        [3, 7]
         '''
         return fnt.partial(itt.starmap, func)
 
@@ -167,11 +278,30 @@ class Stream(Monad):
     def flatten(self):
         '''flatten each element
 
+        >>> Stream([(1, 2), (3, 4)]).flatten().to_list()
+        [1, 2, 3, 4]
+
         Returns
         -------
         Stream
         '''
         return itt.chain.from_iterable
+
+    @as_stream
+    def flat_map(self, to_iterable_func):
+        '''Apply function to each element, then flatten the result.
+
+        >>> Stream([1, 2, 3]).flat_map(range).to_list()
+        [0, 0, 1, 0, 1, 2]
+
+        Returns
+        -------
+        Stream
+        '''
+
+        def flat_map_tr(iterable):
+            return itt.chain.from_iterable(map(to_iterable_func, iterable))
+        return flat_map_tr
 
     def then(self, alist):
         # TODO
@@ -611,7 +741,7 @@ class Stream(Monad):
         return dict(key_to_grp)
 
     @as_stream
-    def sliding_window(self, n=2):
+    def sliding_window(self, n):
         '''Create a new Stream instance that all elements are sliding windows
         of source elements.'''
 
@@ -715,27 +845,6 @@ class Stream(Monad):
 
     # def copy(self):
     #     return Array(copy(self._items))
-
-    def to_series(self):
-        '''Convert to a pandas Series'''
-        import pandas as pd
-        return pd.Series(list(self))
-
-    def to_set(self):
-        '''Convert to a set'''
-        return set(self)
-
-    def to_dict(self):
-        '''Convert to a dict'''
-        return {k: v for k, v in self}
-
-    def to_map(self):
-        '''Convert to a Map'''
-        from .map import Map
-        return Map(self)
-
-    def to_array(self):
-        return Array(self)
 
     def grouped(self):
         # TODO
