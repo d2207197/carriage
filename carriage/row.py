@@ -1,7 +1,54 @@
 
 
 class Row(tuple):
+    '''A named tuple like type without the need of declaring field names.
 
+    A Row object can be created anytime when you need it.
+
+    >>> Row(name='Joe', age=30, height=170)
+    Row(name='Joe', age=30, height=170)
+
+    If you are too lazy to name the fields.
+
+    >>> Row.from_values(1, 'a', 9)
+    Row(v0=1, v1='a', v2=9)
+    >>> Row.from_iterable(range(3))
+    Row(v0=0, v1=1, v2=2)
+
+    You can access field using index or field name in ``O(1)``.
+    >>> row = Row(name='Joe', age=30, height=170)
+    >>> row.name
+    'Joe'
+    >>> row[2]
+    170
+
+    And it provides some useful method for transforming, converting.
+    Because Row is immutable type, all these method create a new Row object.
+
+    >>> row.evolve(height=180)  # I hope so
+    Row(name='Joe', age=30, height=180)
+
+    >>> row.evolve(age=row.age + 1)
+    Row(name='Joe', age=31, height=170)
+
+    >>> row.asdict()
+    {'name': 'Joe', 'age': 30, 'height': 170}
+
+    >>> row.to_dict()
+    {'name': 'Joe', 'age': 30, 'height': 170}
+
+    >>> row.to_map()
+    Map({'name': 'Joe', 'age': 30, 'height': 170})
+
+    Row is iterable. You can unpack it.
+
+    >>> name, age, height = row
+    >>> name
+    'Joe'
+    >>> age
+    30
+
+    '''
     @classmethod
     def from_values(cls, *args):
         return cls.from_iterable(args)
@@ -24,6 +71,12 @@ class Row(tuple):
         else:
             return tuple.__getattribute__(self, name)
 
+    def __setattr__(self, name, value):
+        if name != '_dict':
+            raise TypeError("'Row' object does not support item assignment")
+        else:
+            super().__setattr__(name, value)
+
     # def __getattr__(self, name):
     #     if name in self._dict:
     #         return self._dict[name]
@@ -42,6 +95,18 @@ class Row(tuple):
 
     def asdict(self):
         return self._dict.copy()
+
+    to_dict = asdict
+
+    def to_map(self):
+        from .map import Map
+        return Map(self.asdict())
+
+    def to_tuple(self):
+        return tuple(self)
+
+    def to_list(self):
+        return list(self)
 
     def __repr__(self):
         kwargs_str = ', '.join(f'{k}={v!r}' for k, v in self._dict.items())

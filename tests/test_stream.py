@@ -5,7 +5,7 @@ from collections import Counter
 import pandas as pd
 import pytest
 from carriage import Array, Nothing, Some, Stream
-from carriage.rowtype import CurrNext, CurrPrev, Row, ValueIndex
+from carriage.row import CurrNext, CurrPrev, Row, ValueIndex
 
 
 class Person:
@@ -212,7 +212,7 @@ def test_groupby():
             .starmap(lambda k, vs: (k, list(vs))).to_list() ==
             [(0, [0, 1, 2]), (1, [3, 4, 5]), (2, [6, 7, 8]), (3, [9])])
 
-    assert Stream.range(10).map_group_by(
+    assert Stream.range(10).group_by_as_map(
         lambda n: n // 3) == {0: [0, 1, 2], 1: [3, 4, 5], 2: [6, 7, 8], 3: [9]}
 
 
@@ -238,7 +238,7 @@ def test_general_case(ipsum, capsys):
                 keyvalues.transform(values=lambda stream: stream.to_array()))
            .map(lambda keyvalues: Row(
                length=keyvalues.key, count=keyvalues.values.len()))
-           .tap(2, tag='length count')
+           .tap(tag='length count', n=2)
            .nlargest(3, key=lambda row: row.count)
            .pluck_attr('length')
            .to_list()

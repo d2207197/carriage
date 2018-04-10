@@ -2,12 +2,12 @@
 import builtins
 import collections
 import itertools as itt
-import reprlib
 from copy import copy
 
 from .monad import Monad
 from .optional import Nothing, Some
-from .rowtype import CurrNext, CurrPrev, ValueIndex
+from .repr import short_repr
+from .row import CurrNext, CurrPrev, ValueIndex
 
 
 class Array(Monad):
@@ -71,7 +71,7 @@ class Array(Monad):
         return iter(self._items)
 
     def __repr__(self):
-        return f'{type(self).__name__}({reprlib.repr(self._items)})'
+        return f'{type(self).__name__}({short_repr.repr(self._items)})'
 
     @property
     def _value_for_cmp(self):

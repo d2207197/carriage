@@ -9,7 +9,8 @@ from collections import Counter, defaultdict, deque
 from .array import Array
 from .monad import Monad
 from .optional import Nothing, Some
-from .rowtype import CurrNext, CurrPrev, KeyValues, ValueIndex
+from .repr import short_repr
+from .row import CurrNext, CurrPrev, KeyValues, ValueIndex
 
 
 def as_stream(f):
@@ -327,10 +328,10 @@ class Stream(Monad):
     def __repr__(self):
         if self._transformer is None:
             return (f'{type(self).__name__}'
-                    f'({reprlib.repr(self._iterable)})')
+                    f'({short_repr.repr(self._iterable)})')
         else:
             return (f'{type(self).__name__}'
-                    f'({reprlib.repr(self._iterable)}, {self._transformer!r})')
+                    f'({short_repr.repr(self._iterable)}, {self._transformer!r})')
 
     @property
     def _value_for_cmp(self):
@@ -690,7 +691,7 @@ class Stream(Monad):
         which sequentially groups elements as long as the key function
         evaluates to the same value.
 
-        Comparing to ``map_group_by``, there're some pros and cons.
+        Comparing to ``group_by_as_map``, there're some pros and cons.
 
         Cons:
 
@@ -714,11 +715,11 @@ class Stream(Monad):
 
     groupby = group_by
 
-    def map_group_by(self, key=None):
+    def group_by_as_map(self, key=None):
         '''Group values in to a Map by the value of key function evaluation
         result.
 
-        Comparing to ``map_group_by``, there're some pros and cons.
+        Comparing to ``group_by``, there're some pros and cons.
 
         Pros:
 
@@ -739,7 +740,7 @@ class Stream(Monad):
             key_to_grp[key(elem)].append(elem)
         return Map(key_to_grp)
 
-    def map_multi_group_by(self, key=None):
+    def multi_group_by_as_map(self, key=None):
         key_to_grp = defaultdict(list)
         for elem in self:
             for k in key(elem):
@@ -791,7 +792,9 @@ class Stream(Monad):
     @as_stream
     def distincted(self):
         '''Create a new Stream with non-repeating elements. And elements are
-        with the same order of first occurence in the source Stream. '''
+        with the same order of first occurence in the source Stream.
+
+        '''
         def distincted_tr(items):
             item_set = set()
             for item in items:
@@ -807,18 +810,26 @@ class Stream(Monad):
             return itt.product(self_, *iterables, repeat=repeat)
         return product_tr
 
+    @as_stream
     def permutations(self, r=None):
         return fnt.partial(itt.permutations, r=r)
 
+    @as_stream
     def combinations(self, r):
         return fnt.partial(itt.combinations, r=r)
 
+    @as_stream
     def combinations_with_replacement(self, r):
         return fnt.partial(itt.combinations_with_replacement, r=r)
 
     @as_stream
     def nsmallest(self, n, key=None):
-        '''Get the n smallest elements.'''
+        '''Get the n smallest elements.
+
+        >>> Stream([1, 5, 2, 3, 6]).nsmallest(2).to_list()
+        [1, 2]
+
+        '''
 
         def nsmallest_tr(self_):
             return heapq.nsmallest(n, iter(self_), key=key)
@@ -826,21 +837,52 @@ class Stream(Monad):
 
     @as_stream
     def nlargest(self, n, key=None):
-        '''Get the n largest elements.'''
+        '''Get the n largest elements.
+
+        >>> Stream([1, 5, 2, 3, 6]).nlargest(2).to_list()
+        [6, 5]
+        '''
 
         def nlargest_tr(self_):
             return heapq.nlargest(n, iter(self_), key=key)
         return nlargest_tr
 
     def tee(self, n=2):
-        '''Copy the Stream into multiple Stream with the same elements.'''
-        itrs = itt.tee(self, n=2)
+        '''Copy the Stream into multiple Stream with the same elements.
+
+        >>> itr = iter(range(3, 6))
+        >>> s1 = Stream(itr).map(lambda x: x * 2)
+        >>> s2, s3 = s1.tee(2)
+        >>> s2.map(lambda x: x * 2).to_list()
+        [12, 16, 20]
+        >>> s3.map(lambda x: x * 3).to_list()
+        [18, 24, 30]
+
+        '''
+        itrs = itt.tee(self, 2)
         return tuple(map(Stream, itrs))
 
     @as_stream
-    def tap(self, n=5, tag='', msg_format='{tag}:{index}: {elem}'):
+    def tap(self, tag='', n=5, msg_format='{tag}:{index}: {elem}'):
         '''A debugging tool. This method create a new Stream with the same
-        elements. And while evaluating Stream, it print first n elements.'''
+        elements. While evaluating Stream, it print first n elements.
+
+        >>> (Stream.range(3).tap('orig')
+        ...  .map(lambda x: x * 2).tap('x2')
+        ...  .accumulate(lambda a, b: a + b).tap('acc')
+        ...  .to_list())
+        orig:0: 0
+        x2:0: 0
+        acc:0: 0
+        orig:1: 1
+        x2:1: 2
+        acc:1: 2
+        orig:2: 2
+        x2:2: 4
+        acc:2: 6
+        [0, 2, 6]
+
+        '''
 
         def tap_tr(self_):
             for index, elem in enumerate(self_):
@@ -854,4 +896,7 @@ class Stream(Monad):
 
     def grouped(self):
         # TODO
+        pass
+
+    def for_each(self):
         pass

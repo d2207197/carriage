@@ -3,7 +3,7 @@ from collections import UserDict, defaultdict
 
 from .array import Array
 from .optional import Nothing, Some
-from .rowtype import KeyValue, Row
+from .row import KeyValue, Row
 from .stream import Stream
 
 
@@ -553,6 +553,10 @@ class Map(UserDict):
         Map({4: 'a', 5: 'b', 6: 'c'})
         '''
         return Map((value, key) for key, value in self.items())
+
+    def most_common(self):
+        # TODO
+        pass
 
 
 class FrozenMap(UserDict):

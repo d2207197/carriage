@@ -1,7 +1,7 @@
 import attr
 import pytest
 from carriage import Array, Nothing, Some, Stream
-from carriage.rowtype import CurrNext, CurrPrev, ValueIndex
+from carriage.row import CurrNext, CurrPrev, ValueIndex
 
 
 def test_init():
