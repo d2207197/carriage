@@ -8,7 +8,7 @@ extras_require = {'pandas': ['pandas']}
 extras_require['all'] = set(itt.chain.from_iterable(extras_require.values()))
 
 setup(name='carriage',
-      version='0.2',
+      version='0.2.1',
       description='Enhanced collection classes for programming fluently',
       author='Yen, Tzu-Hsi',
       author_email='joseph.yen@gmail.com',
