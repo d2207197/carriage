@@ -16,6 +16,7 @@ class Row(tuple):
     Row(v0=0, v1=1, v2=2)
 
     You can access field using index or field name in ``O(1)``.
+
     >>> row = Row(name='Joe', age=30, height=170)
     >>> row.name
     'Joe'
@@ -51,13 +52,21 @@ class Row(tuple):
     '''
     @classmethod
     def from_values(cls, *args):
+        '''Create Row from values'''
         return cls.from_iterable(args)
 
     @classmethod
     def from_iterable(cls, iterable):
+        '''Create Row from a iterable'''
         return cls(**{f'v{i}': v for i, v in enumerate(iterable)})
 
     def __new__(self, **kwargs):
+        '''Create Row by field names and values
+
+        >>> Row(name='Joe', age=30, height=170)
+        Row(name='Joe', age=30, height=170)
+
+        '''
         row = tuple.__new__(self, kwargs.values())
         row._dict = kwargs
 
@@ -84,9 +93,41 @@ class Row(tuple):
     #         raise AttributeError(f'{self!r} has no attribute {name!r}')
 
     def evolve(self, **kwargs):
+        '''Create a new Row by replacing or adding other fields
+
+        >>> row = Row(x=23, y=9)
+        >>> row.evolve(y=12)
+        Row(x=23, y=12)
+        >>> row.evolve(z=3)
+        Row(x=23, y=9, z=3)
+        '''
         d = self._dict.copy()
         d.update(kwargs)
         return Row(**d)
+
+    def project(self, *fields):
+        '''Create a new Row by keeping only specified fields
+
+        >>> row = Row(x=2, y=3, z=4)
+        >>> row.project('x', 'y')
+        Row(x=2, y=3)
+        '''
+        fields = set(fields)
+        return Row(**{field: value
+                      for field, value in self._dict.items()
+                      if field in fields})
+
+    def without(self, *fields):
+        '''Create a new Row by removing only specified fields
+
+        >>> row = Row(x=2, y=3, z=4)
+        >>> row.without('z')
+        Row(x=2, y=3)
+        '''
+        fields = set(fields)
+        return Row(**{field: value
+                      for field, value in self._dict.items()
+                      if field not in fields})
 
     def transform(self, **kwargs):
         d = self._dict.copy()
@@ -94,18 +135,22 @@ class Row(tuple):
         return Row(**d)
 
     def asdict(self):
+        '''Convert to dict'''
         return self._dict.copy()
 
     to_dict = asdict
 
     def to_map(self):
+        '''Convert to Map'''
         from .map import Map
         return Map(self.asdict())
 
     def to_tuple(self):
+        '''Convert to tuple'''
         return tuple(self)
 
     def to_list(self):
+        '''Convert to list'''
         return list(self)
 
     def __repr__(self):
