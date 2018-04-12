@@ -2208,6 +2208,149 @@ with the same order of first occurence in the source Array.</p>
 
 </dd></dl>
 
+<dl class="class">
+<dt id="carriage.Optional">
+<em class="property">class </em><code class="descclassname">carriage.</code><code class="descname">Optional</code><a class="reference internal" href="_modules/carriage/optional.html#Optional"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#carriage.Optional" title="Permalink to this definition">¶</a></dt>
+<dd><p>An type for handling special value or exception.</p>
+<p>Create Optional from a function call that may raise exception.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="k">def</span> <span class="nf">divide</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">):</span>
+<span class="gp">... </span>    <span class="k">return</span> <span class="n">a</span> <span class="o">/</span> <span class="n">b</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">Optional</span><span class="o">.</span><span class="n">call_exceptable</span><span class="p">(</span><span class="n">divide</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
+<span class="go">Some(0.5)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">Optional</span><span class="o">.</span><span class="n">call_exceptable</span><span class="p">(</span><span class="n">divide</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+<span class="go">Nothing</span>
+</pre></div>
+</div>
+<p>Create Optional from a value that may be None.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">adict</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;a&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;b&#39;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span> <span class="s1">&#39;c&#39;</span><span class="p">:</span> <span class="mi">3</span><span class="p">}</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">Optional</span><span class="o">.</span><span class="n">value_noneable</span><span class="p">(</span><span class="n">adict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;c&#39;</span><span class="p">))</span>
+<span class="go">Some(3)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">Optional</span><span class="o">.</span><span class="n">value_noneable</span><span class="p">(</span><span class="n">adict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;d&#39;</span><span class="p">))</span>
+<span class="go">Nothing</span>
+</pre></div>
+</div>
+<p>Escape from if hell of handling None value or exception.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="k">class</span> <span class="nc">TreeNode</span><span class="p">:</span>
+<span class="gp">... </span>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="n">left</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">right</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="gp">... </span>        <span class="bp">self</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="n">value</span>
+<span class="gp">... </span>        <span class="bp">self</span><span class="o">.</span><span class="n">left</span> <span class="o">=</span> <span class="n">left</span>
+<span class="gp">... </span>        <span class="bp">self</span><span class="o">.</span><span class="n">right</span> <span class="o">=</span> <span class="n">right</span>
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">n</span> <span class="o">=</span> <span class="n">TreeNode</span><span class="p">(</span><span class="mi">30</span><span class="p">,</span> <span class="n">TreeNode</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="n">TreeNode</span><span class="p">(</span><span class="mi">2</span><span class="p">)))</span>
+</pre></div>
+</div>
+<p>It seem convenient to traversal in tree.
+&gt;&gt;&gt; n.left.left.value
+2</p>
+<p>But both <code class="docutils literal notranslate"><span class="pre">left</span></code> and <code class="docutils literal notranslate"><span class="pre">right</span></code> might be None. You should take care of
+that.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">result</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">if</span> <span class="n">n</span><span class="o">.</span><span class="n">left</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+<span class="gp">... </span>    <span class="k">if</span> <span class="n">n</span><span class="o">.</span><span class="n">left</span><span class="o">.</span><span class="n">left</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+<span class="gp">... </span>        <span class="k">if</span> <span class="n">n</span><span class="o">.</span><span class="n">left</span><span class="o">.</span><span class="n">left</span><span class="o">.</span><span class="n">right</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+<span class="gp">... </span>            <span class="k">if</span> <span class="n">n</span><span class="o">.</span><span class="n">left</span><span class="o">.</span><span class="n">left</span><span class="o">.</span><span class="n">right</span><span class="o">.</span><span class="n">left</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+<span class="gp">... </span>                <span class="n">result</span> <span class="o">=</span> <span class="n">n</span><span class="o">.</span><span class="n">left</span><span class="o">.</span><span class="n">left</span><span class="o">.</span><span class="n">right</span><span class="o">.</span><span class="n">left</span><span class="o">.</span><span class="n">value</span> <span class="o">*</span> <span class="mi">2</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">result</span>
+<span class="go">0</span>
+</pre></div>
+</div>
+<p>Now let’s replace Noneable value with Optional.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="k">class</span> <span class="nc">TreeNodeOpt</span><span class="p">:</span>
+<span class="gp">... </span>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="n">left</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">right</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="gp">... </span>        <span class="bp">self</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="n">value</span>
+<span class="gp">... </span>        <span class="bp">self</span><span class="o">.</span><span class="n">left</span> <span class="o">=</span> <span class="n">Some</span><span class="p">(</span><span class="n">left</span><span class="p">)</span> <span class="k">if</span> <span class="n">left</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">Nothing</span>
+<span class="gp">... </span>        <span class="bp">self</span><span class="o">.</span><span class="n">right</span> <span class="o">=</span> <span class="n">Some</span><span class="p">(</span><span class="n">left</span><span class="p">)</span> <span class="k">if</span> <span class="n">left</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">Nothing</span>
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">nopt</span> <span class="o">=</span> <span class="n">TreeNodeOpt</span><span class="p">(</span><span class="mi">30</span><span class="p">,</span> <span class="n">TreeNodeOpt</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="n">TreeNodeOpt</span><span class="p">(</span><span class="mi">2</span><span class="p">)))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="p">(</span><span class="n">nopt</span><span class="o">.</span><span class="n">left</span>
+<span class="gp">... </span> <span class="o">.</span><span class="n">bind</span><span class="p">(</span><span class="k">lambda</span> <span class="n">n</span><span class="p">:</span> <span class="n">n</span><span class="o">.</span><span class="n">left</span><span class="p">)</span>
+<span class="gp">... </span> <span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">n</span><span class="p">:</span> <span class="n">n</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
+<span class="gp">... </span> <span class="o">.</span><span class="n">get_or</span><span class="p">())</span>
+<span class="go">2</span>
+</pre></div>
+</div>
+<p>It seems getting harder to get a value, but actually you are now free from
+having the risk of getting attribute from None. And you don’t have to build
+a big, nested if statement for handling it.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="p">(</span><span class="n">nopt</span><span class="o">.</span><span class="n">left</span>
+<span class="gp">... </span> <span class="o">.</span><span class="n">bind</span><span class="p">(</span><span class="k">lambda</span> <span class="n">n</span><span class="p">:</span> <span class="n">n</span><span class="o">.</span><span class="n">left</span><span class="p">)</span>
+<span class="gp">... </span> <span class="o">.</span><span class="n">bind</span><span class="p">(</span><span class="k">lambda</span> <span class="n">n</span><span class="p">:</span> <span class="n">n</span><span class="o">.</span><span class="n">right</span><span class="p">)</span>
+<span class="gp">... </span> <span class="o">.</span><span class="n">bind</span><span class="p">(</span><span class="k">lambda</span> <span class="n">n</span><span class="p">:</span> <span class="n">n</span><span class="o">.</span><span class="n">left</span><span class="p">)</span>
+<span class="gp">... </span> <span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">n</span><span class="p">:</span> <span class="n">n</span><span class="o">.</span><span class="n">value</span> <span class="o">*</span> <span class="mi">2</span><span class="p">)</span>
+<span class="gp">... </span> <span class="o">.</span><span class="n">get_or</span><span class="p">(</span><span class="mi">0</span><span class="p">))</span>
+<span class="go">0</span>
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="p">(</span><span class="n">nopt</span><span class="o">.</span><span class="n">left</span>
+<span class="gp">... </span> <span class="o">.</span><span class="n">pluck_attr</span><span class="p">(</span><span class="s1">&#39;left&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">join</span><span class="p">()</span>
+<span class="gp">... </span> <span class="o">.</span><span class="n">pluck_attr</span><span class="p">(</span><span class="s1">&#39;right&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">join</span><span class="p">()</span>
+<span class="gp">... </span> <span class="o">.</span><span class="n">pluck_attr</span><span class="p">(</span><span class="s1">&#39;left&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">join</span><span class="p">()</span>
+<span class="gp">... </span> <span class="o">.</span><span class="n">pluck_attr</span><span class="p">(</span><span class="s1">&#39;value&#39;</span><span class="p">)</span>
+<span class="gp">... </span> <span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">v</span><span class="p">:</span> <span class="n">v</span> <span class="o">*</span> <span class="mi">2</span><span class="p">)</span>
+<span class="gp">... </span> <span class="o">.</span><span class="n">get_or</span><span class="p">(</span><span class="mi">0</span><span class="p">))</span>
+<span class="go">0</span>
+</pre></div>
+</div>
+<p>And you can use Optional to handle the original TreeNode.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">n</span> <span class="o">=</span> <span class="n">TreeNode</span><span class="p">(</span><span class="mi">30</span><span class="p">,</span> <span class="n">TreeNode</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="n">TreeNode</span><span class="p">(</span><span class="mi">2</span><span class="p">)))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="p">(</span><span class="n">Optional</span><span class="o">.</span><span class="n">value_noneable</span><span class="p">(</span><span class="n">n</span><span class="o">.</span><span class="n">left</span><span class="p">)</span>
+<span class="gp">... </span> <span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">n</span><span class="p">:</span> <span class="n">n</span><span class="o">.</span><span class="n">left</span><span class="p">)</span><span class="o">.</span><span class="n">join_noneable</span><span class="p">()</span>
+<span class="gp">... </span> <span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">n</span><span class="p">:</span> <span class="n">n</span><span class="o">.</span><span class="n">right</span><span class="p">)</span><span class="o">.</span><span class="n">join_noneable</span><span class="p">()</span>
+<span class="gp">... </span> <span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">n</span><span class="p">:</span> <span class="n">n</span><span class="o">.</span><span class="n">left</span><span class="p">)</span><span class="o">.</span><span class="n">join_noneable</span><span class="p">()</span>
+<span class="gp">... </span> <span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">n</span><span class="p">:</span> <span class="n">n</span><span class="o">.</span><span class="n">value</span> <span class="o">*</span> <span class="mi">2</span><span class="p">)</span>
+<span class="gp">... </span> <span class="o">.</span><span class="n">get_or</span><span class="p">(</span><span class="mi">0</span><span class="p">))</span>
+<span class="go">0</span>
+</pre></div>
+</div>
+<p>It’s more elegant to have functions return Optional rather than None or
+other special value.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="k">def</span> <span class="nf">get_right_opt</span><span class="p">(</span><span class="n">tn</span><span class="p">):</span>
+<span class="gp">... </span>    <span class="k">if</span> <span class="n">tn</span><span class="o">.</span><span class="n">right</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+<span class="gp">... </span>        <span class="k">return</span> <span class="n">Nothing</span>
+<span class="gp">... </span>    <span class="k">return</span> <span class="n">Some</span><span class="p">(</span><span class="n">tn</span><span class="o">.</span><span class="n">right</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="k">def</span> <span class="nf">get_left_opt</span><span class="p">(</span><span class="n">tn</span><span class="p">):</span>
+<span class="gp">... </span>    <span class="k">if</span> <span class="n">tn</span><span class="o">.</span><span class="n">left</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+<span class="gp">... </span>        <span class="k">return</span> <span class="n">Nothing</span>
+<span class="gp">... </span>    <span class="k">return</span> <span class="n">Some</span><span class="p">(</span><span class="n">tn</span><span class="o">.</span><span class="n">left</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="p">(</span><span class="n">Optional</span><span class="o">.</span><span class="n">value_noneable</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
+<span class="gp">... </span> <span class="o">.</span><span class="n">bind</span><span class="p">(</span><span class="n">get_left_opt</span><span class="p">)</span>
+<span class="gp">... </span> <span class="o">.</span><span class="n">bind</span><span class="p">(</span><span class="n">get_left_opt</span><span class="p">)</span>
+<span class="gp">... </span> <span class="o">.</span><span class="n">bind</span><span class="p">(</span><span class="n">get_right_opt</span><span class="p">)</span>
+<span class="gp">... </span> <span class="o">.</span><span class="n">bind</span><span class="p">(</span><span class="n">get_left_opt</span><span class="p">)</span>
+<span class="gp">... </span> <span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">n</span><span class="p">:</span> <span class="n">n</span><span class="o">.</span><span class="n">value</span> <span class="o">*</span> <span class="mi">2</span><span class="p">)</span>
+<span class="gp">... </span> <span class="o">.</span><span class="n">get_or</span><span class="p">(</span><span class="mi">0</span><span class="p">))</span>
+<span class="go">0</span>
+</pre></div>
+</div>
+<p>You can create an Optional function with these decorator.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="nd">@Optional</span><span class="o">.</span><span class="n">noneable</span>
+<span class="gp">... </span><span class="k">def</span> <span class="nf">get_first</span><span class="p">(</span><span class="n">l</span><span class="p">):</span>
+<span class="gp">... </span>    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">l</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+<span class="gp">... </span>        <span class="k">return</span> <span class="n">l</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+<span class="gp">... </span>    <span class="k">return</span> <span class="kc">None</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">get_first</span><span class="p">([</span><span class="mi">3</span><span class="p">,</span><span class="mi">4</span><span class="p">,</span><span class="mi">5</span><span class="p">])</span>
+<span class="go">Some(3)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">get_first</span><span class="p">([])</span>
+<span class="go">Nothing</span>
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="nd">@Optional</span><span class="o">.</span><span class="n">exceptable</span><span class="p">(</span><span class="ne">IndexError</span><span class="p">)</span>
+<span class="gp">... </span><span class="k">def</span> <span class="nf">get_first</span><span class="p">(</span><span class="n">l</span><span class="p">):</span>
+<span class="gp">... </span>    <span class="k">return</span> <span class="n">l</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">get_first</span><span class="p">([</span><span class="mi">3</span><span class="p">,</span><span class="mi">4</span><span class="p">,</span><span class="mi">5</span><span class="p">])</span>
+<span class="go">Some(3)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">get_first</span><span class="p">([])</span>
+<span class="go">Nothing</span>
+</pre></div>
+</div>
+</dd></dl>
+
 </div>
 
 

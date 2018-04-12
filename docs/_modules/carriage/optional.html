@@ -1,0 +1,789 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>carriage.optional &#8212; carriage 0.1.6 documentation</title>
+    <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" src="../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for carriage.optional</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">inspect</span>
+<span class="kn">from</span> <span class="nn">abc</span> <span class="k">import</span> <span class="n">abstractmethod</span><span class="p">,</span> <span class="n">abstractproperty</span>
+<span class="kn">from</span> <span class="nn">functools</span> <span class="k">import</span> <span class="n">wraps</span>
+
+<span class="kn">from</span> <span class="nn">.monad</span> <span class="k">import</span> <span class="n">Monad</span>
+
+
+<span class="k">class</span> <span class="nc">NothingError</span><span class="p">(</span><span class="ne">AttributeError</span><span class="p">):</span>
+    <span class="k">pass</span>
+
+
+<div class="viewcode-block" id="Optional"><a class="viewcode-back" href="../../api.html#carriage.Optional">[docs]</a><span class="k">class</span> <span class="nc">Optional</span><span class="p">(</span><span class="n">Monad</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;An type for handling special value or exception.</span>
+
+<span class="sd">    Create Optional from a function call that may raise exception.</span>
+
+<span class="sd">    &gt;&gt;&gt; def divide(a, b):</span>
+<span class="sd">    ...     return a / b</span>
+<span class="sd">    &gt;&gt;&gt; Optional.call_exceptable(divide, 2, 4)</span>
+<span class="sd">    Some(0.5)</span>
+<span class="sd">    &gt;&gt;&gt; Optional.call_exceptable(divide, 2, 0)</span>
+<span class="sd">    Nothing</span>
+
+<span class="sd">    Create Optional from a value that may be None.</span>
+
+<span class="sd">    &gt;&gt;&gt; adict = {&#39;a&#39;: 1, &#39;b&#39;: 2, &#39;c&#39;: 3}</span>
+<span class="sd">    &gt;&gt;&gt; Optional.value_noneable(adict.get(&#39;c&#39;))</span>
+<span class="sd">    Some(3)</span>
+<span class="sd">    &gt;&gt;&gt; Optional.value_noneable(adict.get(&#39;d&#39;))</span>
+<span class="sd">    Nothing</span>
+
+
+<span class="sd">    Escape from if hell of handling None value or exception. </span>
+
+<span class="sd">    &gt;&gt;&gt; class TreeNode:</span>
+<span class="sd">    ...     def __init__(self, value, left=None, right=None):</span>
+<span class="sd">    ...         self.value = value</span>
+<span class="sd">    ...         self.left = left</span>
+<span class="sd">    ...         self.right = right</span>
+
+<span class="sd">    &gt;&gt;&gt; n = TreeNode(30, TreeNode(5, TreeNode(2)))</span>
+
+<span class="sd">    It seem convenient to traversal in tree.</span>
+<span class="sd">    &gt;&gt;&gt; n.left.left.value</span>
+<span class="sd">    2</span>
+
+<span class="sd">    But both ``left`` and ``right`` might be None. You should take care of</span>
+<span class="sd">    that.</span>
+
+<span class="sd">    &gt;&gt;&gt; result = 0</span>
+<span class="sd">    &gt;&gt;&gt; if n.left is not None:</span>
+<span class="sd">    ...     if n.left.left is not None:</span>
+<span class="sd">    ...         if n.left.left.right is not None:</span>
+<span class="sd">    ...             if n.left.left.right.left is not None:</span>
+<span class="sd">    ...                 result = n.left.left.right.left.value * 2</span>
+<span class="sd">    &gt;&gt;&gt; result</span>
+<span class="sd">    0</span>
+
+
+<span class="sd">    Now let&#39;s replace Noneable value with Optional.</span>
+
+<span class="sd">    &gt;&gt;&gt; class TreeNodeOpt:</span>
+<span class="sd">    ...     def __init__(self, value, left=None, right=None):</span>
+<span class="sd">    ...         self.value = value</span>
+<span class="sd">    ...         self.left = Some(left) if left is not None else Nothing</span>
+<span class="sd">    ...         self.right = Some(left) if left is not None else Nothing</span>
+
+<span class="sd">    &gt;&gt;&gt; nopt = TreeNodeOpt(30, TreeNodeOpt(5, TreeNodeOpt(2)))</span>
+<span class="sd">    &gt;&gt;&gt; (nopt.left</span>
+<span class="sd">    ...  .bind(lambda n: n.left)</span>
+<span class="sd">    ...  .map(lambda n: n.value)</span>
+<span class="sd">    ...  .get_or())</span>
+<span class="sd">    2</span>
+
+<span class="sd">    It seems getting harder to get a value, but actually you are now free from</span>
+<span class="sd">    having the risk of getting attribute from None. And you don&#39;t have to build</span>
+<span class="sd">    a big, nested if statement for handling it.</span>
+
+<span class="sd">    &gt;&gt;&gt; (nopt.left</span>
+<span class="sd">    ...  .bind(lambda n: n.left)</span>
+<span class="sd">    ...  .bind(lambda n: n.right)</span>
+<span class="sd">    ...  .bind(lambda n: n.left)</span>
+<span class="sd">    ...  .map(lambda n: n.value * 2)</span>
+<span class="sd">    ...  .get_or(0))</span>
+<span class="sd">    0</span>
+
+<span class="sd">    &gt;&gt;&gt; (nopt.left</span>
+<span class="sd">    ...  .pluck_attr(&#39;left&#39;).join()</span>
+<span class="sd">    ...  .pluck_attr(&#39;right&#39;).join()</span>
+<span class="sd">    ...  .pluck_attr(&#39;left&#39;).join()</span>
+<span class="sd">    ...  .pluck_attr(&#39;value&#39;)</span>
+<span class="sd">    ...  .map(lambda v: v * 2)</span>
+<span class="sd">    ...  .get_or(0))</span>
+<span class="sd">    0</span>
+
+<span class="sd">    And you can use Optional to handle the original TreeNode.</span>
+
+<span class="sd">    &gt;&gt;&gt; n = TreeNode(30, TreeNode(5, TreeNode(2)))</span>
+<span class="sd">    &gt;&gt;&gt; (Optional.value_noneable(n.left)</span>
+<span class="sd">    ...  .map(lambda n: n.left).join_noneable()</span>
+<span class="sd">    ...  .map(lambda n: n.right).join_noneable()</span>
+<span class="sd">    ...  .map(lambda n: n.left).join_noneable()</span>
+<span class="sd">    ...  .map(lambda n: n.value * 2)</span>
+<span class="sd">    ...  .get_or(0))</span>
+<span class="sd">    0</span>
+
+<span class="sd">    It&#39;s more elegant to have functions return Optional rather than None or</span>
+<span class="sd">    other special value.</span>
+
+<span class="sd">    &gt;&gt;&gt; def get_right_opt(tn):</span>
+<span class="sd">    ...     if tn.right is None:</span>
+<span class="sd">    ...         return Nothing</span>
+<span class="sd">    ...     return Some(tn.right)</span>
+
+<span class="sd">    &gt;&gt;&gt; def get_left_opt(tn):</span>
+<span class="sd">    ...     if tn.left is None:</span>
+<span class="sd">    ...         return Nothing</span>
+<span class="sd">    ...     return Some(tn.left)</span>
+
+<span class="sd">    &gt;&gt;&gt; (Optional.value_noneable(n)</span>
+<span class="sd">    ...  .bind(get_left_opt)</span>
+<span class="sd">    ...  .bind(get_left_opt)</span>
+<span class="sd">    ...  .bind(get_right_opt)</span>
+<span class="sd">    ...  .bind(get_left_opt)</span>
+<span class="sd">    ...  .map(lambda n: n.value * 2)</span>
+<span class="sd">    ...  .get_or(0))</span>
+<span class="sd">    0</span>
+
+<span class="sd">    You can create an Optional function with these decorator.</span>
+
+
+<span class="sd">    &gt;&gt;&gt; @Optional.noneable</span>
+<span class="sd">    ... def get_first(l):</span>
+<span class="sd">    ...     if len(l) &gt; 0:</span>
+<span class="sd">    ...         return l[0]</span>
+<span class="sd">    ...     return None</span>
+<span class="sd">    &gt;&gt;&gt; get_first([3,4,5])</span>
+<span class="sd">    Some(3)</span>
+<span class="sd">    &gt;&gt;&gt; get_first([])</span>
+<span class="sd">    Nothing</span>
+
+<span class="sd">    &gt;&gt;&gt; @Optional.exceptable(IndexError)</span>
+<span class="sd">    ... def get_first(l):</span>
+<span class="sd">    ...     return l[0]</span>
+<span class="sd">    &gt;&gt;&gt; get_first([3,4,5])</span>
+<span class="sd">    Some(3)</span>
+<span class="sd">    &gt;&gt;&gt; get_first([])</span>
+<span class="sd">    Nothing</span>
+
+
+
+
+
+
+
+<span class="sd">    &#39;&#39;&#39;</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">_base_type</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">Optional</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">call_exceptable</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">getter</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="n">errors</span><span class="o">=</span><span class="ne">Exception</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">value</span> <span class="o">=</span> <span class="n">getter</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="k">except</span> <span class="n">errors</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">Nothing</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">Some</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+
+    <span class="n">ecall</span> <span class="o">=</span> <span class="n">call_exceptable</span>
+    <span class="n">expcall</span> <span class="o">=</span> <span class="n">call_exceptable</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">value_noneable</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">value</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">Nothing</span>
+        <span class="k">return</span> <span class="n">Some</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+
+    <span class="n">noneval</span> <span class="o">=</span> <span class="n">value_noneable</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">noneable</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">f</span><span class="p">):</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">callable</span><span class="p">(</span><span class="n">f</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;&#39;f&#39; should be a callable: </span><span class="si">{f!r}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="nd">@wraps</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+        <span class="k">def</span> <span class="nf">wrapper</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+            <span class="n">res</span> <span class="o">=</span> <span class="n">f</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">res</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">Nothing</span>
+            <span class="k">return</span> <span class="n">Some</span><span class="p">(</span><span class="n">res</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">wrapper</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">exceptable</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">f_or_error</span><span class="p">,</span> <span class="o">*</span><span class="n">more_errors</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">inspect</span><span class="o">.</span><span class="n">isclass</span><span class="p">(</span><span class="n">f_or_error</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">issubclass</span><span class="p">(</span><span class="n">f_or_error</span><span class="p">,</span> <span class="ne">Exception</span><span class="p">):</span>
+            <span class="n">errors</span> <span class="o">=</span> <span class="p">(</span><span class="n">f_or_error</span><span class="p">,)</span> <span class="o">+</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">more_errors</span><span class="p">)</span>
+
+            <span class="k">def</span> <span class="nf">deco</span><span class="p">(</span><span class="n">f</span><span class="p">):</span>
+                <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_wrap_exceptable</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">errors</span><span class="p">)</span>
+
+            <span class="k">return</span> <span class="n">deco</span>
+        <span class="k">if</span> <span class="n">callable</span><span class="p">(</span><span class="n">f_or_error</span><span class="p">):</span>
+            <span class="n">f</span> <span class="o">=</span> <span class="n">f_or_error</span>
+            <span class="n">errors</span> <span class="o">=</span> <span class="ne">Exception</span>
+            <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_wrap_exceptable</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">errors</span><span class="p">)</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">_wrap_exceptable</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">f</span><span class="p">,</span> <span class="n">errors</span><span class="p">):</span>
+        <span class="nd">@wraps</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+        <span class="k">def</span> <span class="nf">wrapper</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">res</span> <span class="o">=</span> <span class="n">f</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+            <span class="k">except</span> <span class="n">errors</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">Nothing</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">Some</span><span class="p">(</span><span class="n">res</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">wrapper</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">unit</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">Some</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span> <span class="nf">join_noneable</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span>
+
+    <span class="nd">@abstractproperty</span>
+    <span class="k">def</span> <span class="nf">value</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span>
+
+    <span class="nd">@abstractproperty</span>
+    <span class="k">def</span> <span class="nf">_value_for_cmp</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span>
+
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span> <span class="nf">get_or</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">default</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span>
+
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span> <span class="nf">get_or_none</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span>
+
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span> <span class="nf">is_some</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span>
+
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span> <span class="nf">is_nothing</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">pluck</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">d</span><span class="p">:</span> <span class="n">d</span><span class="p">[</span><span class="n">key</span><span class="p">])</span>
+
+    <span class="k">def</span> <span class="nf">pluck_opt</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">flat_map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">d</span><span class="p">:</span> <span class="n">Some</span><span class="p">(</span><span class="n">d</span><span class="p">[</span><span class="n">key</span><span class="p">])</span>
+                             <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">d</span> <span class="k">else</span> <span class="n">Nothing</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">pluck_attr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attr</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">obj</span><span class="p">:</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">attr</span><span class="p">))</span></div>
+
+
+<span class="k">class</span> <span class="nc">NothingCls</span><span class="p">(</span><span class="n">Optional</span><span class="p">):</span>
+    <span class="vm">__slots__</span> <span class="o">=</span> <span class="p">()</span>
+    <span class="n">__instance</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="k">def</span> <span class="nf">__new__</span><span class="p">(</span><span class="bp">cls</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">cls</span><span class="o">.</span><span class="n">__instance</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">cls</span><span class="o">.</span><span class="n">__instance</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__new__</span><span class="p">(</span><span class="bp">cls</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">__instance</span>
+
+    <span class="k">def</span> <span class="nf">flat_map</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">maybe_action</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">Nothing</span>
+
+    <span class="k">def</span> <span class="nf">map</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">action</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">Nothing</span>
+
+    <span class="k">def</span> <span class="nf">then</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">maybe_value</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">Nothing</span>
+
+    <span class="k">def</span> <span class="nf">flatten</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">Nothing</span>
+
+    <span class="k">def</span> <span class="nf">join_noneable</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">Nothing</span>
+
+    <span class="k">def</span> <span class="nf">ap</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">maybe_value</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">Nothing</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">value</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="n">NothingError</span><span class="p">(</span><span class="s1">&#39;Nothing here&#39;</span><span class="p">)</span>
+
+    <span class="n">_value_for_cmp</span> <span class="o">=</span> <span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">get_or</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">else_value</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">else_value</span>
+
+    <span class="k">def</span> <span class="nf">get_or_none</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="k">def</span> <span class="nf">is_some</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="kc">False</span>
+
+    <span class="k">def</span> <span class="nf">is_nothing</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="kc">True</span>
+
+    <span class="k">def</span> <span class="nf">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="mi">0</span>
+
+    <span class="k">def</span> <span class="nf">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span>
+
+    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s1">&#39;Nothing&#39;</span>
+
+    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s1">&#39;Nothing&#39;</span>
+
+
+<span class="n">NothingCls</span><span class="o">.</span><span class="vm">__name__</span> <span class="o">=</span> <span class="s1">&#39;Nothing&#39;</span>
+
+
+<span class="n">Nothing</span> <span class="o">=</span> <span class="n">NothingCls</span><span class="p">()</span>
+
+
+<span class="k">def</span> <span class="nf">identity</span><span class="p">(</span><span class="n">_</span><span class="p">):</span> <span class="k">return</span> <span class="n">_</span>
+
+
+<span class="k">class</span> <span class="nc">Some</span><span class="p">(</span><span class="n">Optional</span><span class="p">):</span>
+    <span class="vm">__slots__</span> <span class="o">=</span> <span class="s1">&#39;_some_value&#39;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_some_value</span> <span class="o">=</span> <span class="n">value</span>
+
+    <span class="k">def</span> <span class="nf">flat_map</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">maybe_action</span><span class="p">):</span>
+        <span class="n">value</span> <span class="o">=</span> <span class="n">maybe_action</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_some_value</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">Optional</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">value</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;function should return a Optional&#39;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">map</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">action</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">Some</span><span class="p">(</span><span class="n">action</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_some_value</span><span class="p">))</span>
+
+    <span class="k">def</span> <span class="nf">then</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">maybe_value</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">maybe_value</span>
+
+    <span class="k">def</span> <span class="nf">flatten</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_some_value</span><span class="p">,</span> <span class="n">Optional</span><span class="p">):</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_some_value</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;value should be a Optional&#39;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">join_noneable</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_some_value</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">Nothing</span>
+        <span class="k">return</span> <span class="bp">self</span>
+
+    <span class="k">def</span> <span class="nf">ap</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">maybe_value</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">maybe_value</span><span class="o">.</span><span class="n">is_some</span><span class="p">():</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_some_value</span><span class="p">(</span><span class="n">maybe_value</span><span class="o">.</span><span class="n">get</span><span class="p">())</span>
+        <span class="k">elif</span> <span class="n">maybe_value</span><span class="o">.</span><span class="n">is_nothing</span><span class="p">():</span>
+            <span class="k">return</span> <span class="n">Nothing</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">value</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_some_value</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">_value_for_cmp</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_some_value</span><span class="p">,)</span>
+
+    <span class="k">def</span> <span class="nf">get_or</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">else_value</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_some_value</span>
+
+    <span class="k">def</span> <span class="nf">get_or_none</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_some_value</span>
+
+    <span class="k">def</span> <span class="nf">is_some</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="kc">True</span>
+
+    <span class="k">def</span> <span class="nf">is_nothing</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="kc">False</span>
+
+    <span class="k">def</span> <span class="nf">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="mi">1</span>
+
+    <span class="k">def</span> <span class="nf">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">yield</span> <span class="bp">self</span><span class="o">.</span><span class="n">_some_value</span>
+
+    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">f</span><span class="s1">&#39;Some(</span><span class="si">{self._some_value!r}</span><span class="s1">)&#39;</span>
+
+    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">f</span><span class="s1">&#39;Some(</span><span class="si">{self._some_value!s}</span><span class="s1">)&#39;</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">value_do</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">SomeOp</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_some_value</span><span class="p">)</span>
+
+
+<span class="k">class</span> <span class="nc">SomeOp</span><span class="p">(</span><span class="n">Some</span><span class="p">):</span>
+
+    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">Some</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_some_value</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">))</span>
+
+    <span class="k">def</span> <span class="nf">__getattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_some_value</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">Some</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_some_value</span><span class="p">,</span> <span class="n">name</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">Nothing</span>
+
+    <span class="k">def</span> <span class="nf">__setattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">v</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">name</span> <span class="o">==</span> <span class="n">f</span><span class="s2">&quot;_some_value&quot;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__setattr__</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_some_value</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">Some</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_some_value</span><span class="p">[</span><span class="n">key</span><span class="p">])</span>
+
+    <span class="k">def</span> <span class="nf">__setitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_some_value</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+
+    <span class="k">def</span> <span class="nf">__delitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+        <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">_some_value</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+
+    <span class="k">def</span> <span class="nf">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_some_value</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">iter</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_some_value</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__reversed__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">Some</span><span class="p">(</span><span class="nb">reversed</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_some_value</span><span class="p">))</span>
+
+    <span class="c1"># def __missing__(self, key):</span>
+        <span class="c1"># klass = self._some_value.__class__</span>
+        <span class="c1"># if hasattr(klass, &#39;__missing__&#39;) and \</span>
+        <span class="c1">#         callable(getattr(klass, &#39;__missing__&#39;)):</span>
+        <span class="c1">#     return Some(self._some_value.__missing__(key))</span>
+
+        <span class="c1"># return Nothing</span>
+
+    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">f</span><span class="s2">&quot;{type(self).__name__}(</span><span class="si">{self._some_value!r}</span><span class="s2">)&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">f</span><span class="s2">&quot;{type(self).__name__}(</span><span class="si">{self._some_value!s}</span><span class="s2">)&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__int__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_some_value</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__float__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_some_value</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__complex__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">complex</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_some_value</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__oct__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">oct</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_some_value</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__hex__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">hex</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_some_value</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__index__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_some_value</span><span class="o">.</span><span class="fm">__index__</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">__trunc__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_some_value</span><span class="o">.</span><span class="n">__trunc__</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">__dir__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">dir</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_some_value</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__add__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">Some</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_some_value</span> <span class="o">+</span> <span class="n">other</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__sub__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">Some</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_some_value</span> <span class="o">-</span> <span class="n">other</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__mul__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">Some</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_some_value</span> <span class="o">*</span> <span class="n">other</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__floordiv__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">Some</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_some_value</span> <span class="o">//</span> <span class="n">other</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__div__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">Some</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_some_value</span> <span class="o">/</span> <span class="n">other</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__mod__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">Some</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_some_value</span> <span class="o">%</span> <span class="n">other</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__divmod__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">Some</span><span class="p">(</span><span class="nb">divmod</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_some_value</span><span class="p">,</span> <span class="n">other</span><span class="p">))</span>
+
+    <span class="k">def</span> <span class="nf">__pow__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">Some</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_some_value</span> <span class="o">**</span> <span class="n">other</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__lshift__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">Some</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_some_value</span> <span class="o">&lt;&lt;</span> <span class="n">other</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__rshift__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">Some</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_some_value</span> <span class="o">&gt;&gt;</span> <span class="n">other</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__and__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">Some</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_some_value</span> <span class="o">&amp;</span> <span class="n">other</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__or__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">Some</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_some_value</span> <span class="o">|</span> <span class="n">other</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__xor__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">Some</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_some_value</span> <span class="o">^</span> <span class="n">other</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__radd__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">Some</span><span class="p">(</span><span class="n">other</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_some_value</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__rsub__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">Some</span><span class="p">(</span><span class="n">other</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">_some_value</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__rmul__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">Some</span><span class="p">(</span><span class="n">other</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">_some_value</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__rfloordiv__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">Some</span><span class="p">(</span><span class="n">other</span> <span class="o">//</span> <span class="bp">self</span><span class="o">.</span><span class="n">_some_value</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__rdiv__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">Some</span><span class="p">(</span><span class="n">other</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">_some_value</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__rmod__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">Some</span><span class="p">(</span><span class="n">other</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">_some_value</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__rdivmod__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">Some</span><span class="p">(</span><span class="nb">divmod</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_some_value</span><span class="p">))</span>
+
+    <span class="k">def</span> <span class="nf">__rpow__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">Some</span><span class="p">(</span><span class="n">other</span> <span class="o">**</span> <span class="bp">self</span><span class="o">.</span><span class="n">_some_value</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__rlshift__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">Some</span><span class="p">(</span><span class="n">other</span> <span class="o">&lt;&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">_some_value</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__rrshift__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">Some</span><span class="p">(</span><span class="n">other</span> <span class="o">&gt;&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">_some_value</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__rand__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">Some</span><span class="p">(</span><span class="n">other</span> <span class="o">&amp;</span> <span class="bp">self</span><span class="o">.</span><span class="n">_some_value</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__ror__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">Some</span><span class="p">(</span><span class="n">other</span> <span class="o">|</span> <span class="bp">self</span><span class="o">.</span><span class="n">_some_value</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__rxor__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">Some</span><span class="p">(</span><span class="n">other</span> <span class="o">^</span> <span class="bp">self</span><span class="o">.</span><span class="n">_some_value</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__iadd__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_some_value</span> <span class="o">+=</span> <span class="n">other</span>
+        <span class="k">return</span> <span class="bp">self</span>
+
+    <span class="k">def</span> <span class="nf">__isub__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_some_value</span> <span class="o">-=</span> <span class="n">other</span>
+        <span class="k">return</span> <span class="bp">self</span>
+
+    <span class="k">def</span> <span class="nf">__imul__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_some_value</span> <span class="o">*=</span> <span class="n">other</span>
+        <span class="k">return</span> <span class="bp">self</span>
+
+    <span class="k">def</span> <span class="nf">__ifloordiv__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_some_value</span> <span class="o">//=</span> <span class="n">other</span>
+        <span class="k">return</span> <span class="bp">self</span>
+
+    <span class="k">def</span> <span class="nf">__idiv__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_some_value</span> <span class="o">/=</span> <span class="n">other</span>
+        <span class="k">return</span> <span class="bp">self</span>
+
+    <span class="k">def</span> <span class="nf">__imod__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_some_value</span> <span class="o">%=</span> <span class="n">other</span>
+        <span class="k">return</span> <span class="bp">self</span>
+
+    <span class="k">def</span> <span class="nf">__ipow__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_some_value</span> <span class="o">**=</span> <span class="n">other</span>
+        <span class="k">return</span> <span class="bp">self</span>
+
+    <span class="k">def</span> <span class="nf">__ilshift__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_some_value</span> <span class="o">&lt;&lt;=</span> <span class="n">other</span>
+        <span class="k">return</span> <span class="bp">self</span>
+
+    <span class="k">def</span> <span class="nf">__irshift__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_some_value</span> <span class="o">&gt;&gt;=</span> <span class="n">other</span>
+        <span class="k">return</span> <span class="bp">self</span>
+
+    <span class="k">def</span> <span class="nf">__iand__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_some_value</span> <span class="o">&amp;=</span> <span class="n">other</span>
+        <span class="k">return</span> <span class="bp">self</span>
+
+    <span class="k">def</span> <span class="nf">__ior__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_some_value</span> <span class="o">|=</span> <span class="n">other</span>
+        <span class="k">return</span> <span class="bp">self</span>
+
+    <span class="k">def</span> <span class="nf">__ixor__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_some_value</span> <span class="o">^=</span> <span class="n">other</span>
+        <span class="k">return</span> <span class="bp">self</span>
+
+
+<span class="k">class</span> <span class="nc">SomeOptionalNone</span><span class="p">(</span><span class="n">Some</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_some_value</span> <span class="o">=</span> <span class="n">value</span>
+
+    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">Optional</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_some_value</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">))</span>
+
+    <span class="k">def</span> <span class="nf">__getattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+        <span class="n">attr</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_some_value</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">callable</span><span class="p">(</span><span class="n">attr</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">SomeOptionalNone</span><span class="p">(</span><span class="n">attr</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">Optional</span><span class="p">(</span><span class="n">attr</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">Optional</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_some_value</span><span class="p">[</span><span class="n">key</span><span class="p">])</span>
+
+    <span class="k">def</span> <span class="nf">__reversed__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">Optional</span><span class="p">(</span><span class="nb">reversed</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_some_value</span><span class="p">))</span>
+
+    <span class="k">def</span> <span class="nf">__missing__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+        <span class="c1"># TODO: review</span>
+        <span class="n">klass</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_some_value</span><span class="o">.</span><span class="vm">__class__</span>
+        <span class="k">if</span> <span class="p">(</span><span class="nb">hasattr</span><span class="p">(</span><span class="n">klass</span><span class="p">,</span> <span class="s1">&#39;__missing__&#39;</span><span class="p">)</span> <span class="ow">and</span>
+                <span class="n">callable</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="n">klass</span><span class="p">,</span> <span class="s1">&#39;__missing__&#39;</span><span class="p">))):</span>
+            <span class="k">return</span> <span class="n">Optional</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_some_value</span><span class="o">.</span><span class="fm">__missing__</span><span class="p">(</span><span class="n">key</span><span class="p">))</span>
+
+        <span class="k">return</span> <span class="n">Nothing</span>
+
+    <span class="k">def</span> <span class="nf">__add__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">Optional</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_some_value</span> <span class="o">+</span> <span class="n">other</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__sub__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">Optional</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_some_value</span> <span class="o">-</span> <span class="n">other</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__mul__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">Optional</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_some_value</span> <span class="o">*</span> <span class="n">other</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__floordiv__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">Optional</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_some_value</span> <span class="o">//</span> <span class="n">other</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__div__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">Optional</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_some_value</span> <span class="o">/</span> <span class="n">other</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__mod__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">Optional</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_some_value</span> <span class="o">%</span> <span class="n">other</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__divmod__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">Optional</span><span class="p">(</span><span class="nb">divmod</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_some_value</span><span class="p">,</span> <span class="n">other</span><span class="p">))</span>
+
+    <span class="k">def</span> <span class="nf">__pow__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">Optional</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_some_value</span> <span class="o">**</span> <span class="n">other</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__lshift__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">Optional</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_some_value</span> <span class="o">&lt;&lt;</span> <span class="n">other</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__rshift__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">Optional</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_some_value</span> <span class="o">&gt;&gt;</span> <span class="n">other</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__and__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">Optional</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_some_value</span> <span class="o">&amp;</span> <span class="n">other</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__or__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">Optional</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_some_value</span> <span class="o">|</span> <span class="n">other</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__xor__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">Optional</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_some_value</span> <span class="o">^</span> <span class="n">other</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__radd__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">Optional</span><span class="p">(</span><span class="n">other</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_some_value</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__rsub__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">Optional</span><span class="p">(</span><span class="n">other</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">_some_value</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__rmul__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">Optional</span><span class="p">(</span><span class="n">other</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">_some_value</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__rfloordiv__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">Optional</span><span class="p">(</span><span class="n">other</span> <span class="o">//</span> <span class="bp">self</span><span class="o">.</span><span class="n">_some_value</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__rdiv__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">Optional</span><span class="p">(</span><span class="n">other</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">_some_value</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__rmod__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">Optional</span><span class="p">(</span><span class="n">other</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">_some_value</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__rdivmod__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">Optional</span><span class="p">(</span><span class="nb">divmod</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_some_value</span><span class="p">))</span>
+
+    <span class="k">def</span> <span class="nf">__rpow__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">Optional</span><span class="p">(</span><span class="n">other</span> <span class="o">**</span> <span class="bp">self</span><span class="o">.</span><span class="n">_some_value</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__rlshift__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">Optional</span><span class="p">(</span><span class="n">other</span> <span class="o">&lt;&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">_some_value</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__rrshift__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">Optional</span><span class="p">(</span><span class="n">other</span> <span class="o">&gt;&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">_some_value</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__rand__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">Optional</span><span class="p">(</span><span class="n">other</span> <span class="o">&amp;</span> <span class="bp">self</span><span class="o">.</span><span class="n">_some_value</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__ror__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">Optional</span><span class="p">(</span><span class="n">other</span> <span class="o">|</span> <span class="bp">self</span><span class="o">.</span><span class="n">_some_value</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__rxor__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">Optional</span><span class="p">(</span><span class="n">other</span> <span class="o">^</span> <span class="bp">self</span><span class="o">.</span><span class="n">_some_value</span><span class="p">)</span>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2018, Yen, Tzu-Hsi.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.2</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>
