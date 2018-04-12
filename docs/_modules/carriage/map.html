@@ -290,7 +290,7 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="o">*</span><span class="n">keys_to_delete</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="Map.retain_false"><a class="viewcode-back" href="../../api.html#carriage.Map.retain_false">[docs]</a>    <span class="k">def</span> <span class="nf">retain_false</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pred</span><span class="p">):</span>
-        <span class="sd">&#39;&#39;&#39;Delete key/value pairs not satisfying the predicate and return self</span>
+        <span class="sd">&#39;&#39;&#39;Delete key/value pairs satisfying the predicate and return self</span>
 
 <span class="sd">        &gt;&gt;&gt; m = Map(a=3, b=4, c=5)</span>
 <span class="sd">        &gt;&gt;&gt; m.retain_false(lambda k, v: k == &#39;b&#39; or v == 5)</span>

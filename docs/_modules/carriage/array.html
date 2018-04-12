@@ -34,29 +34,47 @@
 <span class="kn">import</span> <span class="nn">builtins</span>
 <span class="kn">import</span> <span class="nn">collections</span>
 <span class="kn">import</span> <span class="nn">itertools</span> <span class="k">as</span> <span class="nn">itt</span>
+<span class="kn">from</span> <span class="nn">collections</span> <span class="k">import</span> <span class="n">Counter</span><span class="p">,</span> <span class="n">defaultdict</span><span class="p">,</span> <span class="n">deque</span>
 <span class="kn">from</span> <span class="nn">copy</span> <span class="k">import</span> <span class="n">copy</span>
 
 <span class="kn">from</span> <span class="nn">.monad</span> <span class="k">import</span> <span class="n">Monad</span>
 <span class="kn">from</span> <span class="nn">.optional</span> <span class="k">import</span> <span class="n">Nothing</span><span class="p">,</span> <span class="n">Some</span>
 <span class="kn">from</span> <span class="nn">.repr</span> <span class="k">import</span> <span class="n">short_repr</span>
-<span class="kn">from</span> <span class="nn">.row</span> <span class="k">import</span> <span class="n">CurrNext</span><span class="p">,</span> <span class="n">CurrPrev</span><span class="p">,</span> <span class="n">ValueIndex</span>
+<span class="kn">from</span> <span class="nn">.row</span> <span class="k">import</span> <span class="n">CurrNext</span><span class="p">,</span> <span class="n">CurrPrev</span><span class="p">,</span> <span class="n">KeyValues</span><span class="p">,</span> <span class="n">ValueIndex</span>
 
 
 <div class="viewcode-block" id="Array"><a class="viewcode-back" href="../../api.html#carriage.Array">[docs]</a><span class="k">class</span> <span class="nc">Array</span><span class="p">(</span><span class="n">Monad</span><span class="p">):</span>
     <span class="vm">__slots__</span> <span class="o">=</span> <span class="s1">&#39;_items&#39;</span>
 
-    <span class="nd">@classmethod</span>
+<div class="viewcode-block" id="Array.range"><a class="viewcode-back" href="../../api.html#carriage.Array.range">[docs]</a>    <span class="nd">@classmethod</span>
     <span class="k">def</span> <span class="nf">range</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Create a Array from range.</span>
+
+<span class="sd">        &gt;&gt;&gt; Array.range(2, 10, 2).to_list()</span>
+<span class="sd">        [2, 4, 6, 8]</span>
+<span class="sd">        &gt;&gt;&gt; Array.range(3).to_list()</span>
+<span class="sd">        [0, 1, 2]</span>
+<span class="sd">        &#39;&#39;&#39;</span>
         <span class="k">if</span> <span class="n">end</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">start</span><span class="p">,</span> <span class="n">end</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">start</span>
 
-        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">,</span> <span class="n">step</span><span class="p">))</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">,</span> <span class="n">step</span><span class="p">))</span></div>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">_base_type</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">Array</span>
 
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">items</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Create a Array object</span>
+
+<span class="sd">        &gt;&gt;&gt; Array()</span>
+<span class="sd">        Array([])</span>
+<span class="sd">        &gt;&gt;&gt; Array([1, 2, 3])</span>
+<span class="sd">        Array([1, 2, 3])</span>
+<span class="sd">        &gt;&gt;&gt; Array(range(2, 8, 2))</span>
+<span class="sd">        Array([2, 4, 6])</span>
+
+<span class="sd">        &#39;&#39;&#39;</span>
 
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">items</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
             <span class="k">pass</span>
@@ -73,17 +91,210 @@
     <span class="k">def</span> <span class="nf">unit</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">Array</span><span class="p">([</span><span class="n">value</span><span class="p">])</span>
 
-    <span class="k">def</span> <span class="nf">flat_map</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">to_iterable_action</span><span class="p">):</span>
+<div class="viewcode-block" id="Array.to_list"><a class="viewcode-back" href="../../api.html#carriage.Array.to_list">[docs]</a>    <span class="k">def</span> <span class="nf">to_list</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Convert to a list.</span>
+
+<span class="sd">        &gt;&gt;&gt; Array.range(3).to_list()</span>
+<span class="sd">        [0, 1, 2]</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+
+        <span class="k">if</span> <span class="n">copy</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_items</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_items</span><span class="p">[:]</span></div>
+
+<div class="viewcode-block" id="Array.to_series"><a class="viewcode-back" href="../../api.html#carriage.Array.to_series">[docs]</a>    <span class="k">def</span> <span class="nf">to_series</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Convert to a pandas Series</span>
+
+<span class="sd">        &gt;&gt;&gt; Array.range(5, 10, 2).to_series()</span>
+<span class="sd">        0    5</span>
+<span class="sd">        1    7</span>
+<span class="sd">        2    9</span>
+<span class="sd">        dtype: int64</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        pandas.Series</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+        <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Array.to_set"><a class="viewcode-back" href="../../api.html#carriage.Array.to_set">[docs]</a>    <span class="k">def</span> <span class="nf">to_set</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Convert to a set</span>
+
+<span class="sd">        &gt;&gt;&gt; Array([3, 2, 3, 6, 2]).to_set()</span>
+<span class="sd">        {2, 3, 6}</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        set</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">return</span> <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Array.to_dict"><a class="viewcode-back" href="../../api.html#carriage.Array.to_dict">[docs]</a>    <span class="k">def</span> <span class="nf">to_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Convert to a dict</span>
+
+<span class="sd">        &gt;&gt;&gt; Array.range(5, 10, 2).zip_index().to_dict()</span>
+<span class="sd">        {5: 0, 7: 1, 9: 2}</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        dict</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">return</span> <span class="nb">dict</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Array.to_map"><a class="viewcode-back" href="../../api.html#carriage.Array.to_map">[docs]</a>    <span class="k">def</span> <span class="nf">to_map</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Convert to a Map</span>
+
+<span class="sd">        &gt;&gt;&gt; Array.range(5, 10, 2).zip_index().to_map()</span>
+<span class="sd">        Map({5: 0, 7: 1, 9: 2})</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        Map</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="kn">from</span> <span class="nn">.map</span> <span class="k">import</span> <span class="n">Map</span>
+        <span class="k">return</span> <span class="n">Map</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Array.to_stream"><a class="viewcode-back" href="../../api.html#carriage.Array.to_stream">[docs]</a>    <span class="k">def</span> <span class="nf">to_stream</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Convert to a Stream</span>
+
+<span class="sd">        &gt;&gt;&gt; strm = Array.range(5, 8, 2).zip_index().to_stream()</span>
+<span class="sd">        &gt;&gt;&gt; type(strm)</span>
+<span class="sd">        &lt;class &#39;carriage.stream.Stream&#39;&gt;</span>
+<span class="sd">        &gt;&gt;&gt; strm.to_array()</span>
+<span class="sd">        Array([Row(value=5, index=0), Row(value=7, index=1)])</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        Stream</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="kn">from</span> <span class="nn">.stream</span> <span class="k">import</span> <span class="n">Stream</span>
+        <span class="k">return</span> <span class="n">Stream</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Array.map"><a class="viewcode-back" href="../../api.html#carriage.Array.map">[docs]</a>    <span class="k">def</span> <span class="nf">map</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">action</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Create a new Array by applying function to each element</span>
+
+<span class="sd">        &gt;&gt;&gt; Array.range(5, 8).map(lambda x: x * 2)</span>
+<span class="sd">        Array([10, 12, 14])</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        Array</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">return</span> <span class="n">Array</span><span class="p">(</span><span class="n">action</span><span class="p">(</span><span class="n">item</span><span class="p">)</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Array.starmap"><a class="viewcode-back" href="../../api.html#carriage.Array.starmap">[docs]</a>    <span class="k">def</span> <span class="nf">starmap</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">func</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Create a new Array by evaluating function using argument tulpe</span>
+<span class="sd">        from each element. i.e. ``func(*elem)``. It&#39;s convenient that</span>
+<span class="sd">        if all elements in Array are iterable and you want to treat</span>
+<span class="sd">        each element in elemnts as separate argument while calling the</span>
+<span class="sd">        function.</span>
+
+<span class="sd">        &gt;&gt;&gt; Array([(1, 2), (3, 4)]).starmap(lambda a, b: a+b)</span>
+<span class="sd">        Array([3, 7])</span>
+
+<span class="sd">        The map way. Not easy to read and write</span>
+
+<span class="sd">        &gt;&gt;&gt; Array([(1, 2), (3, 4)]).map(lambda a_b: a_b[0]+a_b[1])</span>
+<span class="sd">        Array([3, 7])</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">return</span> <span class="n">Array</span><span class="p">(</span><span class="n">itt</span><span class="o">.</span><span class="n">starmap</span><span class="p">(</span><span class="n">func</span><span class="p">,</span> <span class="bp">self</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="Array.flatten"><a class="viewcode-back" href="../../api.html#carriage.Array.flatten">[docs]</a>    <span class="k">def</span> <span class="nf">flatten</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;flatten each element</span>
+
+<span class="sd">        &gt;&gt;&gt; Array([(1, 2), (3, 4)]).flatten()</span>
+<span class="sd">        Array([1, 2, 3, 4])</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        Array</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">return</span> <span class="n">Array</span><span class="p">(</span><span class="n">itt</span><span class="o">.</span><span class="n">chain</span><span class="o">.</span><span class="n">from_iterable</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_items</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="Array.flat_map"><a class="viewcode-back" href="../../api.html#carriage.Array.flat_map">[docs]</a>    <span class="k">def</span> <span class="nf">flat_map</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">to_iterable_action</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Apply function to each element, then flatten the result.</span>
+
+<span class="sd">        &gt;&gt;&gt; Array([1, 2, 3]).flat_map(range)</span>
+<span class="sd">        Array([0, 0, 1, 0, 1, 2])</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        Array</span>
+<span class="sd">        &#39;&#39;&#39;</span>
         <span class="k">return</span> <span class="n">Array</span><span class="p">(</span>
             <span class="n">itt</span><span class="o">.</span><span class="n">chain</span><span class="o">.</span><span class="n">from_iterable</span><span class="p">(</span>
                 <span class="n">to_iterable_action</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
-                <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_items</span><span class="p">))</span>
+                <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_items</span><span class="p">))</span></div>
 
-    <span class="k">def</span> <span class="nf">map</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">action</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">Array</span><span class="p">(</span><span class="n">action</span><span class="p">(</span><span class="n">item</span><span class="p">)</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_items</span><span class="p">)</span>
+<div class="viewcode-block" id="Array.tap"><a class="viewcode-back" href="../../api.html#carriage.Array.tap">[docs]</a>    <span class="k">def</span> <span class="nf">tap</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tag</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">n</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">msg_format</span><span class="o">=</span><span class="s1">&#39;</span><span class="si">{tag}</span><span class="s1">:</span><span class="si">{index}</span><span class="s1">: </span><span class="si">{elem}</span><span class="s1">&#39;</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;A debugging tool. This method create a new Array with the same</span>
+<span class="sd">        elements. While creating it, it print first n elements.</span>
 
-    <span class="k">def</span> <span class="nf">flatten</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">Array</span><span class="p">(</span><span class="n">itt</span><span class="o">.</span><span class="n">chain</span><span class="o">.</span><span class="n">from_iterable</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_items</span><span class="p">))</span>
+
+<span class="sd">        &gt;&gt;&gt; (Array.range(3).tap(&#39;orig&#39;)</span>
+<span class="sd">        ...  .map(lambda x: x * 2).tap(&#39;x2&#39;)</span>
+<span class="sd">        ...  .accumulate(lambda a, b: a + b)</span>
+<span class="sd">        ...  .tap_with(func=lambda i, e: f&#39;{i} -&gt; {e}&#39;)</span>
+<span class="sd">        ... )</span>
+<span class="sd">        orig:0: 0</span>
+<span class="sd">        orig:1: 1</span>
+<span class="sd">        orig:2: 2</span>
+<span class="sd">        x2:0: 0</span>
+<span class="sd">        x2:1: 2</span>
+<span class="sd">        x2:2: 4</span>
+<span class="sd">        0 -&gt; 0</span>
+<span class="sd">        1 -&gt; 2</span>
+<span class="sd">        2 -&gt; 6</span>
+<span class="sd">        Array([0, 2, 6])</span>
+
+<span class="sd">        &#39;&#39;&#39;</span>
+
+        <span class="k">def</span> <span class="nf">tap_tr</span><span class="p">(</span><span class="n">self_</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">index</span><span class="p">,</span> <span class="n">elem</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">self_</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">index</span> <span class="o">&lt;</span> <span class="n">n</span><span class="p">:</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="n">msg_format</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">tag</span><span class="o">=</span><span class="n">tag</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="n">index</span><span class="p">,</span> <span class="n">elem</span><span class="o">=</span><span class="n">elem</span><span class="p">))</span>
+                <span class="k">yield</span> <span class="n">elem</span>
+        <span class="k">return</span> <span class="n">Array</span><span class="p">(</span><span class="n">tap_tr</span><span class="p">(</span><span class="bp">self</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="Array.tap_with"><a class="viewcode-back" href="../../api.html#carriage.Array.tap_with">[docs]</a>    <span class="k">def</span> <span class="nf">tap_with</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">func</span><span class="p">,</span> <span class="n">n</span><span class="o">=</span><span class="mi">5</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;A debugging tool. This method create a new Array with the same</span>
+<span class="sd">        elements. While creating Array, it call the function using</span>
+<span class="sd">        index and element then prints the return value for first n elements.</span>
+
+
+<span class="sd">        &gt;&gt;&gt; (Array.range(3).tap(&#39;orig&#39;)</span>
+<span class="sd">        ...  .map(lambda x: x * 2).tap(&#39;x2&#39;)</span>
+<span class="sd">        ...  .accumulate(lambda a, b: a + b)</span>
+<span class="sd">        ...  .tap_with(func=lambda i, e: f&#39;{i} -&gt; {e}&#39;)</span>
+<span class="sd">        ... )</span>
+<span class="sd">        orig:0: 0</span>
+<span class="sd">        orig:1: 1</span>
+<span class="sd">        orig:2: 2</span>
+<span class="sd">        x2:0: 0</span>
+<span class="sd">        x2:1: 2</span>
+<span class="sd">        x2:2: 4</span>
+<span class="sd">        0 -&gt; 0</span>
+<span class="sd">        1 -&gt; 2</span>
+<span class="sd">        2 -&gt; 6</span>
+<span class="sd">        Array([0, 2, 6])</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        -----------</span>
+<span class="sd">        func : ``func(index, elem) -&gt; Any``</span>
+<span class="sd">            Function for building the printing object.</span>
+<span class="sd">        n : int</span>
+<span class="sd">            First n element will be print.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+
+        <span class="k">def</span> <span class="nf">tap_with_tr</span><span class="p">(</span><span class="n">self_</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">index</span><span class="p">,</span> <span class="n">elem</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">self_</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">index</span> <span class="o">&lt;</span> <span class="n">n</span><span class="p">:</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="n">func</span><span class="p">(</span><span class="n">index</span><span class="p">,</span> <span class="n">elem</span><span class="p">))</span>
+                <span class="k">yield</span> <span class="n">elem</span>
+
+        <span class="k">return</span> <span class="n">Array</span><span class="p">(</span><span class="n">tap_with_tr</span><span class="p">(</span><span class="bp">self</span><span class="p">))</span></div>
 
     <span class="k">def</span> <span class="nf">then</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">alist</span><span class="p">):</span>
         <span class="c1"># TODO</span>
@@ -109,84 +320,151 @@
     <span class="k">def</span> <span class="nf">_value_for_cmp</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_items</span>
 
-    <span class="k">def</span> <span class="nf">len</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+<div class="viewcode-block" id="Array.len"><a class="viewcode-back" href="../../api.html#carriage.Array.len">[docs]</a>    <span class="k">def</span> <span class="nf">len</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Get the length&#39;&#39;&#39;</span>
+        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span></div>
 
     <span class="k">def</span> <span class="nf">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Get the item in the nth position if index is integer.</span>
+<span class="sd">        Get a Array of a slice of items if index is a slice object.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        index : int, slice</span>
+<span class="sd">            index of target item or a slice object</span>
+<span class="sd">        &#39;&#39;&#39;</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">index</span><span class="p">,</span> <span class="nb">slice</span><span class="p">):</span>
             <span class="k">return</span> <span class="n">Array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_items</span><span class="p">[</span><span class="n">index</span><span class="p">])</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_items</span><span class="p">[</span><span class="n">index</span><span class="p">]</span>
 
-    <span class="k">def</span> <span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<div class="viewcode-block" id="Array.get"><a class="viewcode-back" href="../../api.html#carriage.Array.get">[docs]</a>    <span class="k">def</span> <span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Get item of the index. Return default value if not exists.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
         <span class="k">if</span> <span class="n">index</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_items</span><span class="p">[</span><span class="n">index</span><span class="p">]</span>
-        <span class="k">return</span> <span class="n">default</span>
+        <span class="k">return</span> <span class="n">default</span></div>
 
-    <span class="k">def</span> <span class="nf">get_opt</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">):</span>
+<div class="viewcode-block" id="Array.get_opt"><a class="viewcode-back" href="../../api.html#carriage.Array.get_opt">[docs]</a>    <span class="k">def</span> <span class="nf">get_opt</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Optionally get item of the index.</span>
+<span class="sd">        Return Some(value) if exists.</span>
+<span class="sd">        Otherwise return Nothing.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
         <span class="k">if</span> <span class="p">(</span><span class="n">index</span> <span class="k">if</span> <span class="n">index</span> <span class="o">&gt;=</span> <span class="mi">0</span> <span class="k">else</span> <span class="nb">abs</span><span class="p">(</span><span class="n">index</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
             <span class="k">return</span> <span class="n">Some</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_items</span><span class="p">[</span><span class="n">index</span><span class="p">])</span>
 
-        <span class="k">return</span> <span class="n">Nothing</span>
+        <span class="k">return</span> <span class="n">Nothing</span></div>
 
-    <span class="k">def</span> <span class="nf">first</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_items</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+<div class="viewcode-block" id="Array.slice"><a class="viewcode-back" href="../../api.html#carriage.Array.slice">[docs]</a>    <span class="k">def</span> <span class="nf">slice</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Create a Array from the slice of items.</span>
 
-    <span class="k">def</span> <span class="nf">second</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_items</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        Array</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="p">[</span><span class="nb">slice</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">step</span><span class="p">)]</span></div>
 
-    <span class="k">def</span> <span class="nf">last</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_items</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+<div class="viewcode-block" id="Array.first"><a class="viewcode-back" href="../../api.html#carriage.Array.first">[docs]</a>    <span class="k">def</span> <span class="nf">first</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Get first element</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_items</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span></div>
 
-    <span class="k">def</span> <span class="nf">first_opt</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_opt</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<div class="viewcode-block" id="Array.second"><a class="viewcode-back" href="../../api.html#carriage.Array.second">[docs]</a>    <span class="k">def</span> <span class="nf">second</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Get second element</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_items</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span></div>
 
-    <span class="k">def</span> <span class="nf">second_opt</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_opt</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+<div class="viewcode-block" id="Array.last"><a class="viewcode-back" href="../../api.html#carriage.Array.last">[docs]</a>    <span class="k">def</span> <span class="nf">last</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Get last element</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_items</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span></div>
 
-    <span class="k">def</span> <span class="nf">last_opt</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_opt</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+<div class="viewcode-block" id="Array.first_opt"><a class="viewcode-back" href="../../api.html#carriage.Array.first_opt">[docs]</a>    <span class="k">def</span> <span class="nf">first_opt</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Get first element as Some(element), or Nothing if not exists</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_opt</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span></div>
 
-    <span class="k">def</span> <span class="nf">find</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pred</span><span class="p">):</span>
+<div class="viewcode-block" id="Array.second_opt"><a class="viewcode-back" href="../../api.html#carriage.Array.second_opt">[docs]</a>    <span class="k">def</span> <span class="nf">second_opt</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Get second element as Some(element), or Nothing if not exists</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_opt</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Array.last_opt"><a class="viewcode-back" href="../../api.html#carriage.Array.last_opt">[docs]</a>    <span class="k">def</span> <span class="nf">last_opt</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Get last element as Some(element), or Nothing if not exists</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_opt</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Array.find"><a class="viewcode-back" href="../../api.html#carriage.Array.find">[docs]</a>    <span class="k">def</span> <span class="nf">find</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pred</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Get first element satifying predicate</span>
+<span class="sd">        &#39;&#39;&#39;</span>
         <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_items</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">pred</span><span class="p">(</span><span class="n">item</span><span class="p">):</span>
-                <span class="k">return</span> <span class="n">item</span>
+                <span class="k">return</span> <span class="n">item</span></div>
 
-    <span class="k">def</span> <span class="nf">find_opt</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pred</span><span class="p">):</span>
+<div class="viewcode-block" id="Array.find_opt"><a class="viewcode-back" href="../../api.html#carriage.Array.find_opt">[docs]</a>    <span class="k">def</span> <span class="nf">find_opt</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pred</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Optionally get first element satifying predicate.</span>
+<span class="sd">        Return Some(element) if exist</span>
+<span class="sd">        Otherwise return Nothing</span>
+<span class="sd">        &#39;&#39;&#39;</span>
         <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_items</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">pred</span><span class="p">(</span><span class="n">item</span><span class="p">):</span>
                 <span class="k">return</span> <span class="n">Some</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
 
         <span class="k">else</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">Nothing</span>
+            <span class="k">return</span> <span class="n">Nothing</span></div>
 
-    <span class="k">def</span> <span class="nf">take</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">Array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_items</span><span class="p">[:</span><span class="n">n</span><span class="p">])</span>
+<div class="viewcode-block" id="Array.take"><a class="viewcode-back" href="../../api.html#carriage.Array.take">[docs]</a>    <span class="k">def</span> <span class="nf">take</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Create a new Array of only first n element &#39;&#39;&#39;</span>
+        <span class="k">return</span> <span class="n">Array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_items</span><span class="p">[:</span><span class="n">n</span><span class="p">])</span></div>
 
-    <span class="k">def</span> <span class="nf">drop</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">Array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_items</span><span class="p">[</span><span class="n">n</span><span class="p">:])</span>
+<div class="viewcode-block" id="Array.drop"><a class="viewcode-back" href="../../api.html#carriage.Array.drop">[docs]</a>    <span class="k">def</span> <span class="nf">drop</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Create a new Array of first n element dropped</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">return</span> <span class="n">Array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_items</span><span class="p">[</span><span class="n">n</span><span class="p">:])</span></div>
 
-    <span class="k">def</span> <span class="nf">tail</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">Array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_items</span><span class="p">[</span><span class="mi">1</span><span class="p">:])</span>
+<div class="viewcode-block" id="Array.tail"><a class="viewcode-back" href="../../api.html#carriage.Array.tail">[docs]</a>    <span class="k">def</span> <span class="nf">tail</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Create a new Array first element dropped</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">return</span> <span class="n">Array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_items</span><span class="p">[</span><span class="mi">1</span><span class="p">:])</span></div>
 
-    <span class="k">def</span> <span class="nf">butlast</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+<div class="viewcode-block" id="Array.butlast"><a class="viewcode-back" href="../../api.html#carriage.Array.butlast">[docs]</a>    <span class="k">def</span> <span class="nf">butlast</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Create a new Array that last element dropped</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span></div>
 
-    <span class="k">def</span> <span class="nf">takeright</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">Array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_items</span><span class="p">[</span><span class="o">-</span><span class="n">n</span><span class="p">:])</span>
+<div class="viewcode-block" id="Array.take_right"><a class="viewcode-back" href="../../api.html#carriage.Array.take_right">[docs]</a>    <span class="k">def</span> <span class="nf">take_right</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Create a new Array with last n elements</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">return</span> <span class="n">Array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_items</span><span class="p">[</span><span class="o">-</span><span class="n">n</span><span class="p">:])</span></div>
 
-    <span class="k">def</span> <span class="nf">dropright</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">Array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_items</span><span class="p">[:</span><span class="o">-</span><span class="n">n</span><span class="p">])</span>
+    <span class="n">takeright</span> <span class="o">=</span> <span class="n">take_right</span>
 
-    <span class="k">def</span> <span class="nf">slice</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="p">[</span><span class="nb">slice</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">step</span><span class="p">)]</span>
+<div class="viewcode-block" id="Array.drop_right"><a class="viewcode-back" href="../../api.html#carriage.Array.drop_right">[docs]</a>    <span class="k">def</span> <span class="nf">drop_right</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Create a new Array that last n elements dropped</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">return</span> <span class="n">Array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_items</span><span class="p">[:</span><span class="o">-</span><span class="n">n</span><span class="p">])</span></div>
 
-    <span class="k">def</span> <span class="nf">takewhile</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pred</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">Array</span><span class="p">(</span><span class="n">itt</span><span class="o">.</span><span class="n">takewhile</span><span class="p">(</span><span class="n">pred</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_items</span><span class="p">))</span>
+    <span class="n">dropright</span> <span class="o">=</span> <span class="n">drop_right</span>
 
-    <span class="k">def</span> <span class="nf">dropwhile</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pred</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">Array</span><span class="p">(</span><span class="n">itt</span><span class="o">.</span><span class="n">dropwhile</span><span class="p">(</span><span class="n">pred</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_items</span><span class="p">))</span>
+<div class="viewcode-block" id="Array.take_while"><a class="viewcode-back" href="../../api.html#carriage.Array.take_while">[docs]</a>    <span class="k">def</span> <span class="nf">take_while</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pred</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Create a new Array with successive elements as long as</span>
+<span class="sd">        predicate evaluates to true.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">return</span> <span class="n">Array</span><span class="p">(</span><span class="n">itt</span><span class="o">.</span><span class="n">takewhile</span><span class="p">(</span><span class="n">pred</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_items</span><span class="p">))</span></div>
 
-    <span class="k">def</span> <span class="nf">split_before</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pred</span><span class="p">):</span>
+    <span class="n">takewhile</span> <span class="o">=</span> <span class="n">take_while</span>
+
+<div class="viewcode-block" id="Array.drop_while"><a class="viewcode-back" href="../../api.html#carriage.Array.drop_while">[docs]</a>    <span class="k">def</span> <span class="nf">drop_while</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pred</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Create a new Array without elements as long as predicate</span>
+<span class="sd">        evaluates to true.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">return</span> <span class="n">Array</span><span class="p">(</span><span class="n">itt</span><span class="o">.</span><span class="n">dropwhile</span><span class="p">(</span><span class="n">pred</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_items</span><span class="p">))</span></div>
+
+    <span class="n">dropwhile</span> <span class="o">=</span> <span class="n">drop_while</span>
+
+<div class="viewcode-block" id="Array.split_before"><a class="viewcode-back" href="../../api.html#carriage.Array.split_before">[docs]</a>    <span class="k">def</span> <span class="nf">split_before</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pred</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Create a new Array of Arrays by splitting before each element</span>
+<span class="sd">        passing predicate.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
         <span class="k">def</span> <span class="nf">_split_before</span><span class="p">(</span><span class="n">pred</span><span class="p">,</span> <span class="n">items</span><span class="p">):</span>
             <span class="n">segment</span> <span class="o">=</span> <span class="p">[]</span>
             <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">items</span><span class="p">:</span>
@@ -197,9 +475,12 @@
 
             <span class="k">yield</span> <span class="n">segment</span>
 
-        <span class="k">return</span> <span class="n">Array</span><span class="p">(</span><span class="n">_split_before</span><span class="p">(</span><span class="n">pred</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_items</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">Array</span><span class="p">(</span><span class="n">_split_before</span><span class="p">(</span><span class="n">pred</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_items</span><span class="p">))</span></div>
 
-    <span class="k">def</span> <span class="nf">split_after</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pred</span><span class="p">):</span>
+<div class="viewcode-block" id="Array.split_after"><a class="viewcode-back" href="../../api.html#carriage.Array.split_after">[docs]</a>    <span class="k">def</span> <span class="nf">split_after</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pred</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Create a new Array of Arrays by splitting after each element</span>
+<span class="sd">        passing predicate.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
         <span class="k">def</span> <span class="nf">_split_after</span><span class="p">(</span><span class="n">pred</span><span class="p">,</span> <span class="n">items</span><span class="p">):</span>
             <span class="n">segment</span> <span class="o">=</span> <span class="p">[]</span>
             <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">items</span><span class="p">:</span>
@@ -211,45 +492,72 @@
             <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">segment</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
                 <span class="k">yield</span> <span class="n">segment</span>
 
-        <span class="k">return</span> <span class="n">Array</span><span class="p">(</span><span class="n">_split_after</span><span class="p">(</span><span class="n">pred</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_items</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">Array</span><span class="p">(</span><span class="n">_split_after</span><span class="p">(</span><span class="n">pred</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_items</span><span class="p">))</span></div>
 
-    <span class="k">def</span> <span class="nf">pluck</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">d</span><span class="p">:</span> <span class="n">d</span><span class="p">[</span><span class="n">key</span><span class="p">])</span>
+<div class="viewcode-block" id="Array.pluck"><a class="viewcode-back" href="../../api.html#carriage.Array.pluck">[docs]</a>    <span class="k">def</span> <span class="nf">pluck</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Create a new Array of values by evaluating ``elem[key]`` for each</span>
+<span class="sd">        element.&#39;&#39;&#39;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">d</span><span class="p">:</span> <span class="n">d</span><span class="p">[</span><span class="n">key</span><span class="p">])</span></div>
 
-    <span class="k">def</span> <span class="nf">pluck_opt</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+<div class="viewcode-block" id="Array.pluck_opt"><a class="viewcode-back" href="../../api.html#carriage.Array.pluck_opt">[docs]</a>    <span class="k">def</span> <span class="nf">pluck_opt</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Create a new Array of Optional values by evaluating ``elem[key]``</span>
+<span class="sd">        for each element.</span>
+<span class="sd">        Get ``Some(value)`` if the key exists for that element, otherwise get</span>
+<span class="sd">        Nothing singleton.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">d</span><span class="p">:</span> <span class="n">Some</span><span class="p">(</span><span class="n">d</span><span class="p">[</span><span class="n">key</span><span class="p">])</span>
-                        <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">d</span> <span class="k">else</span> <span class="n">Nothing</span><span class="p">)</span>
+                        <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">d</span> <span class="k">else</span> <span class="n">Nothing</span><span class="p">)</span></div>
 
-    <span class="k">def</span> <span class="nf">pluck_attr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attr</span><span class="p">):</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">obj</span><span class="p">:</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">attr</span><span class="p">))</span>
+<div class="viewcode-block" id="Array.pluck_attr"><a class="viewcode-back" href="../../api.html#carriage.Array.pluck_attr">[docs]</a>    <span class="k">def</span> <span class="nf">pluck_attr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attr</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Create a new Array of Optional values by evaluating ``elem.attr`` of</span>
+<span class="sd">        each element.</span>
+<span class="sd">        Get ``Some(value)`` if attr exists for that element, otherwise get</span>
+<span class="sd">        Nothing singleton.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">obj</span><span class="p">:</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">attr</span><span class="p">))</span></div>
 
-    <span class="k">def</span> <span class="nf">filter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pred</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">Array</span><span class="p">(</span><span class="n">builtins</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">pred</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_items</span><span class="p">))</span>
+<div class="viewcode-block" id="Array.without"><a class="viewcode-back" href="../../api.html#carriage.Array.without">[docs]</a>    <span class="k">def</span> <span class="nf">without</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">items</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Create a new Array without specified elements.&#39;&#39;&#39;</span>
+        <span class="n">items</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">items</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="k">lambda</span> <span class="n">item</span><span class="p">:</span> <span class="n">item</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">items</span><span class="p">)</span></div>
 
-    <span class="k">def</span> <span class="nf">filterfalse</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pred</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">Array</span><span class="p">(</span><span class="n">itt</span><span class="o">.</span><span class="n">filterfalse</span><span class="p">(</span><span class="n">pred</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_items</span><span class="p">))</span>
+<div class="viewcode-block" id="Array.filter"><a class="viewcode-back" href="../../api.html#carriage.Array.filter">[docs]</a>    <span class="k">def</span> <span class="nf">filter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pred</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Create a new Array contains only elements passing predicate&#39;&#39;&#39;</span>
+        <span class="k">return</span> <span class="n">Array</span><span class="p">(</span><span class="n">builtins</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">pred</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_items</span><span class="p">))</span></div>
 
-    <span class="k">def</span> <span class="nf">where</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">conds</span><span class="p">):</span>
+<div class="viewcode-block" id="Array.filter_false"><a class="viewcode-back" href="../../api.html#carriage.Array.filter_false">[docs]</a>    <span class="k">def</span> <span class="nf">filter_false</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pred</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Create a new Array contains only elements not passing predicate&#39;&#39;&#39;</span>
+        <span class="k">return</span> <span class="n">Array</span><span class="p">(</span><span class="n">itt</span><span class="o">.</span><span class="n">filterfalse</span><span class="p">(</span><span class="n">pred</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_items</span><span class="p">))</span></div>
+
+    <span class="n">filterfalse</span> <span class="o">=</span> <span class="n">filter_false</span>
+
+<div class="viewcode-block" id="Array.where"><a class="viewcode-back" href="../../api.html#carriage.Array.where">[docs]</a>    <span class="k">def</span> <span class="nf">where</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">conds</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Create a new Array contains only mapping pass all conditions.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="k">lambda</span> <span class="n">d</span><span class="p">:</span>
                            <span class="nb">all</span><span class="p">(</span><span class="n">key</span> <span class="ow">in</span> <span class="n">d</span> <span class="ow">and</span> <span class="n">d</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">==</span> <span class="n">value</span>
-                               <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">conds</span><span class="o">.</span><span class="n">items</span><span class="p">()))</span>
+                               <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">conds</span><span class="o">.</span><span class="n">items</span><span class="p">()))</span></div>
 
-    <span class="k">def</span> <span class="nf">without</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">items</span><span class="p">):</span>
-        <span class="n">items</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">items</span><span class="p">)</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="k">lambda</span> <span class="n">item</span><span class="p">:</span> <span class="n">item</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">items</span><span class="p">)</span>
-
-    <span class="k">def</span> <span class="nf">interpose</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sep</span><span class="p">):</span>
+<div class="viewcode-block" id="Array.interpose"><a class="viewcode-back" href="../../api.html#carriage.Array.interpose">[docs]</a>    <span class="k">def</span> <span class="nf">interpose</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sep</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Create a new Array by interposing separater between elemens.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="c1"># TODO</span>
         <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_items</span><span class="p">:</span>
             <span class="k">yield</span> <span class="n">item</span>
-            <span class="k">yield</span>
+            <span class="k">yield</span></div>
 
-    <span class="k">def</span> <span class="nf">zip</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">iterable</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">Array</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_items</span><span class="p">,</span> <span class="o">*</span><span class="n">iterable</span><span class="p">))</span>
+<div class="viewcode-block" id="Array.zip"><a class="viewcode-back" href="../../api.html#carriage.Array.zip">[docs]</a>    <span class="k">def</span> <span class="nf">zip</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">iterable</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Create a new Array by zipping elements with other iterables.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">return</span> <span class="n">Array</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_items</span><span class="p">,</span> <span class="o">*</span><span class="n">iterable</span><span class="p">))</span></div>
 
-    <span class="k">def</span> <span class="nf">zip_longest</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">iterables</span><span class="p">,</span> <span class="n">fillvalue</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<div class="viewcode-block" id="Array.zip_longest"><a class="viewcode-back" href="../../api.html#carriage.Array.zip_longest">[docs]</a>    <span class="k">def</span> <span class="nf">zip_longest</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">iterables</span><span class="p">,</span> <span class="n">fillvalue</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Create a new Array by zipping elements with other iterables</span>
+<span class="sd">        as long as possible.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
         <span class="k">return</span> <span class="n">Array</span><span class="p">(</span><span class="n">itt</span><span class="o">.</span><span class="n">zip_longest</span><span class="p">(</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_items</span><span class="p">,</span> <span class="o">*</span><span class="n">iterables</span><span class="p">,</span>
-            <span class="n">fillvalue</span><span class="o">=</span><span class="n">fillvalue</span><span class="p">))</span>
+            <span class="n">fillvalue</span><span class="o">=</span><span class="n">fillvalue</span><span class="p">))</span></div>
 
     <span class="k">def</span> <span class="nf">zip_longest_opt</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">iterables</span><span class="p">):</span>
         <span class="n">iterables</span> <span class="o">=</span> <span class="p">[</span><span class="nb">map</span><span class="p">(</span><span class="n">Some</span><span class="p">,</span> <span class="n">it</span><span class="p">)</span> <span class="k">for</span> <span class="n">it</span> <span class="ow">in</span> <span class="n">iterables</span><span class="p">]</span>
@@ -257,62 +565,157 @@
                                      <span class="o">*</span><span class="n">iterables</span><span class="p">,</span>
                                      <span class="n">fillvalue</span><span class="o">=</span><span class="n">Nothing</span><span class="p">))</span>
 
-    <span class="k">def</span> <span class="nf">zip_prev</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fillvalue</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-        <span class="n">prevs</span> <span class="o">=</span> <span class="n">itt</span><span class="o">.</span><span class="n">chain</span><span class="p">([</span><span class="n">fillvalue</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">_items</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">Array</span><span class="p">(</span><span class="n">itt</span><span class="o">.</span><span class="n">starmap</span><span class="p">(</span><span class="n">CurrPrev</span><span class="p">,</span> <span class="nb">zip</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_items</span><span class="p">,</span> <span class="n">prevs</span><span class="p">)))</span>
-
-    <span class="k">def</span> <span class="nf">zip_next</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fillvalue</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<div class="viewcode-block" id="Array.zip_next"><a class="viewcode-back" href="../../api.html#carriage.Array.zip_next">[docs]</a>    <span class="k">def</span> <span class="nf">zip_next</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fillvalue</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Create a new Array by zipping elements with next one.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
         <span class="n">items_itr</span> <span class="o">=</span> <span class="nb">iter</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_items</span><span class="p">)</span>
         <span class="nb">next</span><span class="p">(</span><span class="n">items_itr</span><span class="p">)</span>
         <span class="n">nexts</span> <span class="o">=</span> <span class="n">itt</span><span class="o">.</span><span class="n">chain</span><span class="p">(</span><span class="n">items_itr</span><span class="p">,</span> <span class="p">[</span><span class="n">fillvalue</span><span class="p">])</span>
-        <span class="k">return</span> <span class="n">Array</span><span class="p">(</span><span class="n">itt</span><span class="o">.</span><span class="n">starmap</span><span class="p">(</span><span class="n">CurrNext</span><span class="p">,</span> <span class="nb">zip</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_items</span><span class="p">,</span> <span class="n">nexts</span><span class="p">)))</span>
+        <span class="k">return</span> <span class="n">Array</span><span class="p">(</span><span class="n">itt</span><span class="o">.</span><span class="n">starmap</span><span class="p">(</span><span class="n">CurrNext</span><span class="p">,</span> <span class="nb">zip</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_items</span><span class="p">,</span> <span class="n">nexts</span><span class="p">)))</span></div>
 
-    <span class="k">def</span> <span class="nf">zip_index</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+<div class="viewcode-block" id="Array.zip_prev"><a class="viewcode-back" href="../../api.html#carriage.Array.zip_prev">[docs]</a>    <span class="k">def</span> <span class="nf">zip_prev</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fillvalue</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Create a new Array by zipping elements with previous one.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">prevs</span> <span class="o">=</span> <span class="n">itt</span><span class="o">.</span><span class="n">chain</span><span class="p">([</span><span class="n">fillvalue</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">_items</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">Array</span><span class="p">(</span><span class="n">itt</span><span class="o">.</span><span class="n">starmap</span><span class="p">(</span><span class="n">CurrPrev</span><span class="p">,</span> <span class="nb">zip</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_items</span><span class="p">,</span> <span class="n">prevs</span><span class="p">)))</span></div>
+
+<div class="viewcode-block" id="Array.zip_index"><a class="viewcode-back" href="../../api.html#carriage.Array.zip_index">[docs]</a>    <span class="k">def</span> <span class="nf">zip_index</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Create a new Array by zipping elements with index.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
         <span class="k">return</span> <span class="n">Array</span><span class="p">(</span><span class="n">itt</span><span class="o">.</span><span class="n">starmap</span><span class="p">(</span><span class="n">ValueIndex</span><span class="p">,</span>
-                                 <span class="nb">zip</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_items</span><span class="p">,</span> <span class="n">itt</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="n">start</span><span class="p">))))</span>
+                                 <span class="nb">zip</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_items</span><span class="p">,</span> <span class="n">itt</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="n">start</span><span class="p">))))</span></div>
 
-    <span class="k">def</span> <span class="nf">starmap</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">action</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">Array</span><span class="p">(</span><span class="n">itt</span><span class="o">.</span><span class="n">starmap</span><span class="p">(</span><span class="n">action</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_items</span><span class="p">))</span>
-
-    <span class="k">def</span> <span class="nf">reverse</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="Array.reverse"><a class="viewcode-back" href="../../api.html#carriage.Array.reverse">[docs]</a>    <span class="k">def</span> <span class="nf">reverse</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;In place reverse this Array.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_items</span><span class="o">.</span><span class="n">reverse</span><span class="p">()</span>
-        <span class="k">return</span> <span class="bp">self</span>
+        <span class="k">return</span> <span class="bp">self</span></div>
 
-    <span class="k">def</span> <span class="nf">reversed</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">Array</span><span class="p">(</span><span class="nb">reversed</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_items</span><span class="p">))</span>
+<div class="viewcode-block" id="Array.reversed"><a class="viewcode-back" href="../../api.html#carriage.Array.reversed">[docs]</a>    <span class="k">def</span> <span class="nf">reversed</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Create a new reversed Array.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">return</span> <span class="n">Array</span><span class="p">(</span><span class="nb">reversed</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_items</span><span class="p">))</span></div>
 
-    <span class="k">def</span> <span class="nf">sort</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">reverse</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<div class="viewcode-block" id="Array.sort"><a class="viewcode-back" href="../../api.html#carriage.Array.sort">[docs]</a>    <span class="k">def</span> <span class="nf">sort</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">reverse</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;In place sort this Array.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_items</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="n">key</span><span class="p">,</span> <span class="n">reverse</span><span class="o">=</span><span class="n">reverse</span><span class="p">)</span>
-        <span class="k">return</span> <span class="bp">self</span>
+        <span class="k">return</span> <span class="bp">self</span></div>
 
-    <span class="k">def</span> <span class="nf">sorted</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">reverse</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">Array</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_items</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="n">key</span><span class="p">,</span> <span class="n">reverse</span><span class="o">=</span><span class="n">reverse</span><span class="p">))</span>
+<div class="viewcode-block" id="Array.sorted"><a class="viewcode-back" href="../../api.html#carriage.Array.sorted">[docs]</a>    <span class="k">def</span> <span class="nf">sorted</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">reverse</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Create a new sorted Array.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">return</span> <span class="n">Array</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_items</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="n">key</span><span class="p">,</span> <span class="n">reverse</span><span class="o">=</span><span class="n">reverse</span><span class="p">))</span></div>
 
-    <span class="k">def</span> <span class="nf">sum</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="nb">sum</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+<div class="viewcode-block" id="Array.sum"><a class="viewcode-back" href="../../api.html#carriage.Array.sum">[docs]</a>    <span class="k">def</span> <span class="nf">sum</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Get sum of elements&#39;&#39;&#39;</span>
+        <span class="k">return</span> <span class="nb">sum</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span></div>
 
-    <span class="k">def</span> <span class="nf">accumulate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">func</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">Array</span><span class="p">(</span><span class="n">itt</span><span class="o">.</span><span class="n">accumulate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_items</span><span class="p">,</span> <span class="n">func</span><span class="p">))</span>
+    <span class="k">def</span> <span class="nf">reduce</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c1"># TODO</span>
+        <span class="k">pass</span>
 
-    <span class="k">def</span> <span class="nf">extend</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">iterable</span><span class="p">):</span>
+<div class="viewcode-block" id="Array.group_by"><a class="viewcode-back" href="../../api.html#carriage.Array.group_by">[docs]</a>    <span class="k">def</span> <span class="nf">group_by</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Create a new Array using the builtin itertools.groupby,</span>
+<span class="sd">        which sequentially groups elements as long as the key function</span>
+<span class="sd">        evaluates to the same value.</span>
+
+<span class="sd">        Comparing to ``group_by_as_map``, there&#39;re some pros and cons.</span>
+
+<span class="sd">        Cons:</span>
+
+<span class="sd">        - Elements should be sorted by the key function first,</span>
+<span class="sd">          or elements with the same key may be broken into different groups.</span>
+
+<span class="sd">        Pros:</span>
+
+<span class="sd">        - Key function doesn&#39;t have to be evaluated to a hashable value.</span>
+<span class="sd">          It can be any type which supports ``__eq__``.</span>
+
+<span class="sd">        &#39;&#39;&#39;</span>
+
+        <span class="k">def</span> <span class="nf">group_by_tr</span><span class="p">(</span><span class="n">self_</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">vs</span> <span class="ow">in</span> <span class="n">itt</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="n">self_</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="n">key</span><span class="p">):</span>
+                <span class="k">yield</span> <span class="n">KeyValues</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="n">k</span><span class="p">,</span> <span class="n">values</span><span class="o">=</span><span class="n">Array</span><span class="p">(</span><span class="n">vs</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">Array</span><span class="p">(</span><span class="n">group_by_tr</span><span class="p">(</span><span class="bp">self</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="Array.group_by_as_map"><a class="viewcode-back" href="../../api.html#carriage.Array.group_by_as_map">[docs]</a>    <span class="k">def</span> <span class="nf">group_by_as_map</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Group values in to a Map by the value of key function evaluation</span>
+<span class="sd">        result.</span>
+
+<span class="sd">        Comparing to ``group_by``, there&#39;re some pros and cons.</span>
+
+<span class="sd">        Pros:</span>
+
+<span class="sd">        * Elements don&#39;t need to be sorted by the key function first. </span>
+<span class="sd">          You can call ``map_group_by`` anytime and correct grouping result.</span>
+
+<span class="sd">        Cons:</span>
+
+<span class="sd">        * Key function has to be evaluated to a hashable value.</span>
+
+<span class="sd">        &#39;&#39;&#39;</span>
+
+        <span class="kn">from</span> <span class="nn">.map</span> <span class="k">import</span> <span class="n">Map</span>
+        <span class="n">key_to_grp</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="n">Array</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">elem</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">:</span>
+            <span class="n">key_to_grp</span><span class="p">[</span><span class="n">key</span><span class="p">(</span><span class="n">elem</span><span class="p">)]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">elem</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">Map</span><span class="p">(</span><span class="n">key_to_grp</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Array.accumulate"><a class="viewcode-back" href="../../api.html#carriage.Array.accumulate">[docs]</a>    <span class="k">def</span> <span class="nf">accumulate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">func</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Create a new Array of calling ``itertools.accumulate``&#39;&#39;&#39;</span>
+        <span class="k">return</span> <span class="n">Array</span><span class="p">(</span><span class="n">itt</span><span class="o">.</span><span class="n">accumulate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_items</span><span class="p">,</span> <span class="n">func</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="Array.mean"><a class="viewcode-back" href="../../api.html#carriage.Array.mean">[docs]</a>    <span class="k">def</span> <span class="nf">mean</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Get the average of elements.&#39;&#39;&#39;</span>
+
+        <span class="k">return</span> <span class="nb">sum</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Array.sliding_window"><a class="viewcode-back" href="../../api.html#carriage.Array.sliding_window">[docs]</a>    <span class="k">def</span> <span class="nf">sliding_window</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Create a new Array instance that all elements are sliding windows</span>
+<span class="sd">        of source elements.&#39;&#39;&#39;</span>
+
+        <span class="k">def</span> <span class="nf">sliding_window_tr</span><span class="p">(</span><span class="n">self_</span><span class="p">):</span>
+            <span class="n">self_itr</span> <span class="o">=</span> <span class="nb">iter</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+            <span class="n">dq</span> <span class="o">=</span> <span class="n">deque</span><span class="p">(</span><span class="n">itt</span><span class="o">.</span><span class="n">islice</span><span class="p">(</span><span class="n">self_itr</span><span class="p">,</span> <span class="n">n</span> <span class="o">-</span> <span class="mi">1</span><span class="p">),</span> <span class="n">maxlen</span><span class="o">=</span><span class="n">n</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">self_itr</span><span class="p">:</span>
+                <span class="n">dq</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
+                <span class="k">yield</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">dq</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">Array</span><span class="p">(</span><span class="n">sliding_window_tr</span><span class="p">(</span><span class="bp">self</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="Array.value_counts"><a class="viewcode-back" href="../../api.html#carriage.Array.value_counts">[docs]</a>    <span class="k">def</span> <span class="nf">value_counts</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Get a Counter instance of elements counts&#39;&#39;&#39;</span>
+        <span class="k">return</span> <span class="n">Counter</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Array.extend"><a class="viewcode-back" href="../../api.html#carriage.Array.extend">[docs]</a>    <span class="k">def</span> <span class="nf">extend</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">iterable</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Extend the Array from iterable&#39;&#39;&#39;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_items</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">iterable</span><span class="p">)</span>
-        <span class="k">return</span> <span class="bp">self</span>
+        <span class="k">return</span> <span class="bp">self</span></div>
 
-    <span class="k">def</span> <span class="nf">extended</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">iterable</span><span class="p">):</span>
+<div class="viewcode-block" id="Array.extended"><a class="viewcode-back" href="../../api.html#carriage.Array.extended">[docs]</a>    <span class="k">def</span> <span class="nf">extended</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">iterable</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Create a new Array that extends source Array with another</span>
+<span class="sd">        iterable&#39;&#39;&#39;</span>
         <span class="n">alist</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
         <span class="n">alist</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">iterable</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">alist</span>
+        <span class="k">return</span> <span class="n">alist</span></div>
 
-    <span class="k">def</span> <span class="nf">append</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">):</span>
+<div class="viewcode-block" id="Array.append"><a class="viewcode-back" href="../../api.html#carriage.Array.append">[docs]</a>    <span class="k">def</span> <span class="nf">append</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Append element to the Array&#39;&#39;&#39;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_items</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
-        <span class="k">return</span> <span class="bp">self</span>
+        <span class="k">return</span> <span class="bp">self</span></div>
 
-    <span class="k">def</span> <span class="nf">appended</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">):</span>
+<div class="viewcode-block" id="Array.appended"><a class="viewcode-back" href="../../api.html#carriage.Array.appended">[docs]</a>    <span class="k">def</span> <span class="nf">appended</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Create a new Array that extends source Array with another element.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
         <span class="n">alist</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
         <span class="n">alist</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">alist</span>
+        <span class="k">return</span> <span class="n">alist</span></div>
 
-    <span class="k">def</span> <span class="nf">distincted</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="Array.distincted"><a class="viewcode-back" href="../../api.html#carriage.Array.distincted">[docs]</a>    <span class="k">def</span> <span class="nf">distincted</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Create a new Array with non-repeating elements. And elements are</span>
+<span class="sd">        with the same order of first occurence in the source Array.</span>
+
+<span class="sd">        &#39;&#39;&#39;</span>
         <span class="k">def</span> <span class="nf">_distincted</span><span class="p">(</span><span class="n">items</span><span class="p">):</span>
             <span class="n">item_set</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
             <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">items</span><span class="p">:</span>
@@ -320,7 +723,7 @@
                     <span class="n">item_set</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
                     <span class="k">yield</span> <span class="n">item</span>
 
-        <span class="k">return</span> <span class="n">Array</span><span class="p">(</span><span class="n">_distincted</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_items</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">Array</span><span class="p">(</span><span class="n">_distincted</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_items</span><span class="p">))</span></div>
 
     <span class="k">def</span> <span class="nf">product</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">iterables</span><span class="p">,</span> <span class="n">repeat</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">Array</span><span class="p">(</span><span class="n">itt</span><span class="o">.</span><span class="n">product</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_items</span><span class="p">,</span> <span class="o">*</span><span class="n">iterables</span><span class="p">,</span> <span class="n">repeat</span><span class="o">=</span><span class="n">repeat</span><span class="p">))</span>
@@ -335,27 +738,7 @@
         <span class="k">return</span> <span class="n">Array</span><span class="p">(</span><span class="n">itt</span><span class="o">.</span><span class="n">combinations_with_replacement</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_items</span><span class="p">,</span> <span class="n">r</span><span class="o">=</span><span class="n">r</span><span class="p">))</span>
 
     <span class="k">def</span> <span class="nf">copy</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">Array</span><span class="p">(</span><span class="n">copy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_items</span><span class="p">))</span>
-
-    <span class="k">def</span> <span class="nf">to_list</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
-        <span class="k">if</span> <span class="n">copy</span><span class="p">:</span>
-            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_items</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_items</span><span class="p">[:]</span>
-
-    <span class="k">def</span> <span class="nf">to_series</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="c1"># TODO</span>
-        <span class="k">pass</span>
-
-    <span class="k">def</span> <span class="nf">to_set</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_items</span><span class="p">)</span>
-
-    <span class="k">def</span> <span class="nf">to_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">}</span>
-
-    <span class="k">def</span> <span class="nf">to_stream</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="kn">from</span> <span class="nn">.stream</span> <span class="k">import</span> <span class="n">Stream</span>
-        <span class="k">return</span> <span class="n">Stream</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span></div>
+        <span class="k">return</span> <span class="n">Array</span><span class="p">(</span><span class="n">copy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_items</span><span class="p">))</span></div>
 </pre></div>
 
           </div>

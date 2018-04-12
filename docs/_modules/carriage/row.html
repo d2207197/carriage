@@ -30,10 +30,14 @@
           <div class="body" role="main">
             
   <h1>Source code for carriage.row</h1><div class="highlight"><pre>
-<span></span>
+<span></span><span class="kn">import</span> <span class="nn">itertools</span> <span class="k">as</span> <span class="nn">itt</span>
+
+<span class="kn">from</span> <span class="nn">.repr</span> <span class="k">import</span> <span class="n">short_repr</span>
+
 
 <div class="viewcode-block" id="Row"><a class="viewcode-back" href="../../api.html#carriage.Row">[docs]</a><span class="k">class</span> <span class="nc">Row</span><span class="p">(</span><span class="nb">tuple</span><span class="p">):</span>
-    <span class="sd">&#39;&#39;&#39;A named tuple like type without the need of declaring field names.</span>
+    <span class="sd">&#39;&#39;&#39;A named tuple like type without the need of declaring field names</span>
+<span class="sd">    in advance.</span>
 
 <span class="sd">    A Row object can be created anytime when you need it.</span>
 
@@ -64,9 +68,6 @@
 <span class="sd">    &gt;&gt;&gt; row.evolve(age=row.age + 1)</span>
 <span class="sd">    Row(name=&#39;Joe&#39;, age=31, height=170)</span>
 
-<span class="sd">    &gt;&gt;&gt; row.asdict()</span>
-<span class="sd">    {&#39;name&#39;: &#39;Joe&#39;, &#39;age&#39;: 30, &#39;height&#39;: 170}</span>
-
 <span class="sd">    &gt;&gt;&gt; row.to_dict()</span>
 <span class="sd">    {&#39;name&#39;: &#39;Joe&#39;, &#39;age&#39;: 30, &#39;height&#39;: 170}</span>
 
@@ -91,6 +92,11 @@
     <span class="k">def</span> <span class="nf">from_iterable</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">iterable</span><span class="p">):</span>
         <span class="sd">&#39;&#39;&#39;Create Row from a iterable&#39;&#39;&#39;</span>
         <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="o">**</span><span class="p">{</span><span class="n">f</span><span class="s1">&#39;v</span><span class="si">{i}</span><span class="s1">&#39;</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">iterable</span><span class="p">)})</span></div>
+
+<div class="viewcode-block" id="Row.from_dict"><a class="viewcode-back" href="../../api.html#carriage.Row.from_dict">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">from_dict</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">adict</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Create Row from a iterable&#39;&#39;&#39;</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="o">**</span><span class="n">adict</span><span class="p">)</span></div>
 
     <span class="k">def</span> <span class="nf">__new__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="sd">&#39;&#39;&#39;Create Row by field names and values</span>
@@ -123,6 +129,9 @@
     <span class="c1">#         return self._dict[name]</span>
     <span class="c1">#     else:</span>
     <span class="c1">#         raise AttributeError(f&#39;{self!r} has no attribute {name!r}&#39;)</span>
+
+    <span class="k">def</span> <span class="nf">fields</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
 
 <div class="viewcode-block" id="Row.evolve"><a class="viewcode-back" href="../../api.html#carriage.Row.evolve">[docs]</a>    <span class="k">def</span> <span class="nf">evolve</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="sd">&#39;&#39;&#39;Create a new Row by replacing or adding other fields</span>
@@ -161,32 +170,61 @@
                       <span class="k">for</span> <span class="n">field</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dict</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
                       <span class="k">if</span> <span class="n">field</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">fields</span><span class="p">})</span></div>
 
+<div class="viewcode-block" id="Row.merge"><a class="viewcode-back" href="../../api.html#carriage.Row.merge">[docs]</a>    <span class="k">def</span> <span class="nf">merge</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">rows</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Create a new merged Row.</span>
+<span class="sd">        If there&#39;s duplicated field name, keep the last value.</span>
+
+<span class="sd">        &gt;&gt;&gt; row = Row(x=2, y=3)</span>
+<span class="sd">        &gt;&gt;&gt; row.merge(Row(y=4, z=5), Row(z=6, u=7))</span>
+<span class="sd">        Row(x=2, y=4, z=6, u=7)</span>
+
+<span class="sd">        &#39;&#39;&#39;</span>
+
+        <span class="n">field_value_pairs</span> <span class="o">=</span> <span class="n">itt</span><span class="o">.</span><span class="n">chain</span><span class="o">.</span><span class="n">from_iterable</span><span class="p">(</span><span class="n">row</span><span class="o">.</span><span class="n">_dict</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+                                                    <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="p">(</span><span class="bp">self</span><span class="p">,)</span> <span class="o">+</span> <span class="n">rows</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">Row</span><span class="p">(</span><span class="o">**</span><span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">field_value_pairs</span><span class="p">})</span></div>
+
     <span class="k">def</span> <span class="nf">transform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="n">d</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dict</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
         <span class="n">d</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="n">k</span><span class="p">:</span> <span class="n">f</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="p">))</span><span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">items</span><span class="p">()})</span>
         <span class="k">return</span> <span class="n">Row</span><span class="p">(</span><span class="o">**</span><span class="n">d</span><span class="p">)</span>
 
-<div class="viewcode-block" id="Row.asdict"><a class="viewcode-back" href="../../api.html#carriage.Row.asdict">[docs]</a>    <span class="k">def</span> <span class="nf">asdict</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="Row.to_dict"><a class="viewcode-back" href="../../api.html#carriage.Row.to_dict">[docs]</a>    <span class="k">def</span> <span class="nf">to_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&#39;&#39;&#39;Convert to dict&#39;&#39;&#39;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dict</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span></div>
-
-    <span class="n">to_dict</span> <span class="o">=</span> <span class="n">asdict</span>
 
 <div class="viewcode-block" id="Row.to_map"><a class="viewcode-back" href="../../api.html#carriage.Row.to_map">[docs]</a>    <span class="k">def</span> <span class="nf">to_map</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&#39;&#39;&#39;Convert to Map&#39;&#39;&#39;</span>
         <span class="kn">from</span> <span class="nn">.map</span> <span class="k">import</span> <span class="n">Map</span>
-        <span class="k">return</span> <span class="n">Map</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">asdict</span><span class="p">())</span></div>
+        <span class="k">return</span> <span class="n">Map</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">to_dict</span><span class="p">())</span></div>
 
 <div class="viewcode-block" id="Row.to_tuple"><a class="viewcode-back" href="../../api.html#carriage.Row.to_tuple">[docs]</a>    <span class="k">def</span> <span class="nf">to_tuple</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&#39;&#39;&#39;Convert to tuple&#39;&#39;&#39;</span>
         <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Row.to_fields"><a class="viewcode-back" href="../../api.html#carriage.Row.to_fields">[docs]</a>    <span class="k">def</span> <span class="nf">to_fields</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Convert to rows</span>
+
+<span class="sd">        &gt;&gt;&gt; Row(x=3, y=4).to_fields()</span>
+<span class="sd">        [Row(field=&#39;x&#39;, value=3), Row(field=&#39;y&#39;, value=4)]</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">Row</span><span class="p">(</span><span class="n">field</span><span class="o">=</span><span class="n">k</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dict</span><span class="o">.</span><span class="n">items</span><span class="p">()]</span></div>
+
+<div class="viewcode-block" id="Row.iter_fields"><a class="viewcode-back" href="../../api.html#carriage.Row.iter_fields">[docs]</a>    <span class="k">def</span> <span class="nf">iter_fields</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Convert to rows</span>
+
+<span class="sd">        &gt;&gt;&gt; list(Row(x=3, y=4).iter_fields())</span>
+<span class="sd">        [Row(field=&#39;x&#39;, value=3), Row(field=&#39;y&#39;, value=4)]</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">Row</span><span class="p">(</span><span class="n">field</span><span class="o">=</span><span class="n">k</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dict</span><span class="o">.</span><span class="n">items</span><span class="p">())</span></div>
 
 <div class="viewcode-block" id="Row.to_list"><a class="viewcode-back" href="../../api.html#carriage.Row.to_list">[docs]</a>    <span class="k">def</span> <span class="nf">to_list</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&#39;&#39;&#39;Convert to list&#39;&#39;&#39;</span>
         <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span></div>
 
     <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="n">kwargs_str</span> <span class="o">=</span> <span class="s1">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">f</span><span class="s1">&#39;</span><span class="si">{k}</span><span class="s1">=</span><span class="si">{v!r}</span><span class="s1">&#39;</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dict</span><span class="o">.</span><span class="n">items</span><span class="p">())</span>
+        <span class="n">kwargs_str</span> <span class="o">=</span> <span class="s1">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+            <span class="n">f</span><span class="s1">&#39;</span><span class="si">{k}</span><span class="s1">={short_repr.repr(v)}&#39;</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dict</span><span class="o">.</span><span class="n">items</span><span class="p">())</span>
         <span class="k">return</span> <span class="n">f</span><span class="s1">&#39;Row(</span><span class="si">{kwargs_str}</span><span class="s1">)&#39;</span></div>
 
 
