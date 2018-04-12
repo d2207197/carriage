@@ -258,7 +258,7 @@ class Map(UserDict):
         return self.remove(*keys_to_delete)
 
     def retain_false(self, pred):
-        '''Delete key/value pairs not satisfying the predicate and return self
+        '''Delete key/value pairs satisfying the predicate and return self
 
         >>> m = Map(a=3, b=4, c=5)
         >>> m.retain_false(lambda k, v: k == 'b' or v == 5)

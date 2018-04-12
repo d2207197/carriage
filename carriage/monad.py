@@ -12,7 +12,7 @@ class Monad(ABC):
         raise NotImplementedError()
 
     def bind(self, to_monad_action):
-        raise self.flat_map(to_monad_action)
+        return self.flat_map(to_monad_action)
 
     @abstractmethod
     def map(self, action):

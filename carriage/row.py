@@ -1,7 +1,11 @@
+import itertools as itt
+
+from .repr import short_repr
 
 
 class Row(tuple):
-    '''A named tuple like type without the need of declaring field names.
+    '''A named tuple like type without the need of declaring field names
+    in advance.
 
     A Row object can be created anytime when you need it.
 
@@ -32,9 +36,6 @@ class Row(tuple):
     >>> row.evolve(age=row.age + 1)
     Row(name='Joe', age=31, height=170)
 
-    >>> row.asdict()
-    {'name': 'Joe', 'age': 30, 'height': 170}
-
     >>> row.to_dict()
     {'name': 'Joe', 'age': 30, 'height': 170}
 
@@ -59,6 +60,11 @@ class Row(tuple):
     def from_iterable(cls, iterable):
         '''Create Row from a iterable'''
         return cls(**{f'v{i}': v for i, v in enumerate(iterable)})
+
+    @classmethod
+    def from_dict(cls, adict):
+        '''Create Row from a iterable'''
+        return cls(**adict)
 
     def __new__(self, **kwargs):
         '''Create Row by field names and values
@@ -91,6 +97,9 @@ class Row(tuple):
     #         return self._dict[name]
     #     else:
     #         raise AttributeError(f'{self!r} has no attribute {name!r}')
+
+    def fields(self):
+        return self._dict.keys()
 
     def evolve(self, **kwargs):
         '''Create a new Row by replacing or adding other fields
@@ -129,32 +138,61 @@ class Row(tuple):
                       for field, value in self._dict.items()
                       if field not in fields})
 
+    def merge(self, *rows):
+        '''Create a new merged Row.
+        If there's duplicated field name, keep the last value.
+
+        >>> row = Row(x=2, y=3)
+        >>> row.merge(Row(y=4, z=5), Row(z=6, u=7))
+        Row(x=2, y=4, z=6, u=7)
+
+        '''
+
+        field_value_pairs = itt.chain.from_iterable(row._dict.items()
+                                                    for row in (self,) + rows)
+        return Row(**{k: v for k, v in field_value_pairs})
+
     def transform(self, **kwargs):
         d = self._dict.copy()
         d.update({k: f(getattr(self, k))for k, f in kwargs.items()})
         return Row(**d)
 
-    def asdict(self):
+    def to_dict(self):
         '''Convert to dict'''
         return self._dict.copy()
-
-    to_dict = asdict
 
     def to_map(self):
         '''Convert to Map'''
         from .map import Map
-        return Map(self.asdict())
+        return Map(self.to_dict())
 
     def to_tuple(self):
         '''Convert to tuple'''
         return tuple(self)
+
+    def to_fields(self):
+        '''Convert to rows
+
+        >>> Row(x=3, y=4).to_fields()
+        [Row(field='x', value=3), Row(field='y', value=4)]
+        '''
+        return [Row(field=k, value=v) for k, v in self._dict.items()]
+
+    def iter_fields(self):
+        '''Convert to rows
+
+        >>> list(Row(x=3, y=4).iter_fields())
+        [Row(field='x', value=3), Row(field='y', value=4)]
+        '''
+        return (Row(field=k, value=v) for k, v in self._dict.items())
 
     def to_list(self):
         '''Convert to list'''
         return list(self)
 
     def __repr__(self):
-        kwargs_str = ', '.join(f'{k}={v!r}' for k, v in self._dict.items())
+        kwargs_str = ', '.join(
+            f'{k}={short_repr.repr(v)}' for k, v in self._dict.items())
         return f'Row({kwargs_str})'
 
 

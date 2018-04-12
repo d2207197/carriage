@@ -213,7 +213,11 @@ def test_groupby():
             [(0, [0, 1, 2]), (1, [3, 4, 5]), (2, [6, 7, 8]), (3, [9])])
 
     assert Stream.range(10).group_by_as_map(
-        lambda n: n // 3) == {0: [0, 1, 2], 1: [3, 4, 5], 2: [6, 7, 8], 3: [9]}
+        lambda n: n // 3) == {
+            0: Array([0, 1, 2]),
+            1: Array([3, 4, 5]),
+            2: Array([6, 7, 8]),
+            3: Array([9])}
 
 
 @pytest.fixture
@@ -253,4 +257,5 @@ length count:1: Row(length=2, count=10)
 
 def test_repr():
     assert repr(Stream([1, 2, 3, 4])) == 'Stream([1, 2, 3, 4])'
-    assert repr(Stream(list(range(100)))) == 'Stream([0, 1, 2, 3, 4, ...])'
+    assert repr(Stream(list(range(100)))
+                ) == 'Stream([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, ...])'

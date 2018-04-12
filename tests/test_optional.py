@@ -1,5 +1,4 @@
 import pytest
-
 from carriage import Nothing, NothingError, Optional, Some
 
 
@@ -289,3 +288,55 @@ def test_value_do():
     # assert maybe_obj.n.get_none() is Nothing
     # assert maybe_obj.get_none.n() is Nothing
     # assert maybe_obj.join()
+
+
+def test_general():
+    class TreeNode:
+        def __init__(self, value, left=None, right=None):
+            self.value = value
+            self.left = left
+            self.right = right
+
+            return None
+
+    class TreeNodeOpt:
+        def __init__(self, name, left=Nothing, right=Nothing):
+            self.name = name
+            self.left = left
+            self.right = right
+
+    n = TreeNode(30)
+    # get left left right left right value and times 2
+    # or get 0
+
+    result = 0
+    if n.left is not None:
+        if n.left.left is not None:
+            if n.left.left.right is not None:
+                if n.left.left.right.left is not None:
+                    if n.left.left.right.left.right is not None:
+                        result = n.left.left.right.left.right.value * 2
+
+    assert result == 0
+
+    n = TreeNodeOpt(30)
+    result = (n.left
+              .bind(lambda n: n.left)
+              .bind(lambda n: n.right)
+              .bind(lambda n: n.left)
+              .bind(lambda n: n.right)
+              .map(lambda n: n.value * 2)
+              .get_or(0)
+              )
+    assert result == 0
+
+    n = TreeNode(30)
+    result = (Optional.value_noneable(n.left)
+              .bind(lambda n: n.left).join_noneable()
+              .bind(lambda n: n.right).join_noneable()
+              .bind(lambda n: n.left).join_noneable()
+              .bind(lambda n: n.right).join_noneable()
+              .map(lambda n: n.value * 2)
+              .get_or(0)
+              )
+    assert result == 0

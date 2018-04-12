@@ -174,4 +174,5 @@ def test_to():
 
 def test_repr():
     assert repr(Array.range(3)) == 'Array([0, 1, 2])'
-    assert repr(Array.range(100)) == 'Array([0, 1, 2, 3, 4, ...])'
+    assert repr(Array.range(
+        100)) == 'Array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, ...])'

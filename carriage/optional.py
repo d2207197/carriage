@@ -10,6 +10,150 @@ class NothingError(AttributeError):
 
 
 class Optional(Monad):
+    '''An type for handling special value or exception.
+
+    Create Optional from a function call that may raise exception.
+
+    >>> def divide(a, b):
+    ...     return a / b
+    >>> Optional.call_exceptable(divide, 2, 4)
+    Some(0.5)
+    >>> Optional.call_exceptable(divide, 2, 0)
+    Nothing
+
+    Create Optional from a value that may be None.
+
+    >>> adict = {'a': 1, 'b': 2, 'c': 3}
+    >>> Optional.value_noneable(adict.get('c'))
+    Some(3)
+    >>> Optional.value_noneable(adict.get('d'))
+    Nothing
+
+
+    Escape from if hell of handling None value or exception. 
+
+    >>> class TreeNode:
+    ...     def __init__(self, value, left=None, right=None):
+    ...         self.value = value
+    ...         self.left = left
+    ...         self.right = right
+
+    >>> n = TreeNode(30, TreeNode(5, TreeNode(2)))
+
+    It seem convenient to traversal in tree.
+    >>> n.left.left.value
+    2
+
+    But both ``left`` and ``right`` might be None. You should take care of
+    that.
+
+    >>> result = 0
+    >>> if n.left is not None:
+    ...     if n.left.left is not None:
+    ...         if n.left.left.right is not None:
+    ...             if n.left.left.right.left is not None:
+    ...                 result = n.left.left.right.left.value * 2
+    >>> result
+    0
+
+
+    Now let's replace Noneable value with Optional.
+
+    >>> class TreeNodeOpt:
+    ...     def __init__(self, value, left=None, right=None):
+    ...         self.value = value
+    ...         self.left = Some(left) if left is not None else Nothing
+    ...         self.right = Some(left) if left is not None else Nothing
+
+    >>> nopt = TreeNodeOpt(30, TreeNodeOpt(5, TreeNodeOpt(2)))
+    >>> (nopt.left
+    ...  .bind(lambda n: n.left)
+    ...  .map(lambda n: n.value)
+    ...  .get_or())
+    2
+
+    It seems getting harder to get a value, but actually you are now free from
+    having the risk of getting attribute from None. And you don't have to build
+    a big, nested if statement for handling it.
+
+    >>> (nopt.left
+    ...  .bind(lambda n: n.left)
+    ...  .bind(lambda n: n.right)
+    ...  .bind(lambda n: n.left)
+    ...  .map(lambda n: n.value * 2)
+    ...  .get_or(0))
+    0
+
+    >>> (nopt.left
+    ...  .pluck_attr('left').join()
+    ...  .pluck_attr('right').join()
+    ...  .pluck_attr('left').join()
+    ...  .pluck_attr('value')
+    ...  .map(lambda v: v * 2)
+    ...  .get_or(0))
+    0
+
+    And you can use Optional to handle the original TreeNode.
+
+    >>> n = TreeNode(30, TreeNode(5, TreeNode(2)))
+    >>> (Optional.value_noneable(n.left)
+    ...  .map(lambda n: n.left).join_noneable()
+    ...  .map(lambda n: n.right).join_noneable()
+    ...  .map(lambda n: n.left).join_noneable()
+    ...  .map(lambda n: n.value * 2)
+    ...  .get_or(0))
+    0
+
+    It's more elegant to have functions return Optional rather than None or
+    other special value.
+
+    >>> def get_right_opt(tn):
+    ...     if tn.right is None:
+    ...         return Nothing
+    ...     return Some(tn.right)
+
+    >>> def get_left_opt(tn):
+    ...     if tn.left is None:
+    ...         return Nothing
+    ...     return Some(tn.left)
+
+    >>> (Optional.value_noneable(n)
+    ...  .bind(get_left_opt)
+    ...  .bind(get_left_opt)
+    ...  .bind(get_right_opt)
+    ...  .bind(get_left_opt)
+    ...  .map(lambda n: n.value * 2)
+    ...  .get_or(0))
+    0
+
+    You can create an Optional function with these decorator.
+
+
+    >>> @Optional.noneable
+    ... def get_first(l):
+    ...     if len(l) > 0:
+    ...         return l[0]
+    ...     return None
+    >>> get_first([3,4,5])
+    Some(3)
+    >>> get_first([])
+    Nothing
+
+    >>> @Optional.exceptable(IndexError)
+    ... def get_first(l):
+    ...     return l[0]
+    >>> get_first([3,4,5])
+    Some(3)
+    >>> get_first([])
+    Nothing
+
+
+
+
+
+
+
+    '''
 
     @property
     def _base_type(self):
@@ -25,6 +169,7 @@ class Optional(Monad):
             return Some(value)
 
     ecall = call_exceptable
+    expcall = call_exceptable
 
     @classmethod
     def value_noneable(cls, value):
@@ -32,7 +177,7 @@ class Optional(Monad):
             return Nothing
         return Some(value)
 
-    nval = value_noneable
+    noneval = value_noneable
 
     @classmethod
     def noneable(cls, f):

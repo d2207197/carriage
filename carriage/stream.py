@@ -208,6 +208,7 @@ class Stream(Monad):
 
         Returns
         -------
+        set
         '''
         return set(self)
 
@@ -221,7 +222,7 @@ class Stream(Monad):
         -------
         dict
         '''
-        return {k: v for k, v in self}
+        return dict(self)
 
     def to_map(self):
         '''Convert to a Map
@@ -304,6 +305,79 @@ class Stream(Monad):
         def flat_map_tr(iterable):
             return itt.chain.from_iterable(map(to_iterable_func, iterable))
         return flat_map_tr
+
+    @as_stream
+    def tap(self, tag='', n=5, msg_format='{tag}:{index}: {elem}'):
+        '''A debugging tool. This method create a new Stream with the same
+        elements. While evaluating Stream, it print first n elements.
+
+        >>> (Stream.range(3).tap('orig')
+        ...  .map(lambda x: x * 2).tap_with(lambda i, e: f'{i} -> {e}')
+        ...  .accumulate(lambda a, b: a + b).tap('acc')
+        ...  .tap(msg_format='end\\n')
+        ...  .to_list())
+        orig:0: 0
+        0 -> 0
+        acc:0: 0
+        end
+        <BLANKLINE>
+        orig:1: 1
+        1 -> 2
+        acc:1: 2
+        end
+        <BLANKLINE>
+        orig:2: 2
+        2 -> 4
+        acc:2: 6
+        end
+        <BLANKLINE>
+        [0, 2, 6]
+
+        '''
+
+        def tap_tr(self_):
+            for index, elem in enumerate(self_):
+                if index < n:
+                    print(msg_format.format(tag=tag, index=index, elem=elem))
+                yield elem
+        return tap_tr
+
+    @as_stream
+    def tap_with(self, func, n=5):
+        '''A debugging tool. This method create a new Stream with the same
+        elements. While evaluating Stream, it call the function using
+        index and element then prints the return value for first n elements.
+
+        >>> (Stream.range(3).tap('orig')
+        ...  .map(lambda x: x * 2).tap('x2')
+        ...  .accumulate(lambda a, b: a + b).tap('acc')
+        ...  .to_list())
+        orig:0: 0
+        x2:0: 0
+        acc:0: 0
+        orig:1: 1
+        x2:1: 2
+        acc:1: 2
+        orig:2: 2
+        x2:2: 4
+        acc:2: 6
+        [0, 2, 6]
+
+        Parameters
+        -----------
+        func : ``func(index, elem) -> Any``
+            Function for building the printing object.
+        n : int
+            First n element will be print.
+        '''
+
+        def tap_with_tr(self_):
+            for index, elem in enumerate(self_):
+                if index < n:
+                    print(func(index, elem))
+                yield elem
+
+        return tap_with_tr
 
     def then(self, alist):
         # TODO
@@ -539,13 +613,13 @@ class Stream(Monad):
         return split_after_tr
 
     def pluck(self, key):
-        '''Create a new Stream of values by evaluating ``elem[key]`` of each
+        '''Create a new Stream of values by evaluating ``elem[key]`` for each
         element.'''
         return self.map(lambda d: d[key])
 
     def pluck_opt(self, key):
-        '''Create a new Stream of Optional values by evaluating ``elem[key]`` of
-        each element.
+        '''Create a new Stream of Optional values by evaluating ``elem[key]``
+        for each element.
         Get ``Some(value)`` if the key exists for that element, otherwise get
         Nothing singleton.
         '''
@@ -560,6 +634,15 @@ class Stream(Monad):
         '''
         return self.map(lambda obj: getattr(obj, attr))
 
+    def without(self, *elems):
+        '''Create a new Stream without specified elements.'''
+        try:
+            elems = set(elems)
+        except TypeError:
+            # TODO: warn bad performance
+            pass
+        return self.filter(lambda elem: elem not in elems)
+
     @as_stream
     def filter(self, pred):
         '''Create a new Stream contains only elements passing predicate'''
@@ -571,15 +654,6 @@ class Stream(Monad):
         return fnt.partial(itt.filterfalse, pred)
 
     filterfalse = filter_false
-
-    def without(self, *elems):
-        '''Create a new Stream without specified elements.'''
-        try:
-            elems = set(elems)
-        except TypeError:
-            # TODO: warn bad performance
-            pass
-        return self.filter(lambda elem: elem not in elems)
 
     def where(self, **conds):
         '''Create a new Stream contains only mapping pass all conditions.
@@ -723,29 +797,30 @@ class Stream(Monad):
 
         Pros:
 
-        * Elements don't need to be sorted by the key function first. 
+        * Elements don't need to be sorted by the key function first.
           You can call ``map_group_by`` anytime and correct grouping result.
 
         Cons:
 
         * Key function has to be evaluated to a hashable value.
 
-        * Lazy-evaluating. Consume less memory while grouping. 
+        * Not Lazy-evaluating. Consume more memory while grouping.
           Yield a group as soon as possible.
         '''
 
         from .map import Map
-        key_to_grp = defaultdict(list)
+        key_to_grp = defaultdict(Array)
         for elem in self:
             key_to_grp[key(elem)].append(elem)
         return Map(key_to_grp)
 
     def multi_group_by_as_map(self, key=None):
+        from .map import Map
         key_to_grp = defaultdict(list)
         for elem in self:
             for k in key(elem):
                 key_to_grp[k].append(elem)
-        return dict(key_to_grp)
+        return Map(key_to_grp)
 
     @as_stream
     def sliding_window(self, n):
@@ -761,7 +836,11 @@ class Stream(Monad):
         return sliding_window_tr
 
     def mean(self):
-        '''Get the average of elements.'''
+        '''Get the average of elements.
+
+        >>> Array.range(10).mean()
+        4.5
+        '''
         length, summation = deque(enumerate(itt.accumulate(self), 1), 1).pop()
         return summation / length
 
@@ -861,35 +940,6 @@ class Stream(Monad):
         '''
         itrs = itt.tee(self, 2)
         return tuple(map(Stream, itrs))
-
-    @as_stream
-    def tap(self, tag='', n=5, msg_format='{tag}:{index}: {elem}'):
-        '''A debugging tool. This method create a new Stream with the same
-        elements. While evaluating Stream, it print first n elements.
-
-        >>> (Stream.range(3).tap('orig')
-        ...  .map(lambda x: x * 2).tap('x2')
-        ...  .accumulate(lambda a, b: a + b).tap('acc')
-        ...  .to_list())
-        orig:0: 0
-        x2:0: 0
-        acc:0: 0
-        orig:1: 1
-        x2:1: 2
-        acc:1: 2
-        orig:2: 2
-        x2:2: 4
-        acc:2: 6
-        [0, 2, 6]
-
-        '''
-
-        def tap_tr(self_):
-            for index, elem in enumerate(self_):
-                if index < n:
-                    print(msg_format.format(tag=tag, index=index, elem=elem))
-                yield elem
-        return tap_tr
 
     # def copy(self):
     #     return Array(copy(self._items))
