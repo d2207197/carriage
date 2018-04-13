@@ -1,8 +1,11 @@
+import heapq
 import itertools as itt
-from collections import UserDict, defaultdict
+import operator as op
+from collections import OrderedDict, UserDict, defaultdict
 
 from .array import Array
 from .optional import Nothing, Some
+from .repr import short_repr
 from .row import KeyValue, Row
 from .stream import Stream
 
@@ -10,7 +13,7 @@ from .stream import Stream
 def identity(_): return _
 
 
-class Map(UserDict):
+class Map(OrderedDict):
     '''A mutable dictionary enhanced with a bulk of useful methods.
     '''
 
@@ -93,7 +96,7 @@ class Map(UserDict):
                           for d in dicts)))
 
     def __repr__(self):
-        return f'Map({super().__repr__()})'
+        return f'Map({self.make_string()})'
 
     def map(self, func):
         '''Create a new Map instance that each key, value pair is derived by
@@ -388,6 +391,7 @@ class Map(UserDict):
         >>> Map(a=3, b=4, c=5).group_by(lambda k, v: v % 2)
         Map({1: Map({'a': 3, 'c': 5}), 0: Map({'b': 4})})
 
+
         Parameters
         ----------
         key : ``(k, v) -> key``
@@ -554,54 +558,55 @@ class Map(UserDict):
         '''
         return Map((value, key) for key, value in self.items())
 
-    def most_common(self):
-        # TODO
-        pass
+    def for_each(self, func):
+        '''Call func for each key/value pair'''
+        for k, v in self.items():
+            func(k, v)
 
+    def for_each_key(self, func):
+        '''Call func for each key'''
+        for k in self.key():
+            func(k)
 
-class FrozenMap(UserDict):
+    def for_each_value(self, func):
+        '''Call func for each value'''
+        for v in self.value():
+            func(v)
 
-    def merge(self, others):
-        pass
+    def nlargest_value(self, n=None):
+        '''Get top n largest values'''
+        if n is None:
+            vs = sorted(self.items(), key=op.itemgetter(1), reverse=True)
+        vs = heapq.nlargest(n, self.items(), key=op.itemgetter(1))
+        return Array(vs)
 
-    def merge_with(self, others):
-        pass
+    def nsmallest_value(self, n=None):
+        '''Get top n smallest values'''
+        if n is None:
+            vs = sorted(self.items(), key=op.itemgetter(1), reverse=True)
+        vs = heapq.nlargest(n, self.items(), key=op.itemgetter(1))
+        return Array(vs)
 
-    def map(self, func):
-        pass
+    # TODO
+    def nlargest(self, n, key=None):
+        # '''Get the n largest elements.
 
-    def map_keys(self):
-        pass
+        # >>> Map([1, 5, 2, 3, 6]).nlargest(2).to_list()
+        # [6, 5]
+        # '''
 
-    def map_values(self):
-        pass
+        def nlargest_tr(self_):
+            return heapq.nlargest(n, iter(self_), key=key)
+        return nlargest_tr
 
-    def to_stream(self):
-        pass
+    def nsmallest(self, n, key=None):
+        # '''Get the n smallest elements.
 
-    def to_array(self):
-        pass
+        # >>> Stream([1, 5, 2, 3, 6]).nsmallest(2).to_list()
+        # [1, 2]
 
-    def project(self, keys):
-        pass
+        # '''
 
-    def flip(self):
-        pass
-
-    def get(self, key, default=None):
-        pass
-
-    def get_opt(self, key):
-        pass
-
-    def filter(self, pred):
-        pass
-
-    def filter_keys(self, pred):
-        pass
-
-    def filter_values(self, pred):
-        pass
-
-    def to_tuple(self):
-        return tuple(self.items())
+        def nsmallest_tr(self_):
+            return heapq.nsmallest(n, iter(self_), key=key)
+        return nsmallest_tr

@@ -152,6 +152,16 @@ class Row(tuple):
                                                     for row in (self,) + rows)
         return Row(**{k: v for k, v in field_value_pairs})
 
+    def rename_fields(self, **kwargs):
+        '''Create a new Row that field names renamed.
+
+        >>> row = Row(a=2, b=3, c=4)
+        >>> row.rename_fields(a='x', b='y')
+        Row(x=2, y=3, c=4)
+
+        '''
+        return Row(**{kwargs.get(k, k): v for k, v in self._dict.items()})
+
     def transform(self, **kwargs):
         d = self._dict.copy()
         d.update({k: f(getattr(self, k))for k, f in kwargs.items()})
@@ -164,7 +174,7 @@ class Row(tuple):
     def to_map(self):
         '''Convert to Map'''
         from .map import Map
-        return Map(self.to_dict())
+        return Map(**self.to_dict())
 
     def to_tuple(self):
         '''Convert to tuple'''
