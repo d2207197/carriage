@@ -8,7 +8,7 @@ but enhanced with a lot of practical methods.
 
 :doc:`Row </row>` is a handy and more powerful `namedtuple <https://docs.python.org/3.6/library/collections.html>`_. You can create arbitrary :doc:`Row </row>` anytime without declaring fields in advance. 
 
-:doc:`Stream </stream>` is a very powerful wrapper for any iterable object. You can transform, inspect, manipulate an iterable much easier. And with the property of lazy-evaluating, building and testing the pipeline for handling big, long data are faster and easier.
+:doc:`Stream </stream>` is a very powerful wrapper type for any iterable object. You can write less code to transform, inspect, and manipulate any iterable. And with the property of lazy-evaluating, building and testing the pipeline for handling big, long data are faster and easier.
 
 :doc:`Optional </optional>` is a object wrapper for handling errors. It makes ``None`` value, exceptions or other unexpected condition won't break your data processing pipeline.
 
