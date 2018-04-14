@@ -1,12 +1,12 @@
 ``carriage``: Less code, More productive
 ========================================
 
-**carriage** aims at making your Python coding life easier by providing a bunch of collection classes. You can process data, write your code, test your code more fluently.
+**carriage** aims to make your Python coding life easier. It includes a bunch of powerful collection classes with many practical methods you might use everyday. By using it, you can write your code faster, make your code more readable, and test your data pipeline more less painfully.
 
 :doc:`Map </map>` and :doc:`Array </array>` work just like Python primitive ``dict`` and ``list`` 
 but enhanced with a lot of practical methods.
 
-:doc:`Row </row>` is a handy and more powerful `namedtuple <https://docs.python.org/3.6/library/collections.html>`_. You can create arbitrary :doc:`Row </row>` anytime without declaring fields in advance. It also provides some useful methods for transforming itself. 
+:doc:`Row </row>` is a handy and more powerful `namedtuple <https://docs.python.org/3.6/library/collections.html>`_. You can create arbitrary :doc:`Row </row>` anytime without declaring fields in advance. 
 
 :doc:`Stream </stream>` is a very powerful wrapper for any iterable object. You can transform, inspect, manipulate an iterable much easier. And with the property of lazy-evaluating, building and testing the pipeline for handling big, long data are faster and easier.
 
