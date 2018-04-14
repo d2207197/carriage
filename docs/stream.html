@@ -16,7 +16,7 @@
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="Array: All you want for a List type is here" href="array.html" />
-    <link rel="prev" title="Map: A ordered dictionary with magic powers" href="map.html" />
+    <link rel="prev" title="Map: Ordered dictionary with magic powers" href="map.html" />
    
   <link rel="stylesheet" href="_static/custom.css" type="text/css" />
   
@@ -1016,27 +1016,6 @@ Yield a group as soon as possible.</li>
 </dd></dl>
 
 <dl class="method">
-<dt id="carriage.Stream.groupby">
-<code class="descname">groupby</code><span class="sig-paren">(</span><em>key=None</em><span class="sig-paren">)</span><a class="headerlink" href="#carriage.Stream.groupby" title="Permalink to this definition">¶</a></dt>
-<dd><p>Create a new Stream using the builtin itertools.groupby,
-which sequentially groups elements as long as the key function
-evaluates to the same value.</p>
-<p>Comparing to <code class="docutils literal notranslate"><span class="pre">group_by_as_map</span></code>, there’re some pros and cons.</p>
-<p>Cons:</p>
-<ul class="simple">
-<li>Elements should be sorted by the key function first,
-or elements with the same key may be broken into different groups.</li>
-</ul>
-<p>Pros:</p>
-<ul class="simple">
-<li>Key function doesn’t have to be evaluated to a hashable value.
-It can be any type which supports <code class="docutils literal notranslate"><span class="pre">__eq__</span></code>.</li>
-<li>Lazy-evaluating. Consume less memory while grouping.
-Yield a group as soon as possible.</li>
-</ul>
-</dd></dl>
-
-<dl class="method">
 <dt id="carriage.Stream.group_by_as_map">
 <code class="descname">group_by_as_map</code><span class="sig-paren">(</span><em>key_func=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/carriage/stream.html#Stream.group_by_as_map"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#carriage.Stream.group_by_as_map" title="Permalink to this definition">¶</a></dt>
 <dd><p>Group values in to a Map by the value of key function evaluation
@@ -1178,7 +1157,7 @@ with the same order of first occurence in the source Stream.</p>
 <h3>Related Topics</h3>
 <ul>
   <li><a href="index.html">Documentation overview</a><ul>
-      <li>Previous: <a href="map.html" title="previous chapter"><code class="docutils literal notranslate"><span class="pre">Map</span></code>: A ordered dictionary with magic powers</a></li>
+      <li>Previous: <a href="map.html" title="previous chapter"><code class="docutils literal notranslate"><span class="pre">Map</span></code>: Ordered dictionary with magic powers</a></li>
       <li>Next: <a href="array.html" title="next chapter"><code class="docutils literal notranslate"><span class="pre">Array</span></code>: All you want for a List type is here</a></li>
   </ul></li>
 </ul>
