@@ -30,7 +30,7 @@ All collection classes can be imported from the top level of this package.
 .. doctest::
 
    >>> from carriage import Row, Map, Stream, Array, Optional, Some, Nothing
-   >>> Row(x=3, y=4).evolve(z=5)
+   >>> Row(x=3, y=4).evolve(y=6, z=5)
    Row(x=3, y=4, z=5)
    >>> Map(joe=32, may=59, joy=31).remove('joy')
    Map({'joe': 32, 'may': 59)
