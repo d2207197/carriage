@@ -1035,8 +1035,6 @@ class Stream(Monad):
                 yield KeyValues(key=k, values=Stream(vs))
         return group_by_tr
 
-    groupby = group_by
-
     def group_by_as_map(self, key_func=None):
         '''Group values in to a Map by the value of key function evaluation
         result.
