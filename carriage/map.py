@@ -17,6 +17,15 @@ class Map(OrderedDict):
     '''A mutable dictionary enhanced with a bulk of useful methods.
     '''
 
+    def items(self):
+        return Stream(super().items()).starmap(KeyValue)
+
+    def values(self):
+        return Stream(super().values())
+
+    def keys(self):
+        return Stream(super().keys())
+
     def update(self, *args, **kwds):
         '''Update Map from dict/iterable and ``return self``
 
@@ -160,6 +169,10 @@ class Map(OrderedDict):
         func : ``pred(key, value) -> value``
             function for computing new values
 
+        Returns
+        -------
+        self
+
         '''
         for key, value in self.items():
             self[key] = func(key, value)
@@ -173,6 +186,11 @@ class Map(OrderedDict):
         Map({'a': 3, 'c': 5})
         >>> m
         Map({'a': 3, 'c': 5})
+
+        Returns
+        -------
+        self
+
         '''
         keys = set(keys)
         current_keys = set(self.keys())
@@ -190,6 +208,11 @@ class Map(OrderedDict):
         Map({'a': 3, 'c': 5})
         >>> m
         Map({'a': 3, 'b': 4, 'c': 5})
+
+        Returns
+        -------
+        Map[key, value]
+
         '''
         return Map((k, self[k]) for k in keys)
 
@@ -206,6 +229,10 @@ class Map(OrderedDict):
         Some(6)
         >>> m.get_opt('c').map(lambda v: v * 2)
         Nothing
+
+        Returns
+        -------
+        Optional[value]
         '''
 
         if key in self:
@@ -220,6 +247,10 @@ class Map(OrderedDict):
         Map({'b': 4})
         >>> m
         Map({'b': 4})
+
+        Returns
+        -------
+        self
         '''
         for key in keys:
             del self[key]
@@ -234,6 +265,10 @@ class Map(OrderedDict):
         Map({'b': 4})
         >>> m
         Map({'a': 3, 'b': 4, 'c': 6})
+
+        Returns
+        -------
+        Map[key, value]
         '''
         return Map((key, value)
                    for key, value in self.items()
@@ -251,6 +286,10 @@ class Map(OrderedDict):
         Parameters
         ----------
         pred : ``(k, v) -> bool``
+
+        Returns
+        -------
+        self
         '''
 
         keys_to_delete = []
@@ -272,6 +311,10 @@ class Map(OrderedDict):
         Parameters
         ----------
         pred : ``(k, v) -> bool``
+
+        Returns
+        -------
+        self
         '''
 
         keys_to_delete = []
@@ -293,6 +336,10 @@ class Map(OrderedDict):
         Parameters
         ----------
         pred : ``(k) -> bool``
+
+        Returns
+        -------
+        self
         '''
 
         keys_to_delete = []
@@ -314,6 +361,10 @@ class Map(OrderedDict):
         Parameters
         ----------
         pred : ``(k) -> bool``
+
+        Returns
+        -------
+        self
         '''
 
         keys_to_delete = []
@@ -336,6 +387,10 @@ class Map(OrderedDict):
         pred : ``(k, v) -> bool``
             predicate
 
+
+        Returns
+        -------
+        Map[key, value]
         '''
 
         return Map((k, v) for k, v in self.items() if pred(k, v))
@@ -352,6 +407,10 @@ class Map(OrderedDict):
         ----------
         pred : ``(k, v) -> bool``
             predicate
+
+        Returns
+        -------
+        Map[key, value]
         '''
         return Map((k, v) for k, v in self.items() if not pred(k, v))
 
@@ -367,6 +426,10 @@ class Map(OrderedDict):
         ----------
         pred : ``(k, v) -> bool``
             predicate
+
+        Returns
+        -------
+        Map[key, value]
         '''
         return Map((k, v) for k, v in self.items() if pred(k))
 
@@ -382,10 +445,14 @@ class Map(OrderedDict):
         ----------
         pred : ``(k, v) -> bool``
             predicate
+
+        Returns
+        -------
+        Map[key, value]
         '''
         return Map((k, v) for k, v in self.items() if pred(v))
 
-    def group_by(self, key):
+    def group_by(self, key_func):
         '''Group key/value pairs into nested Maps.
 
         >>> Map(a=3, b=4, c=5).group_by(lambda k, v: v % 2)
@@ -394,14 +461,17 @@ class Map(OrderedDict):
 
         Parameters
         ----------
-        key : ``(k, v) -> key``
+        key_func : ``(key, value) -> group_key``
             predicate
+
+        Returns
+        -------
+        Map[key_func(key), Map[key, value]]
         '''
-        func = key
         grouped_d = defaultdict(Map)
 
         for key, value in self.items():
-            grouped_d[func(key, value)][key] = value
+            grouped_d[key_func(key, value)][key] = value
 
         return Map(grouped_d)
 
@@ -433,6 +503,11 @@ class Map(OrderedDict):
         end : str
             Default to ``}``
 
+
+        Returns
+        -------
+        str
+
         '''
 
         items_str = item_sep.join(
@@ -447,6 +522,10 @@ class Map(OrderedDict):
         >>> m = Map(a=4, b=5, c=6, d=7)
         >>> m.take(2).to_list()
         [Row(key='a', value=4), Row(key='b', value=5)]
+
+        Returns
+        -------
+        Stream[Row[key, value]]
         '''
         return self.to_stream().take(n)
 
@@ -465,6 +544,10 @@ class Map(OrderedDict):
         Traceback (most recent call last):
         ...
         IndexError: index out of range.
+
+        Returns
+        -------
+        Row[key, value]
         '''
         return self.nth(0)
 
@@ -481,6 +564,11 @@ class Map(OrderedDict):
         >>> m = Map()
         >>> m.first_opt()
         Nothing
+
+        Returns
+        -------
+        Optional[Row[key, value]]
+
         '''
         return self.nth_opt(0)
 
@@ -496,6 +584,9 @@ class Map(OrderedDict):
         ...
         IndexError: index out of range.
 
+        Returns
+        -------
+        Row[key, value]
         '''
         try:
             key, value = next(itt.islice(self.items(), index, None))
@@ -514,6 +605,10 @@ class Map(OrderedDict):
         >>> m = Map()
         >>> m.first_opt()
         Nothing
+
+        Returns
+        -------
+        Optional[Row[key, value]]
         '''
         try:
             return Some(self.nth(index))
@@ -526,6 +621,10 @@ class Map(OrderedDict):
         >>> m = Map(a=4, b=5, c=6, d=7)
         >>> m.len()
         4
+
+        Returns
+        -------
+        int
         '''
         return len(self)
 
@@ -536,8 +635,12 @@ class Map(OrderedDict):
         >>> m.to_stream().take(2).to_list()
         [Row(key='a', value=4), Row(key='b', value=5)]
 
+        Returns
+        -------
+        Stream[Row[key, value]]
+
         '''
-        return Stream(self.items()).starmap(KeyValue)
+        return self.items()
 
     def to_array(self):
         '''Create a Array instance of ``Row(key, value)`` iterable.
@@ -545,6 +648,10 @@ class Map(OrderedDict):
         >>> m = Map(a=4, b=5, c=6, d=7)
         >>> m.to_array().take(2)
         Array([Row(key='a', value=4), Row(key='b', value=5)])
+
+        Returns
+        -------
+        Array[Row[key, value]]
 
         '''
         return self.to_stream().to_array()
@@ -559,54 +666,71 @@ class Map(OrderedDict):
         return Map((value, key) for key, value in self.items())
 
     def for_each(self, func):
-        '''Call func for each key/value pair'''
+        '''Call func for each key/value pair
+
+        >>> m = Map(a=[], b=[], c=[])
+        >>> m.for_each(lambda k, v: v.append(k))
+        >>> m
+        Map({'a': ['a'], 'b': ['b'], 'c': ['c']})
+
+        '''
         for k, v in self.items():
             func(k, v)
 
     def for_each_key(self, func):
-        '''Call func for each key'''
-        for k in self.key():
+        '''Call func for each key
+
+        >>> m = Map(a=[], b=[], c=[])
+        >>> keys = []
+        >>> m.for_each_key(lambda k: keys.append(k))
+        >>> keys
+        ['a', 'b', 'c']
+
+        '''
+        for k in self.keys():
             func(k)
 
     def for_each_value(self, func):
-        '''Call func for each value'''
-        for v in self.value():
+        '''Call func for each value
+
+        >>> m = Map(a=[], b=[], c=[])
+        >>> m.for_each_value(lambda v: v.append(3))
+        >>> m
+        Map({'a': [3], 'b': [3], 'c': [3]})
+
+        '''
+        for v in self.values():
             func(v)
 
-    def nlargest_value(self, n=None):
-        '''Get top n largest values'''
+    def nlargest_value_items(self, n=None):
+        '''Get top n largest values
+
+        >>> m = Map(a=6, b=2, c=10, d=9)
+        >>> m.nlargest_value_items(n=2)
+        Array([Row(key='c', value=10), Row(key='d', value=9)])
+
+        Returns
+        -------
+        Array[Row[key, value]]
+        '''
         if n is None:
             vs = sorted(self.items(), key=op.itemgetter(1), reverse=True)
         vs = heapq.nlargest(n, self.items(), key=op.itemgetter(1))
         return Array(vs)
 
-    def nsmallest_value(self, n=None):
-        '''Get top n smallest values'''
+    def nsmallest_value_items(self, n=None):
+        '''Get top n smallest values
+
+        >>> m = Map(a=6, b=2, c=10, d=9)
+        >>> m.nsmallest_value_items(n=2)
+        Array([Row(key='b', value=2), Row(key='a', value=6)])
+
+        Returns
+        -------
+        Array[Row[key, value]]
+
+        '''
         if n is None:
-            vs = sorted(self.items(), key=op.itemgetter(1), reverse=True)
-        vs = heapq.nlargest(n, self.items(), key=op.itemgetter(1))
+            vs = sorted(self.items(), key=op.itemgetter(1), reverse=False)
+        vs = heapq.nsmallest(n, self.items(), key=op.itemgetter(1))
         return Array(vs)
-
-    # TODO
-    def nlargest(self, n, key=None):
-        # '''Get the n largest elements.
-
-        # >>> Map([1, 5, 2, 3, 6]).nlargest(2).to_list()
-        # [6, 5]
-        # '''
-
-        def nlargest_tr(self_):
-            return heapq.nlargest(n, iter(self_), key=key)
-        return nlargest_tr
-
-    def nsmallest(self, n, key=None):
-        # '''Get the n smallest elements.
-
-        # >>> Stream([1, 5, 2, 3, 6]).nsmallest(2).to_list()
-        # [1, 2]
-
-        # '''
-
-        def nsmallest_tr(self_):
-            return heapq.nsmallest(n, iter(self_), key=key)
-        return nsmallest_tr

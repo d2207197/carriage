@@ -400,6 +400,7 @@ class Stream(Monad):
 
     @reprlib.recursive_repr()
     def __repr__(self):
+        # TODO: let user control use or not to use short_repr
         if self._transformer is None:
             return (f'{type(self).__name__}'
                     f'({short_repr.repr(self._iterable)})')
@@ -412,7 +413,12 @@ class Stream(Monad):
         return list(self)
 
     def len(self):
-        '''Get the length of the Stream'''
+        '''Get the length of the Stream
+
+        Returns
+        -------
+        int
+        '''
         return sum(1 for item in self)
 
     @classmethod
@@ -427,16 +433,45 @@ class Stream(Monad):
         '''Get the item in the nth position if index is integer.
         Get a Stream of a slice of items if index is a slice object.
 
-        Be aware of that if the source iterable is an iterator, you might get
-        different item for the index if you call multiple times.
+        Note
+            if the source iterable is an iterator, you might get
+            unexpected element if you call ``__getitem__()`` multiple times.
+
+        >>> s = Stream(range(5, 12))
+        >>> s[2]
+        7
+        >>> s[2]
+        7
+        >>> s = Stream(iter(range(5, 12)))
+        >>> s[2]
+        7
+        >>> s[2]
+        10
+        >>> s[2]
+        Traceback (most recent call last):
+        ...
+        IndexError: Stream index out of range. Be aware of that indexing an iterator would consume items from it.
+
+        >>> s = Stream(range(5, 12))
+        >>> s[:3]
+        Stream(range(5, 8))
 
         Parameters
         ----------
         index : int, slice
             index of target item or a slice object
-        '''
+        '''  # noqa
 
         # TODO: support negative index
+        if self._transformer is None:
+            try:
+                if isinstance(index, slice):
+                    return Stream(self._iterable[index])
+                else:
+                    return self._iterable[index]
+            except Exception:
+                pass
+
         if isinstance(index, slice):
             return self.slice(index.start, index.stop, index.step)
 
@@ -450,6 +485,19 @@ class Stream(Monad):
 
     def get(self, index, default=None):
         '''Get item of the index. Return default value if not exists.
+
+        >>> s = Stream.range(5, 12)
+        >>> s.get(3)
+        8
+        >>> s.get(10) is None
+        True
+        >>> s.get(10, 0)
+        0
+
+        Returns
+        -------
+        element
+
         '''
         # TODO: support negative index
         # dd = deque(aa, maxlen=1)
@@ -461,6 +509,23 @@ class Stream(Monad):
         '''Optionally get item of the index.
         Return Some(value) if exists.
         Otherwise return Nothing.
+
+        >>> s = Stream.range(5, 12)
+        >>> s.get_opt(3)
+        Some(8)
+        >>> s.get_opt(10)
+        Nothing
+
+        >>> s.get_opt(10).get_or(0)
+        0
+        >>> s.get_opt(3).map(lambda n: n * 2).get_or(0)
+        16
+        >>> s.get_opt(10).map(lambda n: n * 2).get_or(0)
+        0
+
+        Returns
+        -------
+        Optional[element]
         '''
         try:
             return Some(self[index])
@@ -471,9 +536,12 @@ class Stream(Monad):
     def slice(self, start, stop, step=None):
         '''Create a Stream from the slice of items.
 
+        >>> Stream(list(range(10))).slice(5, 8).to_list()
+        [5, 6, 7]
+
         Returns
         -------
-        Stream
+        Stream[element]
         '''
         self._check_index_range(start)
         self._check_index_range(stop)
@@ -481,31 +549,61 @@ class Stream(Monad):
 
     def first(self):
         '''Get first element
+
+        >>> Stream(dict(a=3, b=4, c=5).items()).first()
+        ('a', 3)
+
+        Returns
+        -------
+        element
         '''
         return self[0]
 
     def second(self):
         '''Get second element
+
+        >>> Stream(dict(a=3, b=4, c=5).items()).second()
+        ('b', 4)
+
+        Returns
+        -------
+        element
         '''
         return self[1]
 
     def last(self):
         '''Get last element
+
+        Returns
+        -------
+        element
         '''
         return deque(self, 1)[-1]
 
     def first_opt(self):
         '''Get first element as Some(element), or Nothing if not exists
+
+        Returns
+        -------
+        Optional[element]
         '''
         return self.get_opt(0)
 
     def second_opt(self):
         '''Get second element as Some(element), or Nothing if not exists
+
+        Returns
+        -------
+        Optional[element]
         '''
         return self.get_opt(1)
 
     def last_opt(self):
         '''Get last element as Some(element), or Nothing if not exists
+
+        Returns
+        -------
+        Optional[element]
         '''
         dq = deque(self, 1)
         if len(dq) > 0:
@@ -515,6 +613,13 @@ class Stream(Monad):
 
     def find(self, pred):
         '''Get first element satifying predicate
+
+        >>> Stream.range(5, 100).find(lambda n: n % 7 == 0)
+        7
+
+        Returns
+        -------
+        element
         '''
         for item in self:
             if pred(item):
@@ -524,6 +629,15 @@ class Stream(Monad):
         '''Optionally get first element satifying predicate.
         Return Some(element) if exist
         Otherwise return Nothing
+
+        >>> Stream.range(5, 100).find_opt(lambda n: n * 3 + 5 == 40)
+        Nothing
+        >>> Stream.range(5, 100).find_opt(lambda n: n % 7 == 0)
+        Some(7)
+
+        Returns
+        -------
+        Optional[element]
         '''
         for item in self:
             if pred(item):
@@ -534,35 +648,48 @@ class Stream(Monad):
 
     def take(self, n):
         '''Create a new Stream contains only first n element
+
+        >>> Stream(dict(a=3, b=4, c=5).items()).take(2).to_list()
+        [('a', 3), ('b', 4)]
+
+
         '''
         return self[:n]
 
     def drop(self, n):
         '''Create a new Stream with first n element dropped
+
+        >>> Stream(dict(a=3, b=4, c=5).items()).drop(2).to_list()
+        [('c', 5)]
         '''
         return self[n:]
 
     def tail(self):
         '''Create a new Stream with first element dropped
+
+        >>> Stream(dict(a=3, b=4, c=5).items()).tail().to_list()
+        [('b', 4), ('c', 5)]
+
         '''
         return self[1:]
 
     # def butlast(self):
-    #     # TODO
     #     return self[:-1]
 
     # def takeright(self, n):
-    #     # TODO
     #     return Array(self._items[-n:])
 
     # def dropright(self, n):
-    #     # TODO
     #     return Array(self._items[:-n])
 
     @as_stream
     def take_while(self, pred):
         '''Create a new Stream with successive elements as long as
         predicate evaluates to true.
+
+        >>> Stream.range(10).take_while(lambda n: n % 5 < 3).to_list()
+        [0, 1, 2]
+
         '''
         return fnt.partial(itt.takewhile, pred)
 
@@ -581,6 +708,10 @@ class Stream(Monad):
     def split_before(self, pred):
         '''Create a new Stream of Arrays by splitting before each element
         passing predicate.
+
+        >>> Stream.range(10).split_before(lambda n: n % 3 == 2).to_list()
+        [Array([0, 1]), Array([2, 3, 4]), Array([5, 6, 7]), Array([8, 9])]
+
         '''
         def split_before_tr(iterable):
             segment = []
@@ -598,6 +729,10 @@ class Stream(Monad):
     def split_after(self, pred):
         '''Create a new Stream of Arrays by splitting after each element
         passing predicate.
+
+        >>> Stream.range(10).split_after(lambda n: n % 3 == 2).to_list()
+        [Array([0, 1, 2]), Array([3, 4, 5]), Array([6, 7, 8]), Array([9])]
+
         '''
         def split_after_tr(iterable):
             segment = []
@@ -614,7 +749,17 @@ class Stream(Monad):
 
     def pluck(self, key):
         '''Create a new Stream of values by evaluating ``elem[key]`` for each
-        element.'''
+        element.
+
+        >>> s = Stream([dict(x=3, y=4), dict(x=4, y=5), dict(x=8, y=9)])
+        >>> s.pluck('x').to_list()
+        [3, 4, 8]
+
+        Returns
+        -------
+        Stream[``element[key]``]
+
+        '''
         return self.map(lambda d: d[key])
 
     def pluck_opt(self, key):
@@ -622,6 +767,17 @@ class Stream(Monad):
         for each element.
         Get ``Some(value)`` if the key exists for that element, otherwise get
         Nothing singleton.
+
+        >>> s = Stream([dict(x=3, y=4), dict(y=5), dict(x=8, y=9)])
+        >>> s.pluck_opt('x').to_list()
+        [Some(3), Nothing, Some(8)]
+        >>> s.pluck_opt('x').map(lambda n_opt: n_opt.get_or(1)).to_list()
+        [3, 1, 8]
+
+        Returns
+        -------
+        Stream[Optional(type of ``element[key]``)]
+
         '''
         return self.map(lambda d: Some(d[key])
                         if key in d else Nothing)
@@ -631,11 +787,30 @@ class Stream(Monad):
         each element.
         Get ``Some(value)`` if attr exists for that element, otherwise get
         Nothing singleton.
+
+        >>> from carriage import Row
+        >>> s = Stream([Row(x=3, y=4), Row(x=4, y=5), Row(x=8, y=9)])
+        >>> s.pluck_attr('x').to_list()
+        [3, 4, 8]
+
+        Returns
+        --------
+        Stream[type of ``element.attr``]
         '''
         return self.map(lambda obj: getattr(obj, attr))
 
     def without(self, *elems):
-        '''Create a new Stream without specified elements.'''
+        '''Create a new Stream without specified elements.
+
+        >>> Stream.range(10).without(3, 6, 9).to_list()
+        [0, 1, 2, 4, 5, 7, 8]
+
+
+        Returns
+        --------
+        Stream[element]
+
+        '''
         try:
             elems = set(elems)
         except TypeError:
@@ -645,18 +820,36 @@ class Stream(Monad):
 
     @as_stream
     def filter(self, pred):
-        '''Create a new Stream contains only elements passing predicate'''
+        '''Create a new Stream contains only elements passing predicate
+
+        >>> Stream.range(10).filter(lambda n: n % 2 == 0).to_list()
+        [0, 2, 4, 6, 8]
+
+        '''
         return fnt.partial(filter, pred)
 
     @as_stream
     def filter_false(self, pred):
-        '''Create a new Stream contains only elements not passing predicate'''
+        '''Create a new Stream contains only elements not passing predicate
+
+
+        >>> Stream.range(10).filter_false(lambda n: n % 2 == 0).to_list()
+        [1, 3, 5, 7, 9]
+
+        '''
         return fnt.partial(itt.filterfalse, pred)
 
     filterfalse = filter_false
 
     def where(self, **conds):
         '''Create a new Stream contains only mapping pass all conditions.
+
+        >>> s = Stream([dict(x=3, y=4), dict(x=3, y=5), dict(x=4, y=5)])
+        >>> s.where(x=3).to_list()
+        [{'x': 3, 'y': 4}, {'x': 3, 'y': 5}]
+        >>> s.where(y=5).to_list()
+        [{'x': 3, 'y': 5}, {'x': 4, 'y': 5}]
+
 
         '''
         return self.filter(lambda d:
@@ -666,6 +859,10 @@ class Stream(Monad):
     @as_stream
     def interpose(self, sep):
         '''Create a new Stream by interposing separater between elemens.
+
+        >>> Stream.range(5, 10).interpose(0).to_list()
+        [5, 0, 6, 0, 7, 0, 8, 0, 9]
+
         '''
         def interpose_tr(iterable):
             iterator = iter(iterable)
@@ -679,9 +876,24 @@ class Stream(Monad):
     @as_stream
     def zip(self, *iterables):
         '''Create a new Stream by zipping elements with other iterables.
+
+        >>> Stream.range(5, 8).zip([1,2,3]).to_list()
+        [Row(v0=5, v1=1), Row(v0=6, v1=2), Row(v0=7, v1=3)]
+
+        >>> Stream.range(5, 8).zip([1,2,3], [9, 10, 11]).to_list()
+        [Row(v0=5, v1=1, v2=9), Row(v0=6, v1=2, v2=10), Row(v0=7, v1=3, v2=11)]
+
+        >>> Stream.range(5, 8).zip([1,2]).to_list()
+        [Row(v0=5, v1=1), Row(v0=6, v1=2)]
+
+        >>> import itertools as itt
+        >>> Stream.range(5, 8).zip(itt.count(10)).to_list()
+        [Row(v0=5, v1=10), Row(v0=6, v1=11), Row(v0=7, v1=12)]
         '''
+        from carriage import Row
+
         def zip_tr(items):
-            return builtins.zip(items, *iterables)
+            return map(Row.from_iterable, builtins.zip(items, *iterables))
 
         return zip_tr
 
@@ -689,24 +901,48 @@ class Stream(Monad):
     def zip_longest(self, *iterables, fillvalue=None):
         '''Create a new Stream by zipping elements with other iterables
         as long as possible.
+
+        >>> Stream.range(5, 8).zip_longest([1,2]).to_list()
+        [Row(v0=5, v1=1), Row(v0=6, v1=2), Row(v0=7, v1=None)]
+
+        >>> Stream.range(5, 8).zip_longest([1,2], fillvalue=0).to_list()
+        [Row(v0=5, v1=1), Row(v0=6, v1=2), Row(v0=7, v1=0)]
+
         '''
+        from carriage import Row
+
         def zip_longest_tr(items):
-            return itt.zip_longest(items, *iterables, fillvalue=fillvalue)
+            return map(Row.from_iterable,
+                       itt.zip_longest(items, *iterables, fillvalue=fillvalue))
+
         return zip_longest_tr
 
     @as_stream
     def zip_prev(self, fillvalue=None):
         '''Create a new Stream by zipping elements with previous one.
+
+        >>> Stream.range(5, 8).zip_prev().to_list()
+        [Row(curr=5, prev=None), Row(curr=6, prev=5), Row(curr=7, prev=6)]
+
+        >>> Stream.range(5, 8).zip_prev(fillvalue=0).to_list()
+        [Row(curr=5, prev=0), Row(curr=6, prev=5), Row(curr=7, prev=6)]
         '''
         def zip_prev_tr(items):
             items, prevs = itt.tee(items)
             prevs = itt.chain([fillvalue], prevs)
             return itt.starmap(CurrPrev, builtins.zip(items, prevs))
+
         return zip_prev_tr
 
     @as_stream
     def zip_next(self, fillvalue=None):
         '''Create a new Stream by zipping elements with next one.
+
+        >>> Stream.range(5, 8).zip_next().to_list()
+        [Row(curr=5, prev=6), Row(curr=6, prev=7), Row(curr=7, prev=None)]
+
+        >>> Stream.range(5, 8).zip_next(fillvalue=1).to_list()
+        [Row(curr=5, prev=6), Row(curr=6, prev=7), Row(curr=7, prev=1)]
         '''
         def zip_next_tr(items):
             items, nexts = itt.tee(items)
@@ -717,12 +953,23 @@ class Stream(Monad):
 
     def zip_index(self, start=0):
         '''Create a new Stream by zipping elements with index.
-        '''
+
+        >>> Stream(['a', 'b', 'c']).zip_index().to_list()
+        [Row(value='a', index=0), Row(value='b', index=1), Row(value='c', index=2)]
+
+        >>> Stream(['a', 'b', 'c']).zip_index(1).to_list()
+        [Row(value='a', index=1), Row(value='b', index=2), Row(value='c', index=3)]
+
+        '''  # noqa
         return self.zip(itt.count(start)).starmap(ValueIndex)
 
     @as_stream
     def reversed(self):
         '''Create a new reversed Stream.
+
+        >>> Stream(['a', 'b', 'c']).reversed().to_list()
+        ['c', 'b', 'a']
+
         '''
         def reversed_tr(items):
             try:
@@ -735,6 +982,7 @@ class Stream(Monad):
     @as_stream
     def sorted(self, key=None, reverse=False):
         '''Create a new sorted Stream.
+
         '''
         return fnt.partial(sorted, key=key, reverse=reverse)
 
@@ -789,7 +1037,7 @@ class Stream(Monad):
 
     groupby = group_by
 
-    def group_by_as_map(self, key=None):
+    def group_by_as_map(self, key_func=None):
         '''Group values in to a Map by the value of key function evaluation
         result.
 
@@ -806,12 +1054,17 @@ class Stream(Monad):
 
         * Not Lazy-evaluating. Consume more memory while grouping.
           Yield a group as soon as possible.
+
+        >>> Stream.range(10).group_by_as_map(key_func=lambda n: n % 3)
+        Map({0: Array([0, 3, 6, 9]), 1: Array([1, 4, 7]), 2: Array([2, 5, 8])})
+
+
         '''
 
         from .map import Map
         key_to_grp = defaultdict(Array)
         for elem in self:
-            key_to_grp[key(elem)].append(elem)
+            key_to_grp[key_func(elem)].append(elem)
         return Map(key_to_grp)
 
     def multi_group_by_as_map(self, key=None):
@@ -823,16 +1076,30 @@ class Stream(Monad):
         return Map(key_to_grp)
 
     @as_stream
-    def sliding_window(self, n):
+    def sliding_window(self, n, step=1):
         '''Create a new Stream instance that all elements are sliding windows
-        of source elements.'''
+        of source elements.
+
+        >>> (Stream('they have the same meaning'.split())
+        ...  .sliding_window(3)
+        ...  .to_list())
+        [('they', 'have', 'the'), ('have', 'the', 'same'), ('the', 'same', 'meaning')]
+
+        >>> (Stream('they have the same meaning'.split())
+        ...  .sliding_window(3, step=2)
+        ...  .to_list())
+        [('they', 'have', 'the'), ('the', 'same', 'meaning')]
+
+        '''  # noqa
 
         def sliding_window_tr(self_):
             self_itr = iter(self)
             dq = deque(itt.islice(self_itr, n - 1), maxlen=n)
-            for item in self_itr:
+            for item, cyc_idx in zip(self_itr, itt.cycle(range(step))):
                 dq.append(item)
-                yield tuple(dq)
+                if cyc_idx == 0:
+                    yield tuple(dq)
+
         return sliding_window_tr
 
     def mean(self):
@@ -850,8 +1117,14 @@ class Stream(Monad):
         return fnt.partial(itt.accumulate, func=func)
 
     def value_counts(self):
-        '''Get a Counter instance of elements counts'''
-        return Counter(self)
+        '''Get a Counter instance of elements counts
+
+        Returns
+        -------
+        Map[E, int]
+        '''
+        from carriage import Map
+        return Map(Counter(self))
 
     @as_stream
     def extended(self, iterable):
