@@ -1,8 +1,8 @@
 .mypy_cache
+/docs-src/_build
 .ropeproject
 maybee.egg-info
 .pytest_cache
 /build
 /carriage.egg-info
 /dist
-/docs/_build/

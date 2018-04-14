@@ -37,11 +37,155 @@
 <span class="kn">from</span> <span class="nn">.monad</span> <span class="k">import</span> <span class="n">Monad</span>
 
 
-<div class="viewcode-block" id="NothingError"><a class="viewcode-back" href="../../api.html#carriage.NothingError">[docs]</a><span class="k">class</span> <span class="nc">NothingError</span><span class="p">(</span><span class="ne">AttributeError</span><span class="p">):</span>
-    <span class="k">pass</span></div>
+<span class="k">class</span> <span class="nc">NothingError</span><span class="p">(</span><span class="ne">AttributeError</span><span class="p">):</span>
+    <span class="k">pass</span>
 
 
-<div class="viewcode-block" id="Optional"><a class="viewcode-back" href="../../api.html#carriage.Optional">[docs]</a><span class="k">class</span> <span class="nc">Optional</span><span class="p">(</span><span class="n">Monad</span><span class="p">):</span>
+<div class="viewcode-block" id="Optional"><a class="viewcode-back" href="../../optional.html#carriage.Optional">[docs]</a><span class="k">class</span> <span class="nc">Optional</span><span class="p">(</span><span class="n">Monad</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;An type for handling special value or exception.</span>
+
+<span class="sd">    Create Optional from a function call that may raise exception.</span>
+
+<span class="sd">    &gt;&gt;&gt; def divide(a, b):</span>
+<span class="sd">    ...     return a / b</span>
+<span class="sd">    &gt;&gt;&gt; Optional.call_exceptable(divide, 2, 4)</span>
+<span class="sd">    Some(0.5)</span>
+<span class="sd">    &gt;&gt;&gt; Optional.call_exceptable(divide, 2, 0)</span>
+<span class="sd">    Nothing</span>
+
+<span class="sd">    Create Optional from a value that may be None.</span>
+
+<span class="sd">    &gt;&gt;&gt; adict = {&#39;a&#39;: 1, &#39;b&#39;: 2, &#39;c&#39;: 3}</span>
+<span class="sd">    &gt;&gt;&gt; Optional.value_noneable(adict.get(&#39;c&#39;))</span>
+<span class="sd">    Some(3)</span>
+<span class="sd">    &gt;&gt;&gt; Optional.value_noneable(adict.get(&#39;d&#39;))</span>
+<span class="sd">    Nothing</span>
+
+
+<span class="sd">    Escape from if hell of handling None value or exception. </span>
+
+<span class="sd">    &gt;&gt;&gt; class TreeNode:</span>
+<span class="sd">    ...     def __init__(self, value, left=None, right=None):</span>
+<span class="sd">    ...         self.value = value</span>
+<span class="sd">    ...         self.left = left</span>
+<span class="sd">    ...         self.right = right</span>
+
+<span class="sd">    &gt;&gt;&gt; n = TreeNode(30, TreeNode(5, TreeNode(2)))</span>
+
+<span class="sd">    It seem convenient to traversal in tree.</span>
+<span class="sd">    &gt;&gt;&gt; n.left.left.value</span>
+<span class="sd">    2</span>
+
+<span class="sd">    But both ``left`` and ``right`` might be None. You should take care of</span>
+<span class="sd">    that.</span>
+
+<span class="sd">    &gt;&gt;&gt; result = 0</span>
+<span class="sd">    &gt;&gt;&gt; if n.left is not None:</span>
+<span class="sd">    ...     if n.left.left is not None:</span>
+<span class="sd">    ...         if n.left.left.right is not None:</span>
+<span class="sd">    ...             if n.left.left.right.left is not None:</span>
+<span class="sd">    ...                 result = n.left.left.right.left.value * 2</span>
+<span class="sd">    &gt;&gt;&gt; result</span>
+<span class="sd">    0</span>
+
+
+<span class="sd">    Now let&#39;s replace Noneable value with Optional.</span>
+
+<span class="sd">    &gt;&gt;&gt; class TreeNodeOpt:</span>
+<span class="sd">    ...     def __init__(self, value, left=None, right=None):</span>
+<span class="sd">    ...         self.value = value</span>
+<span class="sd">    ...         self.left = Some(left) if left is not None else Nothing</span>
+<span class="sd">    ...         self.right = Some(left) if left is not None else Nothing</span>
+
+<span class="sd">    &gt;&gt;&gt; nopt = TreeNodeOpt(30, TreeNodeOpt(5, TreeNodeOpt(2)))</span>
+<span class="sd">    &gt;&gt;&gt; (nopt.left</span>
+<span class="sd">    ...  .bind(lambda n: n.left)</span>
+<span class="sd">    ...  .map(lambda n: n.value)</span>
+<span class="sd">    ...  .get_or())</span>
+<span class="sd">    2</span>
+
+<span class="sd">    It seems getting harder to get a value, but actually you are now free from</span>
+<span class="sd">    having the risk of getting attribute from None. And you don&#39;t have to build</span>
+<span class="sd">    a big, nested if statement for handling it.</span>
+
+<span class="sd">    &gt;&gt;&gt; (nopt.left</span>
+<span class="sd">    ...  .bind(lambda n: n.left)</span>
+<span class="sd">    ...  .bind(lambda n: n.right)</span>
+<span class="sd">    ...  .bind(lambda n: n.left)</span>
+<span class="sd">    ...  .map(lambda n: n.value * 2)</span>
+<span class="sd">    ...  .get_or(0))</span>
+<span class="sd">    0</span>
+
+<span class="sd">    &gt;&gt;&gt; (nopt.left</span>
+<span class="sd">    ...  .pluck_attr(&#39;left&#39;).join()</span>
+<span class="sd">    ...  .pluck_attr(&#39;right&#39;).join()</span>
+<span class="sd">    ...  .pluck_attr(&#39;left&#39;).join()</span>
+<span class="sd">    ...  .pluck_attr(&#39;value&#39;)</span>
+<span class="sd">    ...  .map(lambda v: v * 2)</span>
+<span class="sd">    ...  .get_or(0))</span>
+<span class="sd">    0</span>
+
+<span class="sd">    And you can use Optional to handle the original TreeNode.</span>
+
+<span class="sd">    &gt;&gt;&gt; n = TreeNode(30, TreeNode(5, TreeNode(2)))</span>
+<span class="sd">    &gt;&gt;&gt; (Optional.value_noneable(n.left)</span>
+<span class="sd">    ...  .map(lambda n: n.left).join_noneable()</span>
+<span class="sd">    ...  .map(lambda n: n.right).join_noneable()</span>
+<span class="sd">    ...  .map(lambda n: n.left).join_noneable()</span>
+<span class="sd">    ...  .map(lambda n: n.value * 2)</span>
+<span class="sd">    ...  .get_or(0))</span>
+<span class="sd">    0</span>
+
+<span class="sd">    It&#39;s more elegant to have functions return Optional rather than None or</span>
+<span class="sd">    other special value.</span>
+
+<span class="sd">    &gt;&gt;&gt; def get_right_opt(tn):</span>
+<span class="sd">    ...     if tn.right is None:</span>
+<span class="sd">    ...         return Nothing</span>
+<span class="sd">    ...     return Some(tn.right)</span>
+
+<span class="sd">    &gt;&gt;&gt; def get_left_opt(tn):</span>
+<span class="sd">    ...     if tn.left is None:</span>
+<span class="sd">    ...         return Nothing</span>
+<span class="sd">    ...     return Some(tn.left)</span>
+
+<span class="sd">    &gt;&gt;&gt; (Optional.value_noneable(n)</span>
+<span class="sd">    ...  .bind(get_left_opt)</span>
+<span class="sd">    ...  .bind(get_left_opt)</span>
+<span class="sd">    ...  .bind(get_right_opt)</span>
+<span class="sd">    ...  .bind(get_left_opt)</span>
+<span class="sd">    ...  .map(lambda n: n.value * 2)</span>
+<span class="sd">    ...  .get_or(0))</span>
+<span class="sd">    0</span>
+
+<span class="sd">    You can create an Optional function with these decorator.</span>
+
+
+<span class="sd">    &gt;&gt;&gt; @Optional.noneable</span>
+<span class="sd">    ... def get_first(l):</span>
+<span class="sd">    ...     if len(l) &gt; 0:</span>
+<span class="sd">    ...         return l[0]</span>
+<span class="sd">    ...     return None</span>
+<span class="sd">    &gt;&gt;&gt; get_first([3,4,5])</span>
+<span class="sd">    Some(3)</span>
+<span class="sd">    &gt;&gt;&gt; get_first([])</span>
+<span class="sd">    Nothing</span>
+
+<span class="sd">    &gt;&gt;&gt; @Optional.exceptable(IndexError)</span>
+<span class="sd">    ... def get_first(l):</span>
+<span class="sd">    ...     return l[0]</span>
+<span class="sd">    &gt;&gt;&gt; get_first([3,4,5])</span>
+<span class="sd">    Some(3)</span>
+<span class="sd">    &gt;&gt;&gt; get_first([])</span>
+<span class="sd">    Nothing</span>
+
+
+
+
+
+
+
+<span class="sd">    &#39;&#39;&#39;</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">_base_type</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -57,6 +201,7 @@
             <span class="k">return</span> <span class="n">Some</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
 
     <span class="n">ecall</span> <span class="o">=</span> <span class="n">call_exceptable</span>
+    <span class="n">expcall</span> <span class="o">=</span> <span class="n">call_exceptable</span>
 
     <span class="nd">@classmethod</span>
     <span class="k">def</span> <span class="nf">value_noneable</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
@@ -64,7 +209,7 @@
             <span class="k">return</span> <span class="n">Nothing</span>
         <span class="k">return</span> <span class="n">Some</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
 
-    <span class="n">nval</span> <span class="o">=</span> <span class="n">value_noneable</span>
+    <span class="n">noneval</span> <span class="o">=</span> <span class="n">value_noneable</span>
 
     <span class="nd">@classmethod</span>
     <span class="k">def</span> <span class="nf">noneable</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">f</span><span class="p">):</span>
@@ -219,7 +364,7 @@
 <span class="k">def</span> <span class="nf">identity</span><span class="p">(</span><span class="n">_</span><span class="p">):</span> <span class="k">return</span> <span class="n">_</span>
 
 
-<div class="viewcode-block" id="Some"><a class="viewcode-back" href="../../api.html#carriage.Some">[docs]</a><span class="k">class</span> <span class="nc">Some</span><span class="p">(</span><span class="n">Optional</span><span class="p">):</span>
+<span class="k">class</span> <span class="nc">Some</span><span class="p">(</span><span class="n">Optional</span><span class="p">):</span>
     <span class="vm">__slots__</span> <span class="o">=</span> <span class="s1">&#39;_some_value&#39;</span>
 
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
@@ -289,7 +434,7 @@
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">value_do</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">SomeOp</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_some_value</span><span class="p">)</span></div>
+        <span class="k">return</span> <span class="n">SomeOp</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_some_value</span><span class="p">)</span>
 
 
 <span class="k">class</span> <span class="nc">SomeOp</span><span class="p">(</span><span class="n">Some</span><span class="p">):</span>

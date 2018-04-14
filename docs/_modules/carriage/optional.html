@@ -41,7 +41,7 @@
     <span class="k">pass</span>
 
 
-<div class="viewcode-block" id="Optional"><a class="viewcode-back" href="../../api.html#carriage.Optional">[docs]</a><span class="k">class</span> <span class="nc">Optional</span><span class="p">(</span><span class="n">Monad</span><span class="p">):</span>
+<div class="viewcode-block" id="Optional"><a class="viewcode-back" href="../../optional.html#carriage.Optional">[docs]</a><span class="k">class</span> <span class="nc">Optional</span><span class="p">(</span><span class="n">Monad</span><span class="p">):</span>
     <span class="sd">&#39;&#39;&#39;An type for handling special value or exception.</span>
 
 <span class="sd">    Create Optional from a function call that may raise exception.</span>
@@ -432,9 +432,11 @@
     <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">f</span><span class="s1">&#39;Some(</span><span class="si">{self._some_value!s}</span><span class="s1">)&#39;</span>
 
-    <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">value_do</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">SomeOp</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_some_value</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">do</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">func</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Call function using this item as parameter.</span>
+
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">func</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_some_value</span><span class="p">)</span>
 
 
 <span class="k">class</span> <span class="nc">SomeOp</span><span class="p">(</span><span class="n">Some</span><span class="p">):</span>

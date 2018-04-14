@@ -43,15 +43,17 @@ def test_access():
     with pytest.raises(ValueError):
         assert Stream.range(5, 10).get(-1) is None
     assert Stream.range(5, 10)[3] == 8
+    assert Stream.range(5, 10)[-1] == 9
+
     with pytest.raises(ValueError):
-        assert Stream.range(5, 10)[-1]
+        assert Stream(iter(range(5, 10)))[-1]
     with pytest.raises(IndexError):
         assert Stream.range(5, 10)[5]
 
     assert Stream.range(5, 10).get_opt(3) == Some(8)
     assert Stream.range(5, 10).get_opt(5) is Nothing
     with pytest.raises(ValueError):
-        assert Stream.range(5, 10).get_opt(-1) is Nothing
+        assert Stream(iter(range(5, 10))).get_opt(-1) is Nothing
 
     assert Stream.range(5, 10).first() == 5
     assert Stream.range(5, 10).first_opt() == Some(5)

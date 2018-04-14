@@ -30,11 +30,14 @@
           <div class="body" role="main">
             
   <h1>Source code for carriage.map</h1><div class="highlight"><pre>
-<span></span><span class="kn">import</span> <span class="nn">itertools</span> <span class="k">as</span> <span class="nn">itt</span>
-<span class="kn">from</span> <span class="nn">collections</span> <span class="k">import</span> <span class="n">UserDict</span><span class="p">,</span> <span class="n">defaultdict</span>
+<span></span><span class="kn">import</span> <span class="nn">heapq</span>
+<span class="kn">import</span> <span class="nn">itertools</span> <span class="k">as</span> <span class="nn">itt</span>
+<span class="kn">import</span> <span class="nn">operator</span> <span class="k">as</span> <span class="nn">op</span>
+<span class="kn">from</span> <span class="nn">collections</span> <span class="k">import</span> <span class="n">OrderedDict</span><span class="p">,</span> <span class="n">UserDict</span><span class="p">,</span> <span class="n">defaultdict</span>
 
 <span class="kn">from</span> <span class="nn">.array</span> <span class="k">import</span> <span class="n">Array</span>
 <span class="kn">from</span> <span class="nn">.optional</span> <span class="k">import</span> <span class="n">Nothing</span><span class="p">,</span> <span class="n">Some</span>
+<span class="kn">from</span> <span class="nn">.repr</span> <span class="k">import</span> <span class="n">short_repr</span>
 <span class="kn">from</span> <span class="nn">.row</span> <span class="k">import</span> <span class="n">KeyValue</span><span class="p">,</span> <span class="n">Row</span>
 <span class="kn">from</span> <span class="nn">.stream</span> <span class="k">import</span> <span class="n">Stream</span>
 
@@ -42,11 +45,20 @@
 <span class="k">def</span> <span class="nf">identity</span><span class="p">(</span><span class="n">_</span><span class="p">):</span> <span class="k">return</span> <span class="n">_</span>
 
 
-<div class="viewcode-block" id="Map"><a class="viewcode-back" href="../../api.html#carriage.Map">[docs]</a><span class="k">class</span> <span class="nc">Map</span><span class="p">(</span><span class="n">UserDict</span><span class="p">):</span>
+<div class="viewcode-block" id="Map"><a class="viewcode-back" href="../../map.html#carriage.Map">[docs]</a><span class="k">class</span> <span class="nc">Map</span><span class="p">(</span><span class="n">OrderedDict</span><span class="p">):</span>
     <span class="sd">&#39;&#39;&#39;A mutable dictionary enhanced with a bulk of useful methods.</span>
 <span class="sd">    &#39;&#39;&#39;</span>
 
-<div class="viewcode-block" id="Map.update"><a class="viewcode-back" href="../../api.html#carriage.Map.update">[docs]</a>    <span class="k">def</span> <span class="nf">update</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwds</span><span class="p">):</span>
+<div class="viewcode-block" id="Map.items"><a class="viewcode-back" href="../../map.html#carriage.Map.items">[docs]</a>    <span class="k">def</span> <span class="nf">items</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">Stream</span><span class="p">(</span><span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">items</span><span class="p">())</span><span class="o">.</span><span class="n">starmap</span><span class="p">(</span><span class="n">KeyValue</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Map.values"><a class="viewcode-back" href="../../map.html#carriage.Map.values">[docs]</a>    <span class="k">def</span> <span class="nf">values</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">Stream</span><span class="p">(</span><span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">values</span><span class="p">())</span></div>
+
+<div class="viewcode-block" id="Map.keys"><a class="viewcode-back" href="../../map.html#carriage.Map.keys">[docs]</a>    <span class="k">def</span> <span class="nf">keys</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">Stream</span><span class="p">(</span><span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span></div>
+
+<div class="viewcode-block" id="Map.update"><a class="viewcode-back" href="../../map.html#carriage.Map.update">[docs]</a>    <span class="k">def</span> <span class="nf">update</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwds</span><span class="p">):</span>
         <span class="sd">&#39;&#39;&#39;Update Map from dict/iterable and ``return self``</span>
 
 <span class="sd">        &gt;&gt;&gt; m = Map(a=3, b=4)</span>
@@ -59,7 +71,7 @@
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwds</span><span class="p">)</span>
         <span class="k">return</span> <span class="bp">self</span></div>
 
-<div class="viewcode-block" id="Map.updated"><a class="viewcode-back" href="../../api.html#carriage.Map.updated">[docs]</a>    <span class="k">def</span> <span class="nf">updated</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwds</span><span class="p">):</span>
+<div class="viewcode-block" id="Map.updated"><a class="viewcode-back" href="../../map.html#carriage.Map.updated">[docs]</a>    <span class="k">def</span> <span class="nf">updated</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwds</span><span class="p">):</span>
         <span class="sd">&#39;&#39;&#39;Create a new Map instance that is updated from dict/iterable.</span>
 <span class="sd">        This method is the same as ``m.copy().update(...)``</span>
 
@@ -73,7 +85,7 @@
         <span class="n">m</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
         <span class="k">return</span> <span class="n">m</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwds</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="Map.join"><a class="viewcode-back" href="../../api.html#carriage.Map.join">[docs]</a>    <span class="k">def</span> <span class="nf">join</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">others</span><span class="p">,</span> <span class="n">fillvalue</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">agg</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<div class="viewcode-block" id="Map.join"><a class="viewcode-back" href="../../map.html#carriage.Map.join">[docs]</a>    <span class="k">def</span> <span class="nf">join</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">others</span><span class="p">,</span> <span class="n">fillvalue</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">agg</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Create a new Map instance with keys merged and values joined.</span>
 
 <span class="sd">        &gt;&gt;&gt; m1 = Map(a=1, b=2)</span>
@@ -90,7 +102,7 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="n">Map</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">iter_joined</span><span class="p">(</span><span class="o">*</span><span class="n">others</span><span class="p">,</span> <span class="n">fillvalue</span><span class="o">=</span><span class="n">fillvalue</span><span class="p">,</span> <span class="n">agg</span><span class="o">=</span><span class="n">agg</span><span class="p">))</span></div>
 
-<div class="viewcode-block" id="Map.iter_joined"><a class="viewcode-back" href="../../api.html#carriage.Map.iter_joined">[docs]</a>    <span class="k">def</span> <span class="nf">iter_joined</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">others</span><span class="p">,</span> <span class="n">fillvalue</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">agg</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<div class="viewcode-block" id="Map.iter_joined"><a class="viewcode-back" href="../../map.html#carriage.Map.iter_joined">[docs]</a>    <span class="k">def</span> <span class="nf">iter_joined</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">others</span><span class="p">,</span> <span class="n">fillvalue</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">agg</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Create a ``Row(key, Row(v0, v1, ...))`` iterator with keys from</span>
 <span class="sd">        all Maps and value joined.</span>
 
@@ -125,9 +137,9 @@
                           <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">dicts</span><span class="p">)))</span></div>
 
     <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">f</span><span class="s1">&#39;Map({super().__repr__()})&#39;</span>
+        <span class="k">return</span> <span class="n">f</span><span class="s1">&#39;Map({self.make_string()})&#39;</span>
 
-<div class="viewcode-block" id="Map.map"><a class="viewcode-back" href="../../api.html#carriage.Map.map">[docs]</a>    <span class="k">def</span> <span class="nf">map</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">func</span><span class="p">):</span>
+<div class="viewcode-block" id="Map.map"><a class="viewcode-back" href="../../map.html#carriage.Map.map">[docs]</a>    <span class="k">def</span> <span class="nf">map</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">func</span><span class="p">):</span>
         <span class="sd">&#39;&#39;&#39;Create a new Map instance that each key, value pair is derived by</span>
 <span class="sd">        applying function to original key, value.</span>
 
@@ -142,7 +154,7 @@
 <span class="sd">        &#39;&#39;&#39;</span>
         <span class="k">return</span> <span class="n">Map</span><span class="p">(</span><span class="n">func</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span> <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">items</span><span class="p">())</span></div>
 
-<div class="viewcode-block" id="Map.map_keys"><a class="viewcode-back" href="../../api.html#carriage.Map.map_keys">[docs]</a>    <span class="k">def</span> <span class="nf">map_keys</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">func</span><span class="p">):</span>
+<div class="viewcode-block" id="Map.map_keys"><a class="viewcode-back" href="../../map.html#carriage.Map.map_keys">[docs]</a>    <span class="k">def</span> <span class="nf">map_keys</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">func</span><span class="p">):</span>
         <span class="sd">&#39;&#39;&#39;Create a new Map instance that all values remains the same,</span>
 <span class="sd">        while each corresponding key is updated by applying function to</span>
 <span class="sd">        original key, value.</span>
@@ -157,7 +169,7 @@
 <span class="sd">        &#39;&#39;&#39;</span>
         <span class="k">return</span> <span class="n">Map</span><span class="p">((</span><span class="n">func</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">),</span> <span class="n">value</span><span class="p">)</span> <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">items</span><span class="p">())</span></div>
 
-<div class="viewcode-block" id="Map.map_values"><a class="viewcode-back" href="../../api.html#carriage.Map.map_values">[docs]</a>    <span class="k">def</span> <span class="nf">map_values</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">func</span><span class="p">):</span>
+<div class="viewcode-block" id="Map.map_values"><a class="viewcode-back" href="../../map.html#carriage.Map.map_values">[docs]</a>    <span class="k">def</span> <span class="nf">map_values</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">func</span><span class="p">):</span>
         <span class="sd">&#39;&#39;&#39;Create a new Map instance that all keys remains the same,</span>
 <span class="sd">        while each corresponding value is updated by applying function to</span>
 <span class="sd">        original key, value.</span>
@@ -172,7 +184,7 @@
 <span class="sd">        &#39;&#39;&#39;</span>
         <span class="k">return</span> <span class="n">Map</span><span class="p">((</span><span class="n">key</span><span class="p">,</span> <span class="n">func</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">))</span> <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">items</span><span class="p">())</span></div>
 
-<div class="viewcode-block" id="Map.revamp_values"><a class="viewcode-back" href="../../api.html#carriage.Map.revamp_values">[docs]</a>    <span class="k">def</span> <span class="nf">revamp_values</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">func</span><span class="p">):</span>
+<div class="viewcode-block" id="Map.revamp_values"><a class="viewcode-back" href="../../map.html#carriage.Map.revamp_values">[docs]</a>    <span class="k">def</span> <span class="nf">revamp_values</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">func</span><span class="p">):</span>
         <span class="sd">&#39;&#39;&#39;Update values of current Map and return self.</span>
 <span class="sd">        Each value is derived by computing the function using</span>
 <span class="sd">        both key and value.</span>
@@ -189,12 +201,16 @@
 <span class="sd">        func : ``pred(key, value) -&gt; value``</span>
 <span class="sd">            function for computing new values</span>
 
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        self</span>
+
 <span class="sd">        &#39;&#39;&#39;</span>
         <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
             <span class="bp">self</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">func</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
         <span class="k">return</span> <span class="bp">self</span></div>
 
-<div class="viewcode-block" id="Map.keep"><a class="viewcode-back" href="../../api.html#carriage.Map.keep">[docs]</a>    <span class="k">def</span> <span class="nf">keep</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">keys</span><span class="p">):</span>
+<div class="viewcode-block" id="Map.keep"><a class="viewcode-back" href="../../map.html#carriage.Map.keep">[docs]</a>    <span class="k">def</span> <span class="nf">keep</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">keys</span><span class="p">):</span>
         <span class="sd">&#39;&#39;&#39;Delete keys not specified and return self</span>
 
 <span class="sd">        &gt;&gt;&gt; m = Map(a=3, b=4, c=5)</span>
@@ -202,6 +218,11 @@
 <span class="sd">        Map({&#39;a&#39;: 3, &#39;c&#39;: 5})</span>
 <span class="sd">        &gt;&gt;&gt; m</span>
 <span class="sd">        Map({&#39;a&#39;: 3, &#39;c&#39;: 5})</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        self</span>
+
 <span class="sd">        &#39;&#39;&#39;</span>
         <span class="n">keys</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">keys</span><span class="p">)</span>
         <span class="n">current_keys</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
@@ -211,7 +232,7 @@
 
         <span class="k">return</span> <span class="bp">self</span></div>
 
-<div class="viewcode-block" id="Map.project"><a class="viewcode-back" href="../../api.html#carriage.Map.project">[docs]</a>    <span class="k">def</span> <span class="nf">project</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">keys</span><span class="p">):</span>
+<div class="viewcode-block" id="Map.project"><a class="viewcode-back" href="../../map.html#carriage.Map.project">[docs]</a>    <span class="k">def</span> <span class="nf">project</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">keys</span><span class="p">):</span>
         <span class="sd">&#39;&#39;&#39;Create a new Map instance contains only specified keys.</span>
 
 <span class="sd">        &gt;&gt;&gt; m = Map(a=3, b=4, c=5)</span>
@@ -219,10 +240,15 @@
 <span class="sd">        Map({&#39;a&#39;: 3, &#39;c&#39;: 5})</span>
 <span class="sd">        &gt;&gt;&gt; m</span>
 <span class="sd">        Map({&#39;a&#39;: 3, &#39;b&#39;: 4, &#39;c&#39;: 5})</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        Map[key, value]</span>
+
 <span class="sd">        &#39;&#39;&#39;</span>
         <span class="k">return</span> <span class="n">Map</span><span class="p">((</span><span class="n">k</span><span class="p">,</span> <span class="bp">self</span><span class="p">[</span><span class="n">k</span><span class="p">])</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">keys</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="Map.get_opt"><a class="viewcode-back" href="../../api.html#carriage.Map.get_opt">[docs]</a>    <span class="k">def</span> <span class="nf">get_opt</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+<div class="viewcode-block" id="Map.get_opt"><a class="viewcode-back" href="../../map.html#carriage.Map.get_opt">[docs]</a>    <span class="k">def</span> <span class="nf">get_opt</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
         <span class="sd">&#39;&#39;&#39;Get the value of specified key as Optional type.</span>
 <span class="sd">        Return Some(value) if key exists, otherwise return Nothing.</span>
 
@@ -235,13 +261,17 @@
 <span class="sd">        Some(6)</span>
 <span class="sd">        &gt;&gt;&gt; m.get_opt(&#39;c&#39;).map(lambda v: v * 2)</span>
 <span class="sd">        Nothing</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        Optional[value]</span>
 <span class="sd">        &#39;&#39;&#39;</span>
 
         <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">Some</span><span class="p">(</span><span class="bp">self</span><span class="p">[</span><span class="n">key</span><span class="p">])</span>
         <span class="k">return</span> <span class="n">Nothing</span></div>
 
-<div class="viewcode-block" id="Map.remove"><a class="viewcode-back" href="../../api.html#carriage.Map.remove">[docs]</a>    <span class="k">def</span> <span class="nf">remove</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">keys</span><span class="p">):</span>
+<div class="viewcode-block" id="Map.remove"><a class="viewcode-back" href="../../map.html#carriage.Map.remove">[docs]</a>    <span class="k">def</span> <span class="nf">remove</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">keys</span><span class="p">):</span>
         <span class="sd">&#39;&#39;&#39;Delete keys and return self</span>
 
 <span class="sd">        &gt;&gt;&gt; m = Map(a=3, b=4, c=5)</span>
@@ -249,13 +279,17 @@
 <span class="sd">        Map({&#39;b&#39;: 4})</span>
 <span class="sd">        &gt;&gt;&gt; m</span>
 <span class="sd">        Map({&#39;b&#39;: 4})</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        self</span>
 <span class="sd">        &#39;&#39;&#39;</span>
         <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">keys</span><span class="p">:</span>
             <span class="k">del</span> <span class="bp">self</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
 
         <span class="k">return</span> <span class="bp">self</span></div>
 
-<div class="viewcode-block" id="Map.without"><a class="viewcode-back" href="../../api.html#carriage.Map.without">[docs]</a>    <span class="k">def</span> <span class="nf">without</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">keys</span><span class="p">):</span>
+<div class="viewcode-block" id="Map.without"><a class="viewcode-back" href="../../map.html#carriage.Map.without">[docs]</a>    <span class="k">def</span> <span class="nf">without</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">keys</span><span class="p">):</span>
         <span class="sd">&#39;&#39;&#39;Create a new Map instance with those keys</span>
 
 <span class="sd">        &gt;&gt;&gt; m = Map(a=3, b=4, c=6)</span>
@@ -263,12 +297,16 @@
 <span class="sd">        Map({&#39;b&#39;: 4})</span>
 <span class="sd">        &gt;&gt;&gt; m</span>
 <span class="sd">        Map({&#39;a&#39;: 3, &#39;b&#39;: 4, &#39;c&#39;: 6})</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        Map[key, value]</span>
 <span class="sd">        &#39;&#39;&#39;</span>
         <span class="k">return</span> <span class="n">Map</span><span class="p">((</span><span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
                    <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
                    <span class="k">if</span> <span class="n">key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">keys</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="Map.retain"><a class="viewcode-back" href="../../api.html#carriage.Map.retain">[docs]</a>    <span class="k">def</span> <span class="nf">retain</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pred</span><span class="p">):</span>
+<div class="viewcode-block" id="Map.retain"><a class="viewcode-back" href="../../map.html#carriage.Map.retain">[docs]</a>    <span class="k">def</span> <span class="nf">retain</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pred</span><span class="p">):</span>
         <span class="sd">&#39;&#39;&#39;Delete key/value pairs not satisfying the predicate and return self</span>
 
 <span class="sd">        &gt;&gt;&gt; m = Map(a=3, b=4, c=5)</span>
@@ -280,6 +318,10 @@
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        pred : ``(k, v) -&gt; bool``</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        self</span>
 <span class="sd">        &#39;&#39;&#39;</span>
 
         <span class="n">keys_to_delete</span> <span class="o">=</span> <span class="p">[]</span>
@@ -289,7 +331,7 @@
 
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="o">*</span><span class="n">keys_to_delete</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="Map.retain_false"><a class="viewcode-back" href="../../api.html#carriage.Map.retain_false">[docs]</a>    <span class="k">def</span> <span class="nf">retain_false</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pred</span><span class="p">):</span>
+<div class="viewcode-block" id="Map.retain_false"><a class="viewcode-back" href="../../map.html#carriage.Map.retain_false">[docs]</a>    <span class="k">def</span> <span class="nf">retain_false</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pred</span><span class="p">):</span>
         <span class="sd">&#39;&#39;&#39;Delete key/value pairs satisfying the predicate and return self</span>
 
 <span class="sd">        &gt;&gt;&gt; m = Map(a=3, b=4, c=5)</span>
@@ -301,6 +343,10 @@
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        pred : ``(k, v) -&gt; bool``</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        self</span>
 <span class="sd">        &#39;&#39;&#39;</span>
 
         <span class="n">keys_to_delete</span> <span class="o">=</span> <span class="p">[]</span>
@@ -310,7 +356,7 @@
 
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="o">*</span><span class="n">keys_to_delete</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="Map.retain_by_key"><a class="viewcode-back" href="../../api.html#carriage.Map.retain_by_key">[docs]</a>    <span class="k">def</span> <span class="nf">retain_by_key</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pred</span><span class="p">):</span>
+<div class="viewcode-block" id="Map.retain_by_key"><a class="viewcode-back" href="../../map.html#carriage.Map.retain_by_key">[docs]</a>    <span class="k">def</span> <span class="nf">retain_by_key</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pred</span><span class="p">):</span>
         <span class="sd">&#39;&#39;&#39;Delete key/value pairs not satisfying the predicate and return self</span>
 
 <span class="sd">        &gt;&gt;&gt; m = Map(a=3, b=4, c=5)</span>
@@ -322,6 +368,10 @@
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        pred : ``(k) -&gt; bool``</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        self</span>
 <span class="sd">        &#39;&#39;&#39;</span>
 
         <span class="n">keys_to_delete</span> <span class="o">=</span> <span class="p">[]</span>
@@ -331,7 +381,7 @@
 
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="o">*</span><span class="n">keys_to_delete</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="Map.retain_by_value"><a class="viewcode-back" href="../../api.html#carriage.Map.retain_by_value">[docs]</a>    <span class="k">def</span> <span class="nf">retain_by_value</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pred</span><span class="p">):</span>
+<div class="viewcode-block" id="Map.retain_by_value"><a class="viewcode-back" href="../../map.html#carriage.Map.retain_by_value">[docs]</a>    <span class="k">def</span> <span class="nf">retain_by_value</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pred</span><span class="p">):</span>
         <span class="sd">&#39;&#39;&#39;Delete key/value pairs not satisfying the predicate and return self</span>
 
 <span class="sd">        &gt;&gt;&gt; m = Map(a=3, b=4, c=5)</span>
@@ -343,6 +393,10 @@
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        pred : ``(k) -&gt; bool``</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        self</span>
 <span class="sd">        &#39;&#39;&#39;</span>
 
         <span class="n">keys_to_delete</span> <span class="o">=</span> <span class="p">[]</span>
@@ -352,7 +406,7 @@
 
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="o">*</span><span class="n">keys_to_delete</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="Map.filter"><a class="viewcode-back" href="../../api.html#carriage.Map.filter">[docs]</a>    <span class="k">def</span> <span class="nf">filter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pred</span><span class="p">):</span>
+<div class="viewcode-block" id="Map.filter"><a class="viewcode-back" href="../../map.html#carriage.Map.filter">[docs]</a>    <span class="k">def</span> <span class="nf">filter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pred</span><span class="p">):</span>
         <span class="sd">&#39;&#39;&#39;Create a new Map with key/value pairs satisfying the predicate</span>
 
 <span class="sd">        &gt;&gt;&gt; m = Map({1: 2, 2: 4, 3: 6})</span>
@@ -365,11 +419,15 @@
 <span class="sd">        pred : ``(k, v) -&gt; bool``</span>
 <span class="sd">            predicate</span>
 
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        Map[key, value]</span>
 <span class="sd">        &#39;&#39;&#39;</span>
 
         <span class="k">return</span> <span class="n">Map</span><span class="p">((</span><span class="n">k</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">pred</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">v</span><span class="p">))</span></div>
 
-<div class="viewcode-block" id="Map.filter_false"><a class="viewcode-back" href="../../api.html#carriage.Map.filter_false">[docs]</a>    <span class="k">def</span> <span class="nf">filter_false</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pred</span><span class="p">):</span>
+<div class="viewcode-block" id="Map.filter_false"><a class="viewcode-back" href="../../map.html#carriage.Map.filter_false">[docs]</a>    <span class="k">def</span> <span class="nf">filter_false</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pred</span><span class="p">):</span>
         <span class="sd">&#39;&#39;&#39;Create a new Map with key/value pairs not satisfying the predicate</span>
 
 <span class="sd">        &gt;&gt;&gt; m = Map({1: 2, 2: 4, 3: 6})</span>
@@ -381,10 +439,14 @@
 <span class="sd">        ----------</span>
 <span class="sd">        pred : ``(k, v) -&gt; bool``</span>
 <span class="sd">            predicate</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        Map[key, value]</span>
 <span class="sd">        &#39;&#39;&#39;</span>
         <span class="k">return</span> <span class="n">Map</span><span class="p">((</span><span class="n">k</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">pred</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">v</span><span class="p">))</span></div>
 
-<div class="viewcode-block" id="Map.filter_by_key"><a class="viewcode-back" href="../../api.html#carriage.Map.filter_by_key">[docs]</a>    <span class="k">def</span> <span class="nf">filter_by_key</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pred</span><span class="p">):</span>
+<div class="viewcode-block" id="Map.filter_by_key"><a class="viewcode-back" href="../../map.html#carriage.Map.filter_by_key">[docs]</a>    <span class="k">def</span> <span class="nf">filter_by_key</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pred</span><span class="p">):</span>
         <span class="sd">&#39;&#39;&#39;Create a new Map with keys satisfying the predicate</span>
 
 <span class="sd">        &gt;&gt;&gt; m = Map({1: 2, 2: 4, 3: 6})</span>
@@ -396,10 +458,14 @@
 <span class="sd">        ----------</span>
 <span class="sd">        pred : ``(k, v) -&gt; bool``</span>
 <span class="sd">            predicate</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        Map[key, value]</span>
 <span class="sd">        &#39;&#39;&#39;</span>
         <span class="k">return</span> <span class="n">Map</span><span class="p">((</span><span class="n">k</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">pred</span><span class="p">(</span><span class="n">k</span><span class="p">))</span></div>
 
-<div class="viewcode-block" id="Map.filter_by_value"><a class="viewcode-back" href="../../api.html#carriage.Map.filter_by_value">[docs]</a>    <span class="k">def</span> <span class="nf">filter_by_value</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pred</span><span class="p">):</span>
+<div class="viewcode-block" id="Map.filter_by_value"><a class="viewcode-back" href="../../map.html#carriage.Map.filter_by_value">[docs]</a>    <span class="k">def</span> <span class="nf">filter_by_value</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pred</span><span class="p">):</span>
         <span class="sd">&#39;&#39;&#39;Create a new Map with values satisfying the predicate</span>
 
 <span class="sd">        &gt;&gt;&gt; m = Map({1: 2, 2: 4, 3: 6})</span>
@@ -411,32 +477,40 @@
 <span class="sd">        ----------</span>
 <span class="sd">        pred : ``(k, v) -&gt; bool``</span>
 <span class="sd">            predicate</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        Map[key, value]</span>
 <span class="sd">        &#39;&#39;&#39;</span>
         <span class="k">return</span> <span class="n">Map</span><span class="p">((</span><span class="n">k</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">pred</span><span class="p">(</span><span class="n">v</span><span class="p">))</span></div>
 
-<div class="viewcode-block" id="Map.group_by"><a class="viewcode-back" href="../../api.html#carriage.Map.group_by">[docs]</a>    <span class="k">def</span> <span class="nf">group_by</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+<div class="viewcode-block" id="Map.group_by"><a class="viewcode-back" href="../../map.html#carriage.Map.group_by">[docs]</a>    <span class="k">def</span> <span class="nf">group_by</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key_func</span><span class="p">):</span>
         <span class="sd">&#39;&#39;&#39;Group key/value pairs into nested Maps.</span>
 
 <span class="sd">        &gt;&gt;&gt; Map(a=3, b=4, c=5).group_by(lambda k, v: v % 2)</span>
 <span class="sd">        Map({1: Map({&#39;a&#39;: 3, &#39;c&#39;: 5}), 0: Map({&#39;b&#39;: 4})})</span>
 
+
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-<span class="sd">        key : ``(k, v) -&gt; key``</span>
+<span class="sd">        key_func : ``(key, value) -&gt; group_key``</span>
 <span class="sd">            predicate</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        Map[key_func(key), Map[key, value]]</span>
 <span class="sd">        &#39;&#39;&#39;</span>
-        <span class="n">func</span> <span class="o">=</span> <span class="n">key</span>
         <span class="n">grouped_d</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="n">Map</span><span class="p">)</span>
 
         <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-            <span class="n">grouped_d</span><span class="p">[</span><span class="n">func</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">)][</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+            <span class="n">grouped_d</span><span class="p">[</span><span class="n">key_func</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">)][</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
 
         <span class="k">return</span> <span class="n">Map</span><span class="p">(</span><span class="n">grouped_d</span><span class="p">)</span></div>
 
     <span class="k">def</span> <span class="nf">reduce</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
         <span class="k">pass</span>
 
-<div class="viewcode-block" id="Map.make_string"><a class="viewcode-back" href="../../api.html#carriage.Map.make_string">[docs]</a>    <span class="k">def</span> <span class="nf">make_string</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+<div class="viewcode-block" id="Map.make_string"><a class="viewcode-back" href="../../map.html#carriage.Map.make_string">[docs]</a>    <span class="k">def</span> <span class="nf">make_string</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
                     <span class="n">key_value_format</span><span class="o">=</span><span class="s1">&#39;</span><span class="si">{key!r}</span><span class="s1">: </span><span class="si">{value!r}</span><span class="s1">&#39;</span><span class="p">,</span>
                     <span class="n">start</span><span class="o">=</span><span class="s1">&#39;{&#39;</span><span class="p">,</span> <span class="n">item_sep</span><span class="o">=</span><span class="s1">&#39;, &#39;</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="s1">&#39;}&#39;</span><span class="p">):</span>
         <span class="sd">&#39;&#39;&#39;Construct a string from key/values.</span>
@@ -461,6 +535,11 @@
 <span class="sd">        end : str</span>
 <span class="sd">            Default to ``}``</span>
 
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        str</span>
+
 <span class="sd">        &#39;&#39;&#39;</span>
 
         <span class="n">items_str</span> <span class="o">=</span> <span class="n">item_sep</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
@@ -469,16 +548,20 @@
 
         <span class="k">return</span> <span class="n">start</span> <span class="o">+</span> <span class="n">items_str</span> <span class="o">+</span> <span class="n">end</span></div>
 
-<div class="viewcode-block" id="Map.take"><a class="viewcode-back" href="../../api.html#carriage.Map.take">[docs]</a>    <span class="k">def</span> <span class="nf">take</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n</span><span class="p">):</span>
+<div class="viewcode-block" id="Map.take"><a class="viewcode-back" href="../../map.html#carriage.Map.take">[docs]</a>    <span class="k">def</span> <span class="nf">take</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n</span><span class="p">):</span>
         <span class="sd">&#39;&#39;&#39;create a Stream instance of first ``n`` ``Row(key, value)`` elements.</span>
 
 <span class="sd">        &gt;&gt;&gt; m = Map(a=4, b=5, c=6, d=7)</span>
 <span class="sd">        &gt;&gt;&gt; m.take(2).to_list()</span>
 <span class="sd">        [Row(key=&#39;a&#39;, value=4), Row(key=&#39;b&#39;, value=5)]</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        Stream[Row[key, value]]</span>
 <span class="sd">        &#39;&#39;&#39;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">to_stream</span><span class="p">()</span><span class="o">.</span><span class="n">take</span><span class="p">(</span><span class="n">n</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="Map.first"><a class="viewcode-back" href="../../api.html#carriage.Map.first">[docs]</a>    <span class="k">def</span> <span class="nf">first</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="Map.first"><a class="viewcode-back" href="../../map.html#carriage.Map.first">[docs]</a>    <span class="k">def</span> <span class="nf">first</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&#39;&#39;&#39;Get the first item in ``Row(key, value)`` type</span>
 
 <span class="sd">        &gt;&gt;&gt; m = Map(a=4, b=5, c=6, d=7)</span>
@@ -493,10 +576,14 @@
 <span class="sd">        Traceback (most recent call last):</span>
 <span class="sd">        ...</span>
 <span class="sd">        IndexError: index out of range.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        Row[key, value]</span>
 <span class="sd">        &#39;&#39;&#39;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">nth</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="Map.first_opt"><a class="viewcode-back" href="../../api.html#carriage.Map.first_opt">[docs]</a>    <span class="k">def</span> <span class="nf">first_opt</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="Map.first_opt"><a class="viewcode-back" href="../../map.html#carriage.Map.first_opt">[docs]</a>    <span class="k">def</span> <span class="nf">first_opt</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&#39;&#39;&#39;Optionally get the first item.</span>
 <span class="sd">        Return Some(Row(key, value)) if first item exists,</span>
 <span class="sd">        otherwise return Nothing</span>
@@ -509,10 +596,15 @@
 <span class="sd">        &gt;&gt;&gt; m = Map()</span>
 <span class="sd">        &gt;&gt;&gt; m.first_opt()</span>
 <span class="sd">        Nothing</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        Optional[Row[key, value]]</span>
+
 <span class="sd">        &#39;&#39;&#39;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">nth_opt</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="Map.nth"><a class="viewcode-back" href="../../api.html#carriage.Map.nth">[docs]</a>    <span class="k">def</span> <span class="nf">nth</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">):</span>
+<div class="viewcode-block" id="Map.nth"><a class="viewcode-back" href="../../map.html#carriage.Map.nth">[docs]</a>    <span class="k">def</span> <span class="nf">nth</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">):</span>
         <span class="sd">&#39;&#39;&#39;Get the nth item in ``Row(key, value)`` type.</span>
 
 <span class="sd">        &gt;&gt;&gt; m = Map(a=4, b=5, c=6, d=7)</span>
@@ -524,6 +616,9 @@
 <span class="sd">        ...</span>
 <span class="sd">        IndexError: index out of range.</span>
 
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        Row[key, value]</span>
 <span class="sd">        &#39;&#39;&#39;</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="n">itt</span><span class="o">.</span><span class="n">islice</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">items</span><span class="p">(),</span> <span class="n">index</span><span class="p">,</span> <span class="kc">None</span><span class="p">))</span>
@@ -531,7 +626,7 @@
         <span class="k">except</span> <span class="ne">StopIteration</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">IndexError</span><span class="p">(</span><span class="s1">&#39;index out of range.&#39;</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="Map.nth_opt"><a class="viewcode-back" href="../../api.html#carriage.Map.nth_opt">[docs]</a>    <span class="k">def</span> <span class="nf">nth_opt</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">):</span>
+<div class="viewcode-block" id="Map.nth_opt"><a class="viewcode-back" href="../../map.html#carriage.Map.nth_opt">[docs]</a>    <span class="k">def</span> <span class="nf">nth_opt</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">):</span>
         <span class="sd">&#39;&#39;&#39;Optionally get the nth item.</span>
 <span class="sd">        Return ``Some(Row(key, value))`` if first item exists,</span>
 <span class="sd">        otherwise return Nothing.</span>
@@ -542,42 +637,58 @@
 <span class="sd">        &gt;&gt;&gt; m = Map()</span>
 <span class="sd">        &gt;&gt;&gt; m.first_opt()</span>
 <span class="sd">        Nothing</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        Optional[Row[key, value]]</span>
 <span class="sd">        &#39;&#39;&#39;</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">Some</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nth</span><span class="p">(</span><span class="n">index</span><span class="p">))</span>
         <span class="k">except</span> <span class="ne">IndexError</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">Nothing</span></div>
 
-<div class="viewcode-block" id="Map.len"><a class="viewcode-back" href="../../api.html#carriage.Map.len">[docs]</a>    <span class="k">def</span> <span class="nf">len</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="Map.len"><a class="viewcode-back" href="../../map.html#carriage.Map.len">[docs]</a>    <span class="k">def</span> <span class="nf">len</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&#39;&#39;&#39;Get the length of this Map</span>
 
 <span class="sd">        &gt;&gt;&gt; m = Map(a=4, b=5, c=6, d=7)</span>
 <span class="sd">        &gt;&gt;&gt; m.len()</span>
 <span class="sd">        4</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        int</span>
 <span class="sd">        &#39;&#39;&#39;</span>
         <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="Map.to_stream"><a class="viewcode-back" href="../../api.html#carriage.Map.to_stream">[docs]</a>    <span class="k">def</span> <span class="nf">to_stream</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="Map.to_stream"><a class="viewcode-back" href="../../map.html#carriage.Map.to_stream">[docs]</a>    <span class="k">def</span> <span class="nf">to_stream</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&#39;&#39;&#39;Create a Stream instance of ``Row(key, value)`` iterable.</span>
 
 <span class="sd">        &gt;&gt;&gt; m = Map(a=4, b=5, c=6, d=7)</span>
 <span class="sd">        &gt;&gt;&gt; m.to_stream().take(2).to_list()</span>
 <span class="sd">        [Row(key=&#39;a&#39;, value=4), Row(key=&#39;b&#39;, value=5)]</span>
 
-<span class="sd">        &#39;&#39;&#39;</span>
-        <span class="k">return</span> <span class="n">Stream</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">items</span><span class="p">())</span><span class="o">.</span><span class="n">starmap</span><span class="p">(</span><span class="n">KeyValue</span><span class="p">)</span></div>
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        Stream[Row[key, value]]</span>
 
-<div class="viewcode-block" id="Map.to_array"><a class="viewcode-back" href="../../api.html#carriage.Map.to_array">[docs]</a>    <span class="k">def</span> <span class="nf">to_array</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">items</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="Map.to_array"><a class="viewcode-back" href="../../map.html#carriage.Map.to_array">[docs]</a>    <span class="k">def</span> <span class="nf">to_array</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&#39;&#39;&#39;Create a Array instance of ``Row(key, value)`` iterable.</span>
 
 <span class="sd">        &gt;&gt;&gt; m = Map(a=4, b=5, c=6, d=7)</span>
 <span class="sd">        &gt;&gt;&gt; m.to_array().take(2)</span>
 <span class="sd">        Array([Row(key=&#39;a&#39;, value=4), Row(key=&#39;b&#39;, value=5)])</span>
 
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        Array[Row[key, value]]</span>
+
 <span class="sd">        &#39;&#39;&#39;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">to_stream</span><span class="p">()</span><span class="o">.</span><span class="n">to_array</span><span class="p">()</span></div>
 
-<div class="viewcode-block" id="Map.flip"><a class="viewcode-back" href="../../api.html#carriage.Map.flip">[docs]</a>    <span class="k">def</span> <span class="nf">flip</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="Map.flip"><a class="viewcode-back" href="../../map.html#carriage.Map.flip">[docs]</a>    <span class="k">def</span> <span class="nf">flip</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&#39;&#39;&#39;Create a new Map which key/value pairs are fliped</span>
 
 <span class="sd">        &gt;&gt;&gt; m = Map(a=4, b=5, c=6)</span>
@@ -586,57 +697,75 @@
 <span class="sd">        &#39;&#39;&#39;</span>
         <span class="k">return</span> <span class="n">Map</span><span class="p">((</span><span class="n">value</span><span class="p">,</span> <span class="n">key</span><span class="p">)</span> <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">items</span><span class="p">())</span></div>
 
-    <span class="k">def</span> <span class="nf">most_common</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="c1"># TODO</span>
-        <span class="k">pass</span></div>
+<div class="viewcode-block" id="Map.for_each"><a class="viewcode-back" href="../../map.html#carriage.Map.for_each">[docs]</a>    <span class="k">def</span> <span class="nf">for_each</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">func</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Call func for each key/value pair</span>
 
+<span class="sd">        &gt;&gt;&gt; m = Map(a=[], b=[], c=[])</span>
+<span class="sd">        &gt;&gt;&gt; m.for_each(lambda k, v: v.append(k))</span>
+<span class="sd">        &gt;&gt;&gt; m</span>
+<span class="sd">        Map({&#39;a&#39;: [&#39;a&#39;], &#39;b&#39;: [&#39;b&#39;], &#39;c&#39;: [&#39;c&#39;]})</span>
 
-<span class="k">class</span> <span class="nc">FrozenMap</span><span class="p">(</span><span class="n">UserDict</span><span class="p">):</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">func</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span></div>
 
-    <span class="k">def</span> <span class="nf">merge</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">others</span><span class="p">):</span>
-        <span class="k">pass</span>
+<div class="viewcode-block" id="Map.for_each_key"><a class="viewcode-back" href="../../map.html#carriage.Map.for_each_key">[docs]</a>    <span class="k">def</span> <span class="nf">for_each_key</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">func</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Call func for each key</span>
 
-    <span class="k">def</span> <span class="nf">merge_with</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">others</span><span class="p">):</span>
-        <span class="k">pass</span>
+<span class="sd">        &gt;&gt;&gt; m = Map(a=[], b=[], c=[])</span>
+<span class="sd">        &gt;&gt;&gt; keys = []</span>
+<span class="sd">        &gt;&gt;&gt; m.for_each_key(lambda k: keys.append(k))</span>
+<span class="sd">        &gt;&gt;&gt; keys</span>
+<span class="sd">        [&#39;a&#39;, &#39;b&#39;, &#39;c&#39;]</span>
 
-    <span class="k">def</span> <span class="nf">map</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">func</span><span class="p">):</span>
-        <span class="k">pass</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="n">func</span><span class="p">(</span><span class="n">k</span><span class="p">)</span></div>
 
-    <span class="k">def</span> <span class="nf">map_keys</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">pass</span>
+<div class="viewcode-block" id="Map.for_each_value"><a class="viewcode-back" href="../../map.html#carriage.Map.for_each_value">[docs]</a>    <span class="k">def</span> <span class="nf">for_each_value</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">func</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Call func for each value</span>
 
-    <span class="k">def</span> <span class="nf">map_values</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">pass</span>
+<span class="sd">        &gt;&gt;&gt; m = Map(a=[], b=[], c=[])</span>
+<span class="sd">        &gt;&gt;&gt; m.for_each_value(lambda v: v.append(3))</span>
+<span class="sd">        &gt;&gt;&gt; m</span>
+<span class="sd">        Map({&#39;a&#39;: [3], &#39;b&#39;: [3], &#39;c&#39;: [3]})</span>
 
-    <span class="k">def</span> <span class="nf">to_stream</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">pass</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+            <span class="n">func</span><span class="p">(</span><span class="n">v</span><span class="p">)</span></div>
 
-    <span class="k">def</span> <span class="nf">to_array</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">pass</span>
+<div class="viewcode-block" id="Map.nlargest_value_items"><a class="viewcode-back" href="../../map.html#carriage.Map.nlargest_value_items">[docs]</a>    <span class="k">def</span> <span class="nf">nlargest_value_items</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Get top n largest values</span>
 
-    <span class="k">def</span> <span class="nf">project</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">keys</span><span class="p">):</span>
-        <span class="k">pass</span>
+<span class="sd">        &gt;&gt;&gt; m = Map(a=6, b=2, c=10, d=9)</span>
+<span class="sd">        &gt;&gt;&gt; m.nlargest_value_items(n=2)</span>
+<span class="sd">        Array([Row(key=&#39;c&#39;, value=10), Row(key=&#39;d&#39;, value=9)])</span>
 
-    <span class="k">def</span> <span class="nf">flip</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">pass</span>
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        Array[Row[key, value]]</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">if</span> <span class="n">n</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">vs</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">items</span><span class="p">(),</span> <span class="n">key</span><span class="o">=</span><span class="n">op</span><span class="o">.</span><span class="n">itemgetter</span><span class="p">(</span><span class="mi">1</span><span class="p">),</span> <span class="n">reverse</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">vs</span> <span class="o">=</span> <span class="n">heapq</span><span class="o">.</span><span class="n">nlargest</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">items</span><span class="p">(),</span> <span class="n">key</span><span class="o">=</span><span class="n">op</span><span class="o">.</span><span class="n">itemgetter</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">Array</span><span class="p">(</span><span class="n">vs</span><span class="p">)</span></div>
 
-    <span class="k">def</span> <span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-        <span class="k">pass</span>
+<div class="viewcode-block" id="Map.nsmallest_value_items"><a class="viewcode-back" href="../../map.html#carriage.Map.nsmallest_value_items">[docs]</a>    <span class="k">def</span> <span class="nf">nsmallest_value_items</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Get top n smallest values</span>
 
-    <span class="k">def</span> <span class="nf">get_opt</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
-        <span class="k">pass</span>
+<span class="sd">        &gt;&gt;&gt; m = Map(a=6, b=2, c=10, d=9)</span>
+<span class="sd">        &gt;&gt;&gt; m.nsmallest_value_items(n=2)</span>
+<span class="sd">        Array([Row(key=&#39;b&#39;, value=2), Row(key=&#39;a&#39;, value=6)])</span>
 
-    <span class="k">def</span> <span class="nf">filter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pred</span><span class="p">):</span>
-        <span class="k">pass</span>
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        Array[Row[key, value]]</span>
 
-    <span class="k">def</span> <span class="nf">filter_keys</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pred</span><span class="p">):</span>
-        <span class="k">pass</span>
-
-    <span class="k">def</span> <span class="nf">filter_values</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pred</span><span class="p">):</span>
-        <span class="k">pass</span>
-
-    <span class="k">def</span> <span class="nf">to_tuple</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">items</span><span class="p">())</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">if</span> <span class="n">n</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">vs</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">items</span><span class="p">(),</span> <span class="n">key</span><span class="o">=</span><span class="n">op</span><span class="o">.</span><span class="n">itemgetter</span><span class="p">(</span><span class="mi">1</span><span class="p">),</span> <span class="n">reverse</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="n">vs</span> <span class="o">=</span> <span class="n">heapq</span><span class="o">.</span><span class="n">nsmallest</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">items</span><span class="p">(),</span> <span class="n">key</span><span class="o">=</span><span class="n">op</span><span class="o">.</span><span class="n">itemgetter</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">Array</span><span class="p">(</span><span class="n">vs</span><span class="p">)</span></div></div>
 </pre></div>
 
           </div>

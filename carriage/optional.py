@@ -400,9 +400,11 @@ class Some(Optional):
     def __str__(self):
         return f'Some({self._some_value!s})'
 
-    @property
-    def value_do(self):
-        return SomeOp(self._some_value)
+    def do(self, func):
+        '''Call function using this item as parameter.
+
+        '''
+        func(self._some_value)
 
 
 class SomeOp(Some):
