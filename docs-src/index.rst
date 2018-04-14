@@ -1,16 +1,16 @@
 ``carriage``: Less code, More productive
 ========================================
 
-``carriage`` aims at making your Python coding life easier by providing a bunch of collection classes. You can process data, write your code, test your code more fluently.
+**carriage** aims at making your Python coding life easier by providing a bunch of collection classes. You can process data, write your code, test your code more fluently.
 
-``Map`` and ``Array`` work just like Python primitive ``dict`` and ``list`` 
+:doc:`Map </map>` and :doc:`Array </array>` work just like Python primitive ``dict`` and ``list`` 
 but enhanced with a lot of practical methods.
 
-``Row`` is a handy and more powerful `namedtuple <https://docs.python.org/3.6/library/collections.html>`_. You can create arbitrary ``Row`` anytime without declaring fields in advance. It also provides some useful methods for transforming itself. 
+:doc:`Row </row>` is a handy and more powerful `namedtuple <https://docs.python.org/3.6/library/collections.html>`_. You can create arbitrary :doc:`Row </row>` anytime without declaring fields in advance. It also provides some useful methods for transforming itself. 
 
-``Stream`` is a very powerful wrapper for any iterable object. You can transform, inspect, manipulate an iterable much easier. And with the property of lazy-evaluating, building and testing the pipeline for handling big, long data are faster and easier.
+:doc:`Stream </stream>` is a very powerful wrapper for any iterable object. You can transform, inspect, manipulate an iterable much easier. And with the property of lazy-evaluating, building and testing the pipeline for handling big, long data are faster and easier.
 
-``Optional`` is a object wrapper for handling unexpected condition. It makes ``None`` value, exceptions or other unexpected condition won't break your data processing pipeline.
+:doc:`Optional </optional>` is a object wrapper for handling errors. It makes ``None`` value, exceptions or other unexpected condition won't break your data processing pipeline.
 
 Getting Start
 ====================
