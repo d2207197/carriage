@@ -6,7 +6,7 @@
 :doc:`Map </map>` and :doc:`Array </array>` work just like Python primitive ``dict`` and ``list`` 
 but enhanced with a lot of practical methods.
 
-:doc:`Row </row>` is a handy and more powerful `namedtuple <https://docs.python.org/3.6/library/collections.html>`_. You can create arbitrary :doc:`Row </row>` anytime without declaring fields in advance. 
+:doc:`Row </row>` is a handy and more powerful `namedtuple <https://docs.python.org/3.6/library/collections.html#collections.namedtuple>`_. You can create arbitrary :doc:`Row </row>` anytime without declaring fields in advance. 
 
 :doc:`Stream </stream>` is a very powerful wrapper type for any iterable object. You can write less code to transform, inspect, and manipulate any iterable. And with the property of lazy-evaluating, building and testing the pipeline for handling big, long sequential data are now faster, easier and painlessly.
 
