@@ -629,7 +629,7 @@ class Map(OrderedDict):
         return len(self)
 
     def to_stream(self):
-        '''Create a Stream instance of ``Row(key, value)`` iterable.
+        '''Convert to a Stream instance of ``Row(key, value)`` iterable.
 
         >>> m = Map(a=4, b=5, c=6, d=7)
         >>> m.to_stream().take(2).to_list()
@@ -643,7 +643,7 @@ class Map(OrderedDict):
         return self.items()
 
     def to_array(self):
-        '''Create a Array instance of ``Row(key, value)`` iterable.
+        '''Convert to an Array instance of ``Row(key, value)`` iterable.
 
         >>> m = Map(a=4, b=5, c=6, d=7)
         >>> m.to_array().take(2)
@@ -655,6 +655,10 @@ class Map(OrderedDict):
 
         '''
         return self.to_stream().to_array()
+
+    def to_dict(self):
+        '''Convert to dict'''
+        return dict(self)
 
     def flip(self):
         '''Create a new Map which key/value pairs are fliped

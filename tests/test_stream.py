@@ -210,7 +210,7 @@ def test_counter():
 def test_groupby():
     assert (Stream
             .range(10)
-            .groupby(lambda n: n // 3)
+            .group_by(lambda n: n // 3)
             .starmap(lambda k, vs: (k, list(vs))).to_list() ==
             [(0, [0, 1, 2]), (1, [3, 4, 5]), (2, [6, 7, 8]), (3, [9])])
 

@@ -274,11 +274,11 @@ def test_value_do():
     mama = Person('Mama', 40)
     johnny = Person('Johnny', 18, papa, mama)
 
-    assert Some(johnny).value_do.mother == Some(mama)
-    assert Some(johnny).value_do.mother.value is mama
-    assert Some(johnny).value_do.age == Some(18)
-    assert Some(johnny).value_do.age < Some(
-        johnny).value_do.mother.value_do.age
+    # assert Some(johnny).value_do.mother == Some(mama)
+    # assert Some(johnny).value_do.mother.value is mama
+    # assert Some(johnny).value_do.age == Some(18)
+    # assert Some(johnny).value_do.age < Some(
+    #     johnny).value_do.mother.value_do.age
 
     # assert maybe_obj.get_data().v == 30
     # assert maybe_obj.get_none().v is None

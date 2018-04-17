@@ -1215,9 +1215,49 @@ class Stream(Monad):
     # def copy(self):
     #     return Array(copy(self._items))
 
-    def grouped(self):
-        # TODO
-        pass
+    @as_stream
+    def chunk(self, n, strict=False):
+        '''divide elements into chunks of n elements
 
-    def for_each(self):
-        pass
+        >>> s = Stream.range(5)
+        >>> s.chunk(2).to_list()
+        [Row(v0=0, v1=1), Row(v0=2, v1=3), Row(v0=4)]
+        >>> s.chunk(2, strict=True).to_list()
+        [Row(v0=0, v1=1), Row(v0=2, v1=3)]
+        '''
+        from .row import Row
+
+        def chunk_tr(self_):
+            self_ = iter(self_)
+            while True:
+                row = Row.from_iterable(itt.islice(self_, n))
+                if len(row) == 0 or strict and len(row) != n:
+                    break
+                yield row
+            return self_
+
+        return chunk_tr
+
+    def for_each(self, func):
+        '''Call function for each element
+
+        >>> s = Stream.range(3)
+        >>> s.for_each(print)
+        0
+        1
+        2
+        '''
+        for elem in self:
+            func(elem)
+
+    def star_for_each(self, func):
+        '''Call function for each element as agument tuple
+
+        >>> s = Stream(['a', 'b', 'c']).zip_index(1)
+        >>> s.star_for_each(lambda c, i: print(f'{i}:{c}'))
+        1:a
+        2:b
+        3:c
+        '''
+        for elem in self:
+            func(*elem)
