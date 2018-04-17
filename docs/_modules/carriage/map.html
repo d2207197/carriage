@@ -661,7 +661,7 @@
         <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="Map.to_stream"><a class="viewcode-back" href="../../map.html#carriage.Map.to_stream">[docs]</a>    <span class="k">def</span> <span class="nf">to_stream</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&#39;&#39;&#39;Create a Stream instance of ``Row(key, value)`` iterable.</span>
+        <span class="sd">&#39;&#39;&#39;Convert to a Stream instance of ``Row(key, value)`` iterable.</span>
 
 <span class="sd">        &gt;&gt;&gt; m = Map(a=4, b=5, c=6, d=7)</span>
 <span class="sd">        &gt;&gt;&gt; m.to_stream().take(2).to_list()</span>
@@ -675,7 +675,7 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">items</span><span class="p">()</span></div>
 
 <div class="viewcode-block" id="Map.to_array"><a class="viewcode-back" href="../../map.html#carriage.Map.to_array">[docs]</a>    <span class="k">def</span> <span class="nf">to_array</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&#39;&#39;&#39;Create a Array instance of ``Row(key, value)`` iterable.</span>
+        <span class="sd">&#39;&#39;&#39;Convert to an Array instance of ``Row(key, value)`` iterable.</span>
 
 <span class="sd">        &gt;&gt;&gt; m = Map(a=4, b=5, c=6, d=7)</span>
 <span class="sd">        &gt;&gt;&gt; m.to_array().take(2)</span>
@@ -687,6 +687,10 @@
 
 <span class="sd">        &#39;&#39;&#39;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">to_stream</span><span class="p">()</span><span class="o">.</span><span class="n">to_array</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="Map.to_dict"><a class="viewcode-back" href="../../map.html#carriage.Map.to_dict">[docs]</a>    <span class="k">def</span> <span class="nf">to_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Convert to dict&#39;&#39;&#39;</span>
+        <span class="k">return</span> <span class="nb">dict</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="Map.flip"><a class="viewcode-back" href="../../map.html#carriage.Map.flip">[docs]</a>    <span class="k">def</span> <span class="nf">flip</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&#39;&#39;&#39;Create a new Map which key/value pairs are fliped</span>

@@ -1144,6 +1144,45 @@ with the same order of first occurence in the source Stream.</p>
 </div>
 </dd></dl>
 
+<dl class="method">
+<dt id="carriage.Stream.chunk">
+<code class="descname">chunk</code><span class="sig-paren">(</span><em>n</em>, <em>strict=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/carriage/stream.html#Stream.chunk"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#carriage.Stream.chunk" title="Permalink to this definition">¶</a></dt>
+<dd><p>divide elements into chunks of n elements</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">s</span> <span class="o">=</span> <span class="n">Stream</span><span class="o">.</span><span class="n">range</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">s</span><span class="o">.</span><span class="n">chunk</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">to_list</span><span class="p">()</span>
+<span class="go">[Row(v0=0, v1=1), Row(v0=2, v1=3), Row(v0=4)]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">s</span><span class="o">.</span><span class="n">chunk</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="n">strict</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span><span class="o">.</span><span class="n">to_list</span><span class="p">()</span>
+<span class="go">[Row(v0=0, v1=1), Row(v0=2, v1=3)]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="carriage.Stream.for_each">
+<code class="descname">for_each</code><span class="sig-paren">(</span><em>func</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/carriage/stream.html#Stream.for_each"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#carriage.Stream.for_each" title="Permalink to this definition">¶</a></dt>
+<dd><p>Call function for each element</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">s</span> <span class="o">=</span> <span class="n">Stream</span><span class="o">.</span><span class="n">range</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">s</span><span class="o">.</span><span class="n">for_each</span><span class="p">(</span><span class="nb">print</span><span class="p">)</span>
+<span class="go">0</span>
+<span class="go">1</span>
+<span class="go">2</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="carriage.Stream.star_for_each">
+<code class="descname">star_for_each</code><span class="sig-paren">(</span><em>func</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/carriage/stream.html#Stream.star_for_each"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#carriage.Stream.star_for_each" title="Permalink to this definition">¶</a></dt>
+<dd><p>Call function for each element as agument tuple</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">s</span> <span class="o">=</span> <span class="n">Stream</span><span class="p">([</span><span class="s1">&#39;a&#39;</span><span class="p">,</span> <span class="s1">&#39;b&#39;</span><span class="p">,</span> <span class="s1">&#39;c&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">zip_index</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">s</span><span class="o">.</span><span class="n">star_for_each</span><span class="p">(</span><span class="k">lambda</span> <span class="n">c</span><span class="p">,</span> <span class="n">i</span><span class="p">:</span> <span class="nb">print</span><span class="p">(</span><span class="n">f</span><span class="s1">&#39;</span><span class="si">{i}</span><span class="s1">:</span><span class="si">{c}</span><span class="s1">&#39;</span><span class="p">))</span>
+<span class="go">1:a</span>
+<span class="go">2:b</span>
+<span class="go">3:c</span>
+</pre></div>
+</div>
+</dd></dl>
+
 </dd></dl>
 
 </div>

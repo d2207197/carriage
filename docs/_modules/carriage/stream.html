@@ -1247,12 +1247,52 @@
     <span class="c1"># def copy(self):</span>
     <span class="c1">#     return Array(copy(self._items))</span>
 
-    <span class="k">def</span> <span class="nf">grouped</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="c1"># TODO</span>
-        <span class="k">pass</span>
+<div class="viewcode-block" id="Stream.chunk"><a class="viewcode-back" href="../../stream.html#carriage.Stream.chunk">[docs]</a>    <span class="nd">@as_stream</span>
+    <span class="k">def</span> <span class="nf">chunk</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n</span><span class="p">,</span> <span class="n">strict</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;divide elements into chunks of n elements</span>
 
-    <span class="k">def</span> <span class="nf">for_each</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">pass</span></div>
+<span class="sd">        &gt;&gt;&gt; s = Stream.range(5)</span>
+<span class="sd">        &gt;&gt;&gt; s.chunk(2).to_list()</span>
+<span class="sd">        [Row(v0=0, v1=1), Row(v0=2, v1=3), Row(v0=4)]</span>
+<span class="sd">        &gt;&gt;&gt; s.chunk(2, strict=True).to_list()</span>
+<span class="sd">        [Row(v0=0, v1=1), Row(v0=2, v1=3)]</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="kn">from</span> <span class="nn">.row</span> <span class="k">import</span> <span class="n">Row</span>
+
+        <span class="k">def</span> <span class="nf">chunk_tr</span><span class="p">(</span><span class="n">self_</span><span class="p">):</span>
+            <span class="n">self_</span> <span class="o">=</span> <span class="nb">iter</span><span class="p">(</span><span class="n">self_</span><span class="p">)</span>
+            <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+                <span class="n">row</span> <span class="o">=</span> <span class="n">Row</span><span class="o">.</span><span class="n">from_iterable</span><span class="p">(</span><span class="n">itt</span><span class="o">.</span><span class="n">islice</span><span class="p">(</span><span class="n">self_</span><span class="p">,</span> <span class="n">n</span><span class="p">))</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">row</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">strict</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">row</span><span class="p">)</span> <span class="o">!=</span> <span class="n">n</span><span class="p">:</span>
+                    <span class="k">break</span>
+                <span class="k">yield</span> <span class="n">row</span>
+            <span class="k">return</span> <span class="n">self_</span>
+
+        <span class="k">return</span> <span class="n">chunk_tr</span></div>
+
+<div class="viewcode-block" id="Stream.for_each"><a class="viewcode-back" href="../../stream.html#carriage.Stream.for_each">[docs]</a>    <span class="k">def</span> <span class="nf">for_each</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">func</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Call function for each element</span>
+
+<span class="sd">        &gt;&gt;&gt; s = Stream.range(3)</span>
+<span class="sd">        &gt;&gt;&gt; s.for_each(print)</span>
+<span class="sd">        0</span>
+<span class="sd">        1</span>
+<span class="sd">        2</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">for</span> <span class="n">elem</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">:</span>
+            <span class="n">func</span><span class="p">(</span><span class="n">elem</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Stream.star_for_each"><a class="viewcode-back" href="../../stream.html#carriage.Stream.star_for_each">[docs]</a>    <span class="k">def</span> <span class="nf">star_for_each</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">func</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Call function for each element as agument tuple</span>
+
+<span class="sd">        &gt;&gt;&gt; s = Stream([&#39;a&#39;, &#39;b&#39;, &#39;c&#39;]).zip_index(1)</span>
+<span class="sd">        &gt;&gt;&gt; s.star_for_each(lambda c, i: print(f&#39;{i}:{c}&#39;))</span>
+<span class="sd">        1:a</span>
+<span class="sd">        2:b</span>
+<span class="sd">        3:c</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">for</span> <span class="n">elem</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">:</span>
+            <span class="n">func</span><span class="p">(</span><span class="o">*</span><span class="n">elem</span><span class="p">)</span></div></div>
 </pre></div>
 
           </div>

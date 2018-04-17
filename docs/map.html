@@ -736,7 +736,7 @@ otherwise return Nothing.</p>
 <dl class="method">
 <dt id="carriage.Map.to_stream">
 <code class="descname">to_stream</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/carriage/map.html#Map.to_stream"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#carriage.Map.to_stream" title="Permalink to this definition">¶</a></dt>
-<dd><p>Create a Stream instance of <code class="docutils literal notranslate"><span class="pre">Row(key,</span> <span class="pre">value)</span></code> iterable.</p>
+<dd><p>Convert to a Stream instance of <code class="docutils literal notranslate"><span class="pre">Row(key,</span> <span class="pre">value)</span></code> iterable.</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">m</span> <span class="o">=</span> <span class="n">Map</span><span class="p">(</span><span class="n">a</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">b</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">c</span><span class="o">=</span><span class="mi">6</span><span class="p">,</span> <span class="n">d</span><span class="o">=</span><span class="mi">7</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">m</span><span class="o">.</span><span class="n">to_stream</span><span class="p">()</span><span class="o">.</span><span class="n">take</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">to_list</span><span class="p">()</span>
 <span class="go">[Row(key=&#39;a&#39;, value=4), Row(key=&#39;b&#39;, value=5)]</span>
@@ -757,7 +757,7 @@ otherwise return Nothing.</p>
 <dl class="method">
 <dt id="carriage.Map.to_array">
 <code class="descname">to_array</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/carriage/map.html#Map.to_array"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#carriage.Map.to_array" title="Permalink to this definition">¶</a></dt>
-<dd><p>Create a Array instance of <code class="docutils literal notranslate"><span class="pre">Row(key,</span> <span class="pre">value)</span></code> iterable.</p>
+<dd><p>Convert to an Array instance of <code class="docutils literal notranslate"><span class="pre">Row(key,</span> <span class="pre">value)</span></code> iterable.</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">m</span> <span class="o">=</span> <span class="n">Map</span><span class="p">(</span><span class="n">a</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">b</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">c</span><span class="o">=</span><span class="mi">6</span><span class="p">,</span> <span class="n">d</span><span class="o">=</span><span class="mi">7</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">m</span><span class="o">.</span><span class="n">to_array</span><span class="p">()</span><span class="o">.</span><span class="n">take</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
 <span class="go">Array([Row(key=&#39;a&#39;, value=4), Row(key=&#39;b&#39;, value=5)])</span>
@@ -773,6 +773,12 @@ otherwise return Nothing.</p>
 </tr>
 </tbody>
 </table>
+</dd></dl>
+
+<dl class="method">
+<dt id="carriage.Map.to_dict">
+<code class="descname">to_dict</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/carriage/map.html#Map.to_dict"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#carriage.Map.to_dict" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convert to dict</p>
 </dd></dl>
 
 <dl class="method">
