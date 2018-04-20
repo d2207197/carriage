@@ -1261,3 +1261,20 @@ class Stream(Monad):
         '''
         for elem in self:
             func(*elem)
+
+    def make_string(self,
+                    elem_format='{elem!r}',
+                    start='[', elem_sep=', ', end=']'):
+        '''Make string from elements
+
+        >>> Stream.range(5, 8).make_string()
+        '[5, 6, 7]'
+        >>> print(Stream.range(5, 8).make_string(elem_sep='\\n', start='', end='', elem_format='{index}: {elem}'))
+        0: 5
+        1: 6
+        2: 7
+        '''
+
+        elems_str = elem_sep.join(elem_format.format(index=idx, elem=elem)
+                                  for idx, elem in enumerate(self))
+        return start + elems_str + end
