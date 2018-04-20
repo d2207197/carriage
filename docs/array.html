@@ -15,7 +15,7 @@
     <script type="text/javascript" src="_static/doctools.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="Optional: A object wrapper for handling errors" href="optional.html" />
+    <link rel="next" title="Optional: Object wrapper for handling errors" href="optional.html" />
     <link rel="prev" title="Stream: Lazy-evaluating sequential collection type" href="stream.html" />
    
   <link rel="stylesheet" href="_static/custom.css" type="text/css" />
@@ -695,6 +695,20 @@ iterable</p>
 with the same order of first occurence in the source Array.</p>
 </dd></dl>
 
+<dl class="method">
+<dt id="carriage.Array.make_string">
+<code class="descname">make_string</code><span class="sig-paren">(</span><em>elem_format='{elem!r}'</em>, <em>start='['</em>, <em>elem_sep='</em>, <em>'</em>, <em>end=']'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/carriage/array.html#Array.make_string"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#carriage.Array.make_string" title="Permalink to this definition">¶</a></dt>
+<dd><p>Make string from elements</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">Array</span><span class="o">.</span><span class="n">range</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">8</span><span class="p">)</span><span class="o">.</span><span class="n">make_string</span><span class="p">()</span>
+<span class="go">&#39;[5, 6, 7]&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">Array</span><span class="o">.</span><span class="n">range</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">8</span><span class="p">)</span><span class="o">.</span><span class="n">make_string</span><span class="p">(</span><span class="n">elem_sep</span><span class="o">=</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">elem_format</span><span class="o">=</span><span class="s1">&#39;</span><span class="si">{index}</span><span class="s1">: </span><span class="si">{elem}</span><span class="s1">&#39;</span><span class="p">))</span>
+<span class="go">0: 5</span>
+<span class="go">1: 6</span>
+<span class="go">2: 7</span>
+</pre></div>
+</div>
+</dd></dl>
+
 </dd></dl>
 
 </div>
@@ -709,7 +723,7 @@ with the same order of first occurence in the source Array.</p>
 <ul>
   <li><a href="index.html">Documentation overview</a><ul>
       <li>Previous: <a href="stream.html" title="previous chapter"><code class="docutils literal notranslate"><span class="pre">Stream</span></code>: Lazy-evaluating sequential collection type</a></li>
-      <li>Next: <a href="optional.html" title="next chapter"><code class="docutils literal notranslate"><span class="pre">Optional</span></code>: A object wrapper for handling errors</a></li>
+      <li>Next: <a href="optional.html" title="next chapter"><code class="docutils literal notranslate"><span class="pre">Optional</span></code>: Object wrapper for handling errors</a></li>
   </ul></li>
 </ul>
 </div>

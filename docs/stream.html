@@ -1183,6 +1183,20 @@ with the same order of first occurence in the source Stream.</p>
 </div>
 </dd></dl>
 
+<dl class="method">
+<dt id="carriage.Stream.make_string">
+<code class="descname">make_string</code><span class="sig-paren">(</span><em>elem_format='{elem!r}'</em>, <em>start='['</em>, <em>elem_sep='</em>, <em>'</em>, <em>end=']'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/carriage/stream.html#Stream.make_string"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#carriage.Stream.make_string" title="Permalink to this definition">¶</a></dt>
+<dd><p>Make string from elements</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">Stream</span><span class="o">.</span><span class="n">range</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">8</span><span class="p">)</span><span class="o">.</span><span class="n">make_string</span><span class="p">()</span>
+<span class="go">&#39;[5, 6, 7]&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">Stream</span><span class="o">.</span><span class="n">range</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">8</span><span class="p">)</span><span class="o">.</span><span class="n">make_string</span><span class="p">(</span><span class="n">elem_sep</span><span class="o">=</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">elem_format</span><span class="o">=</span><span class="s1">&#39;</span><span class="si">{index}</span><span class="s1">: </span><span class="si">{elem}</span><span class="s1">&#39;</span><span class="p">))</span>
+<span class="go">0: 5</span>
+<span class="go">1: 6</span>
+<span class="go">2: 7</span>
+</pre></div>
+</div>
+</dd></dl>
+
 </dd></dl>
 
 </div>
