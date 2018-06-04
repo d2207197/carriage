@@ -262,6 +262,21 @@ class Stream(Monad):
         '''
         return fnt.partial(map, func)
 
+    def select(self, *fields):
+        '''Assume elements in Stream is in Row type and
+        create a new Stream by keeping only specified fields in each Row
+
+        >>> from carriage import Row
+        >>> Stream([Row(x=3, y=4, z=1),
+        ...    Row(x=-1, y=2, z=-2)]).select('x', 'y').to_list()
+        [Row(x=3, y=4), Row(x=-1, y=2)]
+
+        Returns
+        -------
+        Stream
+        '''
+        return self.map(lambda row: row.project(*fields))
+
     @as_stream
     def starmap(self, func):
         '''Create a new Stream by evaluating function using argument tulpe
@@ -842,19 +857,20 @@ class Stream(Monad):
     filterfalse = filter_false
 
     def where(self, **conds):
-        '''Create a new Stream contains only mapping pass all conditions.
+        '''Create a new Stream contains only Rows pass all conditions.
 
-        >>> s = Stream([dict(x=3, y=4), dict(x=3, y=5), dict(x=4, y=5)])
+        >>> from carriage import Row
+        >>> s = Stream([Row(x=3, y=4), Row(x=3, y=5), Row(x=4, y=5)])
         >>> s.where(x=3).to_list()
-        [{'x': 3, 'y': 4}, {'x': 3, 'y': 5}]
+        [Row(x=3, y=4), Row(x=3, y=5)]
         >>> s.where(y=5).to_list()
-        [{'x': 3, 'y': 5}, {'x': 4, 'y': 5}]
+        [Row(x=3, y=5), Row(x=4, y=5)]
 
 
         '''
-        return self.filter(lambda d:
-                           all(key in d and d[key] == value
-                               for key, value in conds.items()))
+        return self.filter(lambda row:
+                           all(getattr(row, field) == value
+                               for field, value in conds.items()))
 
     @as_stream
     def interpose(self, sep):

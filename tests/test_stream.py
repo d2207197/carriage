@@ -4,6 +4,7 @@ from collections import Counter
 
 import pandas as pd
 import pytest
+
 from carriage import Array, Nothing, Some, Stream
 from carriage.row import CurrNext, CurrPrev, Row, ValueIndex
 
@@ -100,9 +101,11 @@ def test_filtering():
     assert Stream.range(5, 10).filterfalse(is_even).to_list() == [5, 7, 9]
 
     assert Stream.range(5, 10).without(6, 8).to_list() == [5, 7, 9]
-    assert (Stream([{'a': 1, 'b': 2}, {'a': 4, 'b': 5}, {'a': 1, 'b': 3}])
+    assert (Stream([Row(a=1, b=2),
+                    Row(a=4, b=5),
+                    Row(a=1, b=3)])
             .where(a=1).to_list() ==
-            [{'a': 1, 'b': 2}, {'a': 1, 'b': 3}])
+            [Row(a=1, b=2), Row(a=1, b=3)])
 
 
 def test_interpose():
