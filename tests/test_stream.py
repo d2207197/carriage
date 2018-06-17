@@ -46,7 +46,6 @@ def test_access():
     with pytest.raises(ValueError):
         assert Stream.range(5, 10).get(-1) is None
     assert Stream.range(5, 10)[3] == 8
-    assert Stream.range(5, 10)[-1] == 9
 
     with pytest.raises(ValueError):
         assert Stream(iter(range(5, 10)))[-1]
@@ -215,7 +214,7 @@ def test_counter():
 def test_groupby():
     assert (Stream
             .range(10)
-            .group_by(lambda n: n // 3)
+            .group_by_as_stream(lambda n: n // 3)
             .starmap(lambda k, vs: (k, list(vs))).to_list() ==
             [(0, [0, 1, 2]), (1, [3, 4, 5]), (2, [6, 7, 8]), (3, [9])])
 
@@ -244,7 +243,7 @@ def test_general_case(ipsum, capsys):
            .filter(lambda word: len(word) > 0)
            .distincted()
            .sorted(key=lambda word: len(word))
-           .group_by(lambda word: len(word))
+           .group_by_as_stream(lambda word: len(word))
            .map(lambda keyvalues:
                 keyvalues.transform(values=lambda stream: stream.to_array()))
            .map(lambda keyvalues: Row(
@@ -267,6 +266,9 @@ def test_repr():
     assert repr(Stream(list(range(100)))
                 ) == 'Stream([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, ...])'
 
+
+def test_row_stream():
+    assert Stream([Row(x=3, y=4), Row(x=5, y=6)]).select('x').to_list() == [Row(x=3), Row(x=5)]
 
 
 

@@ -13,11 +13,22 @@ from .repr import short_repr
 from .row import CurrNext, CurrPrev, KeyValues, ValueIndex
 
 
+def repr_args(*args, **kwargs):
+    args_str = ', '.join(repr(arg) for arg in args)
+    kwargs_str = ', '.join(f'{k}={v!r}' for k, v in kwargs.items())
+    return f'{args_str}, {kwargs_str}'
+
+
 def as_stream(f):
     @fnt.wraps(f)
     def wraped(self, *args, **kwargs):
-        trfmr = f(self, *args, **kwargs)
-        return Stream(self, trfmr)
+        args_str = repr_args(*args, **kwargs)
+        trfmr = Transformer(name=f'{f.__name__}({args_str})',
+                            func=f(self, *args, **kwargs))
+
+        return Stream(
+            iterable=self._iterable,
+            pipeline=self._pipeline.then(trfmr))
 
     wraped.call = f
 
@@ -64,6 +75,12 @@ class Pipeline:
     def __repr__(self):
         return f'{type(self).__name__}({self._transformers!r})'
 
+    def is_empty(self):
+        return len(self._transformers) == 0
+
+    def __len__(self):
+        return len(self._transformers)
+
 
 
 
@@ -102,9 +119,9 @@ class Stream(Monad):
     [10, 12, 14]
 
     '''
-    __slots__ = '_iterable', '_transformer'
+    __slots__ = '_iterable', '_pipeline'
 
-    def __init__(self, iterable, transformer=None):
+    def __init__(self, iterable, *, pipeline=None):
         '''Create a Stream from any iterable object.
 
         >>> strm = Stream([1,2,3])
@@ -121,7 +138,11 @@ class Stream(Monad):
         '''
 
         self._iterable = iterable
-        self._transformer = transformer
+
+        if pipeline is None:
+            pipeline = Pipeline()
+
+        self._pipeline = pipeline
 
     @classmethod
     def range(cls, start, end=None, step=1):
@@ -305,6 +326,7 @@ class Stream(Monad):
         '''
         return fnt.partial(map, func)
 
+    @as_stream
     def select(self, *fields):
         '''Assume elements in Stream is in Row type and
         create a new Stream by keeping only specified fields in each Row
@@ -318,7 +340,7 @@ class Stream(Monad):
         -------
         Stream
         '''
-        return self.map(lambda row: row.project(*fields))
+        return fnt.partial(map, lambda row: row.project(*fields))
 
     @as_stream
     def starmap(self, func):
@@ -448,23 +470,18 @@ class Stream(Monad):
         # TODO
         pass
 
-    # def __len__(self):
-
     def __iter__(self):
-        if self._transformer is None:
-            return iter(self._iterable)
-
-        return iter(self._transformer(self._iterable))
+        return iter(self._pipeline.transform(self._iterable))
 
     @reprlib.recursive_repr()
     def __repr__(self):
         # TODO: let user control use or not to use short_repr
-        if self._transformer is None:
+        if self._pipeline.is_empty():
             return (f'{type(self).__name__}'
                     f'({short_repr.repr(self._iterable)})')
         else:
             return (f'{type(self).__name__}'
-                    f'({short_repr.repr(self._iterable)}, {self._transformer!r})')
+                    f'({short_repr.repr(self._iterable)}, {self._pipeline!r})')
 
     @property
     def _value_for_cmp(self):
@@ -511,35 +528,28 @@ class Stream(Monad):
         IndexError: Stream index out of range. Be aware of that indexing an iterator would consume items from it.
 
         >>> s = Stream(range(5, 12))
-        >>> s[:3]
-        Stream(range(5, 8))
+        >>> type(s[:3])
+        <class 'carriage.stream.Stream'>
+        >>> s[:3].to_list()
+        [5, 6, 7]
 
         Parameters
         ----------
         index : int, slice
             index of target item or a slice object
         '''  # noqa
-
         # TODO: support negative index
-        if self._transformer is None:
-            try:
-                if isinstance(index, slice):
-                    return Stream(self._iterable[index])
-                else:
-                    return self._iterable[index]
-            except Exception:
-                pass
 
         if isinstance(index, slice):
             return self.slice(index.start, index.stop, index.step)
-
-        try:
-            return next(itt.islice(self, index, None))
-        except StopIteration:
-            raise IndexError(
-                'Stream index out of range. '
-                'Be aware of that indexing an iterator would '
-                'consume items from it.')
+        else:
+            try:
+                return next(itt.islice(self, index, None))
+            except StopIteration:
+                raise IndexError(
+                    'Stream index out of range. '
+                    'Be aware of that indexing an iterator would '
+                    'consume items from it.')
 
     def get(self, index, default=None):
         '''Get item of the index. Return default value if not exists.
