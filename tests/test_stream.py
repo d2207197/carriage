@@ -1,4 +1,5 @@
 import itertools as itt
+import functools as fnt
 import operator as op
 from collections import Counter
 
@@ -7,6 +8,7 @@ import pytest
 
 from carriage import Array, Nothing, Some, Stream
 from carriage.row import CurrNext, CurrPrev, Row, ValueIndex
+from carriage.stream import Transformer, Pipeline
 
 
 class Person:
@@ -264,3 +266,20 @@ def test_repr():
     assert repr(Stream([1, 2, 3, 4])) == 'Stream([1, 2, 3, 4])'
     assert repr(Stream(list(range(100)))
                 ) == 'Stream([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, ...])'
+
+
+
+
+def test_pipeline():
+    add_2 = Transformer('add_2', lambda x: x+2)
+    mul_3 = Transformer('mul_3', lambda x: x*3)
+    pipeline = Pipeline().then(add_2).then(mul_3)
+    assert pipeline.transform(5) == 21
+
+
+def test_pipeline_iterable():
+    map_add_2 = Transformer('map_add_2', lambda xs: map(lambda x: x+2, xs))
+    map_mul_3 = Transformer('map_mul_3', lambda xs: map(lambda x: x*3, xs))
+    pipeline = Pipeline().then(map_add_2).then(map_mul_3)
+    assert list(pipeline.transform(range(5))) == [6, 9, 12, 15, 18]
+

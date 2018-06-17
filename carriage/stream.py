@@ -24,6 +24,49 @@ def as_stream(f):
     return wraped
 
 
+class Transformer:
+    __slots__ = '_name', '_func'
+
+    def __init__(self, name, func):
+        self._name = name
+        self._func = func
+
+    def transform(self, data):
+        return self._func(data)
+
+    def __repr__(self):
+        return f'{type(self).__name__}({self._name!r}, {self._func!r})'
+
+
+class Pipeline:
+    __slots__ = '_transformers',
+
+    def __init__(self, transformers=None):
+        if transformers is None:
+            transformers = []
+
+        self._transformers = transformers
+
+    def transform(self, data):
+        for transformer in self._transformers:
+            data = transformer.transform(data)
+        return data
+
+    # def transformer_prepended(self, transformer):
+    #     return type(self)([transformer] + self._transformers)
+
+    def then(self, transformer):
+        return type(self)(self._transformers + [transformer])
+
+    def extended(self, other):
+        return type(self)(self._transformers + other._transformers)
+
+    def __repr__(self):
+        return f'{type(self).__name__}({self._transformers!r})'
+
+
+
+
 class Stream(Monad):
     '''An iterable wrapper for building a lazy-evaluating sequence
     transformation pipeline.
@@ -1024,7 +1067,7 @@ class Stream(Monad):
     #     return self.map(lambda elem: Row(key=func(elem), value=elem))
 
     @as_stream
-    def group_by(self, key=None):
+    def group_by_as_stream(self, key=None):
         '''Create a new Stream using the builtin itertools.groupby,
         which sequentially groups elements as long as the key function
         evaluates to the same value.
@@ -1055,7 +1098,7 @@ class Stream(Monad):
         '''Group values in to a Map by the value of key function evaluation
         result.
 
-        Comparing to ``group_by``, there're some pros and cons.
+        Comparing to ``group_by_as_stream``, there're some pros and cons.
 
         Pros:
 

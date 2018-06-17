@@ -63,7 +63,11 @@ class Row(tuple):
 
     @classmethod
     def from_dict(cls, adict):
-        '''Create Row from a iterable'''
+        '''Create Row from a iterable
+
+        >>> Row.from_dict({'name': 'Joe', 'age': 30})
+        Row(name='Joe', age=30)
+        '''
         return cls(**adict)
 
     def __new__(self, **kwargs):
