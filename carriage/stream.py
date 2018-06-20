@@ -313,29 +313,31 @@ class Stream(Monad):
         '''
         return Array(self)
 
+    @as_stream
     def as_rows(self, field_names):
         '''Create a new Stream with elements as Row objects
 
         >>> Stream([(1, 2), (3, 4)]).as_rows(['x', 'y']).to_list()
         [Row(x=1, y=2), Row(x=3, y=4)]
         '''
-        def to_rows(entity):
-            kwargs = {name: value for name, value in zip(field_names, entity)}
-            return Row(**kwargs)
-        return self.map(to_rows)
+        def to_rows(iterable):
+            return [Row(**{name: value for name, value in zip(field_names, entity)})
+                    for entity in iterable]
+        return to_rows
 
+    @as_stream
     def as_rows_opt(self, field_names):
         '''Create a new Stream with elements as Optional Row objects
 
         >>> Stream([(1, 2), (3,)]).as_rows_opt(['x', 'y']).to_list()
         [Some(Row(x=1, y=2)), Nothing]
         '''
-        def to_rows_opt(entity):
-            if len(entity) != len(field_names):
-                return Nothing
-            kwargs = {name: value for name, value in zip(field_names, entity)}
-            return Some(Row(**kwargs))
-        return self.map(to_rows_opt)
+        def to_rows_opt(iterable):
+            return [Some(Row(**{name: value for name, value in zip(field_names, entity)}))
+                    if len(entity) == len(field_names)
+                    else Nothing
+                    for entity in iterable]
+        return to_rows_opt
 
     @as_stream
     def map(self, func):
