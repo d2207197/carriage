@@ -10,7 +10,7 @@ from .array import Array
 from .monad import Monad
 from .optional import Nothing, Some
 from .repr import short_repr
-from .row import CurrNext, CurrPrev, KeyValues, ValueIndex
+from .row import CurrNext, CurrPrev, KeyValues, ValueIndex, Row
 
 
 def repr_args(*args, **kwargs):
@@ -312,6 +312,30 @@ class Stream(Monad):
         Array
         '''
         return Array(self)
+
+    def as_rows(self, field_names):
+        '''Create a new Stream with elements as Row objects
+
+        >>> Stream([(1, 2), (3, 4)]).as_rows(['x', 'y']).to_list()
+        [Row(x=1, y=2), Row(x=3, y=4)]
+        '''
+        def to_rows(entity):
+            kwargs = {name: value for name, value in zip(field_names, entity)}
+            return Row(**kwargs)
+        return self.map(to_rows)
+
+    def as_rows_opt(self, field_names):
+        '''Create a new Stream with elements as Optional Row objects
+
+        >>> Stream([(1, 2), (3,)]).as_rows_opt(['x', 'y']).to_list()
+        [Some(Row(x=1, y=2)), Nothing]
+        '''
+        def to_rows_opt(entity):
+            if len(entity) != len(field_names):
+                return Nothing
+            kwargs = {name: value for name, value in zip(field_names, entity)}
+            return Some(Row(**kwargs))
+        return self.map(to_rows_opt)
 
     @as_stream
     def map(self, func):
