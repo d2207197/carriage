@@ -656,6 +656,21 @@ class Map(OrderedDict):
         '''
         return self.to_stream().to_array()
 
+    def to_list(self):
+        '''Convert to an list instance of ``Row(key, value)`` iterable.
+
+        >>> m = Map(a=4, b=5)
+        >>> m.to_list()
+        [Row(key='a', value=4), Row(key='b', value=5)]
+
+        Returns
+        -------
+        Array[Row[key, value]]
+
+        '''
+        return self.to_stream().to_list()
+
+
     def to_dict(self):
         '''Convert to dict'''
         return dict(self)
