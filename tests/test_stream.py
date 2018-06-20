@@ -268,20 +268,31 @@ def test_repr():
 
 
 def test_row_stream():
-    assert Stream([Row(x=3, y=4), Row(x=5, y=6)]).select('x').to_list() == [Row(x=3), Row(x=5)]
-
+    assert Stream([Row(x=3, y=4), Row(x=5, y=6)]).select(
+        'x').to_list() == [Row(x=3), Row(x=5)]
 
 
 def test_pipeline():
-    add_2 = Transformer('add_2', lambda x: x+2)
-    mul_3 = Transformer('mul_3', lambda x: x*3)
+    add_2 = Transformer('add_2', lambda x: x + 2)
+    mul_3 = Transformer('mul_3', lambda x: x * 3)
     pipeline = Pipeline().then(add_2).then(mul_3)
     assert pipeline.transform(5) == 21
 
 
 def test_pipeline_iterable():
-    map_add_2 = Transformer('map_add_2', lambda xs: map(lambda x: x+2, xs))
-    map_mul_3 = Transformer('map_mul_3', lambda xs: map(lambda x: x*3, xs))
+    map_add_2 = Transformer('map_add_2', lambda xs: map(lambda x: x + 2, xs))
+    map_mul_3 = Transformer('map_mul_3', lambda xs: map(lambda x: x * 3, xs))
     pipeline = Pipeline().then(map_add_2).then(map_mul_3)
     assert list(pipeline.transform(range(5))) == [6, 9, 12, 15, 18]
 
+
+def test_as_rows():
+    strm = Stream([(1, 2), (3, 4)])
+    rows = strm.as_rows(['x', 'y']).to_list()
+    assert rows == [Row(x=1, y=2), Row(x=3, y=4)]
+
+
+def test_as_rows_opt():
+    strm = Stream([(1, 2), (3,)])
+    rows = strm.as_rows_opt(['x', 'y']).to_list()
+    assert rows == [Some(Row(x=1, y=2)), Nothing]
