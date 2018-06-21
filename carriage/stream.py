@@ -16,8 +16,12 @@ from .row import CurrNext, CurrPrev, KeyValues, ValueIndex
 def repr_args(*args, **kwargs):
     args_str = ', '.join(repr(arg) for arg in args)
     kwargs_str = ', '.join(f'{k}={v!r}' for k, v in kwargs.items())
-    return f'{args_str}, {kwargs_str}'
-
+    if args_str and kwargs_str:
+        return f'{args_str}, {kwargs_str}'
+    elif args_str:
+        return args_str
+    else:
+        return kwargs_str
 
 def as_stream(f):
     @fnt.wraps(f)
@@ -45,8 +49,13 @@ class Transformer:
     def transform(self, data):
         return self._func(data)
 
+    @property
+    def name(self):
+        return self._name
+
     def __repr__(self):
-        return f'{type(self).__name__}({self._name!r}, {self._func!r})'
+        return f'<{type(self).__name__} {self._name}>'
+
 
 
 class Pipeline:
@@ -63,8 +72,11 @@ class Pipeline:
             data = transformer.transform(data)
         return data
 
-    # def transformer_prepended(self, transformer):
-    #     return type(self)([transformer] + self._transformers)
+    @property
+    def transformers(self):
+        return self._transformers
+
+
 
     def then(self, transformer):
         return type(self)(self._transformers + [transformer])
@@ -73,13 +85,19 @@ class Pipeline:
         return type(self)(self._transformers + other._transformers)
 
     def __repr__(self):
-        return f'{type(self).__name__}({self._transformers!r})'
+        return f'<{type(self).__name__} {self._transformers!r}>'
 
     def is_empty(self):
         return len(self._transformers) == 0
 
     def __len__(self):
         return len(self._transformers)
+
+    def __str__(self):
+        return (
+            # f'{type(self).__name__}\n -> ' +
+            '\n'.join(f' -> {trfmr.name}' for trfmr in self._transformers)
+        )
 
 
 
@@ -143,6 +161,19 @@ class Stream(Monad):
             pipeline = Pipeline()
 
         self._pipeline = pipeline
+
+
+    def show_pipeline(self):
+        print(self._iterable)
+        elems = list(itt.islice(self._iterable, 0, 3))
+        for index, elem in enumerate(elems):
+            print(f'    [{index}] {elem!r}')
+
+        for trfmr in self._pipeline.transformers:
+            print(f' -> {trfmr.name}')
+            elems = list(trfmr.transform(elems))
+            for index, elem in enumerate(elems):
+                print(f'    [{index}] {elem!r}')
 
     @classmethod
     def range(cls, start, end=None, step=1):
