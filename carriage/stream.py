@@ -163,9 +163,25 @@ class Stream(Monad):
         self._pipeline = pipeline
 
 
-    def show_pipeline(self):
-        print(self._iterable)
-        elems = list(itt.islice(self._iterable, 0, 3))
+    def show_pipeline(self, n=2):
+        '''Show pipeline and some examples for debugging
+        >>> def mul_2(x):
+        ...     return x*2
+        >>> (Stream
+        ...  .range(10).map(mul_2).nlargest(3).show_pipeline(2))
+        range(0, 10)
+            [0] 0
+            [1] 1
+        -> map(<function mul_2 at 0x10a1dbd08>)
+            [0] 0
+            [1] 2
+        -> nlargest(3)
+            [0] 2
+            [1] 0
+
+        '''
+        print(short_repr.repr(self._iterable))
+        elems = list(itt.islice(self._iterable, 0, n))
         for index, elem in enumerate(elems):
             print(f'    [{index}] {elem!r}')
 
@@ -174,6 +190,7 @@ class Stream(Monad):
             elems = list(trfmr.transform(elems))
             for index, elem in enumerate(elems):
                 print(f'    [{index}] {elem!r}')
+
 
     @classmethod
     def range(cls, start, end=None, step=1):
