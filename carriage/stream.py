@@ -11,6 +11,7 @@ from .monad import Monad
 from .optional import Nothing, Some
 from .repr import short_repr
 from .row import CurrNext, CurrPrev, KeyValues, ValueIndex, Row
+from .pipeline import Pipeline, Transformer
 
 
 def repr_args(*args, **kwargs):
@@ -37,69 +38,6 @@ def as_stream(f):
     wraped.call = f
 
     return wraped
-
-
-class Transformer:
-    __slots__ = '_name', '_func'
-
-    def __init__(self, name, func):
-        self._name = name
-        self._func = func
-
-    def transform(self, data):
-        return self._func(data)
-
-    @property
-    def name(self):
-        return self._name
-
-    def __repr__(self):
-        return f'<{type(self).__name__} {self._name}>'
-
-
-
-class Pipeline:
-    __slots__ = '_transformers',
-
-    def __init__(self, transformers=None):
-        if transformers is None:
-            transformers = []
-
-        self._transformers = transformers
-
-    def transform(self, data):
-        for transformer in self._transformers:
-            data = transformer.transform(data)
-        return data
-
-    @property
-    def transformers(self):
-        return self._transformers
-
-
-
-    def then(self, transformer):
-        return type(self)(self._transformers + [transformer])
-
-    def extended(self, other):
-        return type(self)(self._transformers + other._transformers)
-
-    def __repr__(self):
-        return f'<{type(self).__name__} {self._transformers!r}>'
-
-    def is_empty(self):
-        return len(self._transformers) == 0
-
-    def __len__(self):
-        return len(self._transformers)
-
-    def __str__(self):
-        return (
-            # f'{type(self).__name__}\n -> ' +
-            '\n'.join(f' -> {trfmr.name}' for trfmr in self._transformers)
-        )
-
-
 
 
 class Stream(Monad):
@@ -165,6 +103,7 @@ class Stream(Monad):
 
     def show_pipeline(self, n=2):
         '''Show pipeline and some examples for debugging
+
         >>> def mul_2(x):
         ...     return x*2
         >>> (Stream
@@ -400,21 +339,6 @@ class Stream(Monad):
         '''
         return fnt.partial(map, func)
 
-    @as_stream
-    def select(self, *fields):
-        '''Assume elements in Stream is in Row type and
-        create a new Stream by keeping only specified fields in each Row
-
-        >>> from carriage import Row
-        >>> Stream([Row(x=3, y=4, z=1),
-        ...    Row(x=-1, y=2, z=-2)]).select('x', 'y').to_list()
-        [Row(x=3, y=4), Row(x=-1, y=2)]
-
-        Returns
-        -------
-        Stream
-        '''
-        return fnt.partial(map, lambda row: row.project(*fields))
 
     @as_stream
     def starmap(self, func):
@@ -1421,3 +1345,110 @@ class Stream(Monad):
         elems_str = elem_sep.join(elem_format.format(index=idx, elem=elem)
                                   for idx, elem in enumerate(self))
         return start + elems_str + end
+
+
+from tabulate import tabulate
+
+class StreamTable(Stream):
+    '''StreamTable is similar to Stream but designed to work on Rows only.
+    '''
+
+    def __init__(self, iterable, *, pipeline=None):
+        '''Create a StreamTable from an iterable object of Rows
+
+        >>> strm = StreamTable([Row(x=1, y=3), Row(x=2, y=4)])
+        '''
+
+        Stream.__init__(self, iterable, pipeline=pipeline)
+
+    def show(self, n=10, tablefmt='orgtbl'):
+        '''print rows
+
+        Parameters
+        ----------
+        n : int
+            number of rows to show
+        tablefmt : str
+            output table format.
+            all possible format strings are in `tabulate.tabulate_formats`
+        '''
+        print(tabulate)
+
+    def tabulate(self, n=10, tablefmt='orgtbl'):
+        '''return tabulate formatted string
+
+        Parameters
+        ----------
+        n : int
+            number of rows to show
+        tablefmt : str
+            output table format.
+            all possible format strings are in `tabulate.tabulate_formats`
+        '''
+        header_fields = self._scan_fields(n)
+        return tabulate(
+            itt.islice(self, 0, n),
+            headers=header_fields,
+            tablefmt=tablefmt)
+
+    # @as_streamtable
+    def select(self, *fields):
+        '''Assume elements in Stream is in Row type and
+        create a new Stream by keeping only specified fields in each Row
+
+        >>> from carriage import Row
+        >>> Stream([Row(x=3, y=4, z=1),
+        ...    Row(x=-1, y=2, z=-2)]).select('x', 'y').to_list()
+        [Row(x=3, y=4), Row(x=-1, y=2)]
+
+        Parameters
+        ----------
+        *fields : List[str]
+            fields to keep
+
+        Returns
+        -------
+        StreamTable
+        '''
+        return fnt.partial(map, lambda row: row.project(*fields))
+
+    # @as_streamtable
+    def where(self, *conds, **kwconds):
+        '''Create a new Stream contains only Rows pass all conditions.
+
+        >>> from carriage import Row
+        >>> s = Stream([Row(x=3, y=4), Row(x=3, y=5), Row(x=4, y=5)])
+        >>> s.where(x=3).to_list()
+        [Row(x=3, y=4), Row(x=3, y=5)]
+        >>> s.where(_.y > 4).to_list()
+        [Row(x=3, y=5), Row(x=4, y=5)]
+
+        Returns
+        -------
+        StreamTable
+
+        '''
+        return fnt.partial(
+            filter,
+            lambda row: all(getattr(row, field) == value
+                            for field, value in kwconds.items()))
+    
+
+    def _scan_fields(self, n):
+        rows = list(itt.islice(self, 0, n))
+
+        all_fields = []
+        all_fields_set = set()
+        for row in rows:
+            missing_fields = set(row.fields()) - all_fields_set
+            for field in row.fields():
+                if field in missing_fields:
+                    all_fields.append(field)
+
+        return all_fields
+
+
+    def _repr_html_(self):
+        return self.tabulate(tablefmt='html')
+
+
