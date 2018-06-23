@@ -1,5 +1,5 @@
-import itertools as itt
 import functools as fnt
+import itertools as itt
 import operator as op
 from collections import Counter
 
@@ -8,7 +8,7 @@ import pytest
 
 from carriage import Array, Nothing, Some, Stream
 from carriage.row import CurrNext, CurrPrev, Row, ValueIndex
-from carriage.stream import Transformer, Pipeline
+from carriage.stream import Pipeline, Transformer
 
 
 class Person:
@@ -99,14 +99,9 @@ def test_filtering():
     def is_even(n):
         return n % 2 == 0
     assert Stream.range(5, 10).filter(is_even).to_list() == [6, 8]
-    assert Stream.range(5, 10).filterfalse(is_even).to_list() == [5, 7, 9]
+    assert Stream.range(5, 10).filter_false(is_even).to_list() == [5, 7, 9]
 
     assert Stream.range(5, 10).without(6, 8).to_list() == [5, 7, 9]
-    assert (Stream([Row(a=1, b=2),
-                    Row(a=4, b=5),
-                    Row(a=1, b=3)])
-            .where(a=1).to_list() ==
-            [Row(a=1, b=2), Row(a=1, b=3)])
 
 
 def test_interpose():
@@ -267,9 +262,9 @@ def test_repr():
                 ) == 'Stream([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, ...])'
 
 
-def test_row_stream():
-    assert Stream([Row(x=3, y=4), Row(x=5, y=6)]).select(
-        'x').to_list() == [Row(x=3), Row(x=5)]
+# def test_row_stream():
+#     assert Stream([Row(x=3, y=4), Row(x=5, y=6)]).select(
+#         'x').to_list() == [Row(x=3), Row(x=5)]
 
 
 def test_pipeline():

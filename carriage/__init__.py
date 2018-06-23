@@ -1,10 +1,11 @@
 
 
 from .array import Array
+from .lambda_ import X
 from .map import Map
 from .optional import Nothing, NothingError, Optional, Some
 from .row import Row
-from .stream import Stream
+from .stream import Stream, StreamTable
 
 __all__ = ['Row', 'Map', 'Stream', 'Array',
-           'Optional', 'Some', 'Nothing', 'NothingError']
+           'Optional', 'Some', 'Nothing', 'NothingError', 'X', 'StreamTable']

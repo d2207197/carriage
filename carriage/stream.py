@@ -6,12 +6,15 @@ import itertools as itt
 import reprlib
 from collections import Counter, defaultdict, deque
 
+from IPython.core.debugger import set_trace
+from tabulate import tabulate, tabulate_formats
+
 from .array import Array
 from .monad import Monad
 from .optional import Nothing, Some
-from .repr import short_repr
-from .row import CurrNext, CurrPrev, KeyValues, ValueIndex, Row
 from .pipeline import Pipeline, Transformer
+from .repr import short_repr
+from .row import CurrNext, CurrPrev, KeyValues, Row, ValueIndex
 
 
 def repr_args(*args, **kwargs):
@@ -24,6 +27,7 @@ def repr_args(*args, **kwargs):
     else:
         return kwargs_str
 
+
 def as_stream(f):
     @fnt.wraps(f)
     def wraped(self, *args, **kwargs):
@@ -31,7 +35,7 @@ def as_stream(f):
         trfmr = Transformer(name=f'{f.__name__}({args_str})',
                             func=f(self, *args, **kwargs))
 
-        return Stream(
+        return type(self)(
             iterable=self._iterable,
             pipeline=self._pipeline.then(trfmr))
 
@@ -100,21 +104,23 @@ class Stream(Monad):
 
         self._pipeline = pipeline
 
-
     def show_pipeline(self, n=2):
         '''Show pipeline and some examples for debugging
 
         >>> def mul_2(x):
         ...     return x*2
         >>> (Stream
-        ...  .range(10).map(mul_2).nlargest(3).show_pipeline(2))
+        ...  .range(10)
+        ...  .map(mul_2)
+        ...  .nlargest(3)
+        ...  .show_pipeline(2))  # doctest: +SKIP
         range(0, 10)
             [0] 0
             [1] 1
-        -> map(<function mul_2 at 0x10a1dbd08>)
+         -> map(<function mul_2 at 0x10a1dbd08>)
             [0] 0
             [1] 2
-        -> nlargest(3)
+         -> nlargest(3)
             [0] 2
             [1] 0
 
@@ -129,7 +135,6 @@ class Stream(Monad):
             elems = list(trfmr.transform(elems))
             for index, elem in enumerate(elems):
                 print(f'    [{index}] {elem!r}')
-
 
     @classmethod
     def range(cls, start, end=None, step=1):
@@ -338,7 +343,6 @@ class Stream(Monad):
         Stream
         '''
         return fnt.partial(map, func)
-
 
     @as_stream
     def starmap(self, func):
@@ -905,24 +909,6 @@ class Stream(Monad):
         '''
         return fnt.partial(itt.filterfalse, pred)
 
-    filterfalse = filter_false
-
-    def where(self, **conds):
-        '''Create a new Stream contains only Rows pass all conditions.
-
-        >>> from carriage import Row
-        >>> s = Stream([Row(x=3, y=4), Row(x=3, y=5), Row(x=4, y=5)])
-        >>> s.where(x=3).to_list()
-        [Row(x=3, y=4), Row(x=3, y=5)]
-        >>> s.where(y=5).to_list()
-        [Row(x=3, y=5), Row(x=4, y=5)]
-
-
-        '''
-        return self.filter(lambda row:
-                           all(getattr(row, field) == value
-                               for field, value in conds.items()))
-
     @as_stream
     def interpose(self, sep):
         '''Create a new Stream by interposing separater between elemens.
@@ -1347,7 +1333,29 @@ class Stream(Monad):
         return start + elems_str + end
 
 
-from tabulate import tabulate
+def as_streamtable(f):
+    @fnt.wraps(f)
+    def wraped(self, *args, **kwargs):
+        args_str = repr_args(*args, **kwargs)
+        trfmr = Transformer(name=f'{f.__name__}({args_str})',
+                            func=f(self, *args, **kwargs))
+
+        return StreamTable(
+            iterable=self._iterable,
+            pipeline=self._pipeline.then(trfmr))
+
+    wraped.call = f
+
+    return wraped
+
+
+def stream_to_streamtable(f, elem_to_row=None):
+    @fnt.wraps(f)
+    def wraped(self, *args, **kwargs):
+        strm = f(self, *args, **kwargs)
+        return StreamTable(iterable=strm.map(elem_to_row))
+    return wraped
+
 
 class StreamTable(Stream):
     '''StreamTable is similar to Stream but designed to work on Rows only.
@@ -1361,6 +1369,11 @@ class StreamTable(Stream):
 
         Stream.__init__(self, iterable, pipeline=pipeline)
 
+    @classmethod
+    def range(cls, start, end=None, step=1):
+        strm = Stream.range(start, end, step).map(lambda elem: Row(range=elem))
+        return cls(strm)
+
     def show(self, n=10, tablefmt='orgtbl'):
         '''print rows
 
@@ -1372,7 +1385,7 @@ class StreamTable(Stream):
             output table format.
             all possible format strings are in `tabulate.tabulate_formats`
         '''
-        print(tabulate)
+        print(self.tabulate(n=n, tablefmt=tablefmt))
 
     def tabulate(self, n=10, tablefmt='orgtbl'):
         '''return tabulate formatted string
@@ -1391,36 +1404,43 @@ class StreamTable(Stream):
             headers=header_fields,
             tablefmt=tablefmt)
 
-    # @as_streamtable
-    def select(self, *fields):
+    @as_stream
+    def select(self, *fields, **field_funcs):
         '''Assume elements in Stream is in Row type and
         create a new Stream by keeping only specified fields in each Row
 
         >>> from carriage import Row
-        >>> Stream([Row(x=3, y=4, z=1),
-        ...    Row(x=-1, y=2, z=-2)]).select('x', 'y').to_list()
-        [Row(x=3, y=4), Row(x=-1, y=2)]
+        >>> st = StreamTable([Row(x=3, y=4), Row(x=-1, y=2)])
+        >>> st.select('x', z=lambda row: row.x + row.y).to_list()
+        [Row(x=3, z=7), Row(x=-1, z=1)]
 
         Parameters
         ----------
         *fields : List[str]
             fields to keep
+        **field_funcs : Map[str, Function]
+            functions for creating fields
 
         Returns
         -------
         StreamTable
         '''
-        return fnt.partial(map, lambda row: row.project(*fields))
+        return fnt.partial(
+            map,
+            lambda row:
+            row.evolve(**{field: func(row)
+                          for field, func in field_funcs.items()})
+            .project(*fields, *field_funcs.keys()))
 
-    # @as_streamtable
+    @as_stream
     def where(self, *conds, **kwconds):
         '''Create a new Stream contains only Rows pass all conditions.
 
         >>> from carriage import Row
-        >>> s = Stream([Row(x=3, y=4), Row(x=3, y=5), Row(x=4, y=5)])
-        >>> s.where(x=3).to_list()
+        >>> st = StreamTable([Row(x=3, y=4), Row(x=3, y=5), Row(x=4, y=5)])
+        >>> st.where(x=3).to_list()
         [Row(x=3, y=4), Row(x=3, y=5)]
-        >>> s.where(_.y > 4).to_list()
+        >>> st.where(_.y > 4).to_list()
         [Row(x=3, y=5), Row(x=4, y=5)]
 
         Returns
@@ -1430,9 +1450,10 @@ class StreamTable(Stream):
         '''
         return fnt.partial(
             filter,
-            lambda row: all(getattr(row, field) == value
-                            for field, value in kwconds.items()))
-    
+            lambda row:
+            all(cond(row) for cond in conds) and
+            all(getattr(row, field) == value
+                for field, value in kwconds.items()))
 
     def _scan_fields(self, n):
         rows = list(itt.islice(self, 0, n))
@@ -1447,8 +1468,11 @@ class StreamTable(Stream):
 
         return all_fields
 
-
     def _repr_html_(self):
         return self.tabulate(tablefmt='html')
 
+    def _repr_str_(self):
+        return self.tabulate(tablefmt='orgtbl')
 
+
+StreamTable.tabulate.tablefmts = tabulate_formats
