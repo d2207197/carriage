@@ -25,6 +25,7 @@ icecream = "*"
 sphinx = "*"
 pytest-pudb = "*"
 ptipython = "*"
+"autopep8" = "*"
 
 [requires]
 python_version = "3.6"
