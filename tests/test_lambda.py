@@ -13,6 +13,23 @@ def test_basic():
     assert (divmod(X, 3))(5) == (1, 2)
     assert (X**2)(4) == 16
 
+    assert (X == 3)(3) == True
+    assert (3 == X)(4) == False
+    assert (X == 3)(4) == False
+    assert (3 == X)(3) == True
+    assert (X != 3)(4) == True
+    assert (3 != X)(3) == False
+    assert (X > 3)(4) == True
+    assert (X > 3)(2) == False
+    assert (3 > X)(4) == False
+    assert (3 > X)(2) == True
+    assert (X < 3)(4) == False
+    assert (X < 3)(2) == True
+    assert (X >= 3)(3) == True
+    assert (X >= 3)(2) == False
+    assert (X <= 3)(3) == True
+    assert (X <= 3)(2) == True
+
 
 def test_reflected():
     # assert X.y(Row(x=2, y=3)) == 3
