@@ -204,7 +204,7 @@ class Lambda:
     def __ne__(self, other):
         return Transformer(f' != {other}', lambda elem: elem != other)
 
-    @__eq__.other_lambda
+    @__ne__.other_lambda
     def __ne__(self, other):
         return Transformer(f' != {other}', lambda elem: self(elem) != other(elem))
 
