@@ -38,8 +38,9 @@ def Xcall(f):
     >>> partialfunc(2)
     (2, 3, 0, 0)
     >>> partialfunc(5)
-    (5, 3, 0, ,0)
+    (5, 3, 0, 0)
     >>> partialfunc = Xcall(func)(1, 2, c=X.x, d=X.y)
+    >>> from carriage import Row
     >>> partialfunc(Row(x=3, y=4))
     (1, 2, 3, 4)
     '''
@@ -68,6 +69,7 @@ class Lambda:
     - math operators: `X + 3`, `4 - X`, `pow(X, 2)`, `divmod(3, X)`, ...
     - multiple placeholder: `X + X`, `X.firstname + ' ' + X.lastname`
 
+    >>> from carriage import Row
     >>> d = {'point': Row(x=3, y=4)}
     >>> func = X['point'].x == 3
     >>> func(d)

@@ -1425,11 +1425,11 @@ class StreamTable(Stream):
     def where(self, *conds, **kwconds):
         '''Create a new Stream contains only Rows pass all conditions.
 
-        >>> from carriage import Row
+        >>> from carriage import Row, X
         >>> st = StreamTable([Row(x=3, y=4), Row(x=3, y=5), Row(x=4, y=5)])
         >>> st.where(x=3).to_list()
         [Row(x=3, y=4), Row(x=3, y=5)]
-        >>> st.where(_.y > 4).to_list()
+        >>> st.where(X.y > 4).to_list()
         [Row(x=3, y=5), Row(x=4, y=5)]
 
         Returns
