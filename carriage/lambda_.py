@@ -3,6 +3,7 @@ import functools as fnt
 import operator as op
 
 from .pipeline import Pipeline, Transformer
+from .repr import repr_args
 
 
 def lambda_then(f):
@@ -28,15 +29,47 @@ def lambda_then(f):
     return wraped
 
 
+def Xcall(f):
+    '''Elegant partial function builder
+
+    >>> def func(a, b, c=0, d=0):
+    ...     return a, b, c, d
+    >>> partialfunc = Xcall(func)(X, b=3)
+    >>> partialfunc(2)
+    (2, 3, 0, 0)
+    >>> partialfunc(5)
+    (5, 3, 0, ,0)
+    >>> partialfunc = Xcall(func)(1, 2, c=X.x, d=X.y)
+    >>> partialfunc(Row(x=3, y=4))
+    (1, 2, 3, 4)
+    '''
+    @fnt.wraps(f)
+    def wraped(*args, **kwargs):
+        args_str = repr_args(*args, **kwargs)
+
+        def func(elem):
+            actual_args = tuple(arg(elem) if isinstance(arg, Lambda) else arg
+                                for arg in args)
+            actual_kwargs = {k: arg(elem) if isinstance(arg, Lambda) else arg
+                             for k, arg in kwargs.items()}
+            return f(*actual_args, **actual_kwargs)
+
+        return X._then(Transformer(f'{f.__name__}({args_str})', func))
+
+    return wraped
+
+
 class Lambda:
-    '''a lambda builder.
-    support these operations
+    '''Elegant lambda builder
+
+    - __getitem__: :python:`X['name']`
+    - __getattr__: :python:`X.name`
     - comparisons: `X == 5`, `X != 4`, `X > 3`, `X < 2`, ...
-    - getitem: :python:`X['name']`
-    - getattr: :python:`X.name`
+    - math operators: `X + 3`, `4 - X`, `pow(X, 2)`, `divmod(3, X)`, ...
+    - multiple placeholder: `X + X`, `X.firstname + ' ' + X.lastname`
 
     >>> d = {'point': Row(x=3, y=4)}
-    >>> func = X.['point'].x == 3
+    >>> func = X['point'].x == 3
     >>> func(d)
     True
 

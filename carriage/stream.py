@@ -13,19 +13,8 @@ from .array import Array
 from .monad import Monad
 from .optional import Nothing, Some
 from .pipeline import Pipeline, Transformer
-from .repr import short_repr
+from .repr import repr_args, short_repr
 from .row import CurrNext, CurrPrev, KeyValues, Row, ValueIndex
-
-
-def repr_args(*args, **kwargs):
-    args_str = ', '.join(repr(arg) for arg in args)
-    kwargs_str = ', '.join(f'{k}={v!r}' for k, v in kwargs.items())
-    if args_str and kwargs_str:
-        return f'{args_str}, {kwargs_str}'
-    elif args_str:
-        return args_str
-    else:
-        return kwargs_str
 
 
 def as_stream(f):
