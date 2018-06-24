@@ -106,10 +106,3 @@ Multiple X
 - :code:`X.height + X.width` equals to :code:`lambda obj: obj.height + obj.width`
 
 
-.. autoclass:: carriage.lambda_.Lambda
-   :members: 
-   :private-members:
-      
-.. autoclass:: carriage.Xcall
-   :members: 
-   :private-members:
