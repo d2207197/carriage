@@ -35,10 +35,8 @@
             
   <div class="section" id="x-xcall-elegant-lambda-function-builder">
 <h1><code class="docutils literal notranslate"><span class="pre">X,</span> <span class="pre">Xcall</span></code>: Elegant Lambda Function Builder<a class="headerlink" href="#x-xcall-elegant-lambda-function-builder" title="Permalink to this headline">¶</a></h1>
-<div class="section" id="elegant-lambda-builder">
-<h2>Elegant lambda builder<a class="headerlink" href="#elegant-lambda-builder" title="Permalink to this headline">¶</a></h2>
 <div class="section" id="getitem">
-<h3><code class="code docutils literal notranslate"><span class="pre">getitem</span></code><a class="headerlink" href="#getitem" title="Permalink to this headline">¶</a></h3>
+<h2><code class="code docutils literal notranslate"><span class="pre">getitem</span></code><a class="headerlink" href="#getitem" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
 <li><code class="code docutils literal notranslate"><span class="pre">X['key']</span></code> equals to <code class="code docutils literal notranslate"><span class="pre">lambda</span> <span class="pre">obj:</span> <span class="pre">obj['key']</span></code></li>
 </ul>
@@ -51,7 +49,7 @@
 </div>
 </div>
 <div class="section" id="getattr">
-<h3><code class="code docutils literal notranslate"><span class="pre">getattr</span></code><a class="headerlink" href="#getattr" title="Permalink to this headline">¶</a></h3>
+<h2><code class="code docutils literal notranslate"><span class="pre">getattr</span></code><a class="headerlink" href="#getattr" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
 <li><code class="code docutils literal notranslate"><span class="pre">X.attr</span></code> equals to <code class="code docutils literal notranslate"><span class="pre">lambda</span> <span class="pre">obj:</span> <span class="pre">obj.attr</span></code></li>
 </ul>
@@ -64,7 +62,7 @@
 </div>
 </div>
 <div class="section" id="comparison-operators">
-<h3>Comparison operators<a class="headerlink" href="#comparison-operators" title="Permalink to this headline">¶</a></h3>
+<h2>Comparison operators<a class="headerlink" href="#comparison-operators" title="Permalink to this headline">¶</a></h2>
 <p>All comparison operators are supported: <code class="code docutils literal notranslate"><span class="pre">==</span></code>,  <code class="code docutils literal notranslate"><span class="pre">!=</span></code>,  <code class="code docutils literal notranslate"><span class="pre">&gt;</span></code>,  <code class="code docutils literal notranslate"><span class="pre">&lt;</span></code>, <code class="code docutils literal notranslate"><span class="pre">&gt;=</span></code>,  <code class="code docutils literal notranslate"><span class="pre">&lt;=</span></code></p>
 <ul class="simple">
 <li><code class="code docutils literal notranslate"><span class="pre">X</span> <span class="pre">&gt;</span> <span class="pre">3</span></code> equals to <code class="code docutils literal notranslate"><span class="pre">lambda</span> <span class="pre">_:</span> <span class="pre">_</span> <span class="pre">&gt;</span> <span class="pre">3</span></code></li>
@@ -81,7 +79,7 @@
 </div>
 </div>
 <div class="section" id="math-operators">
-<h3>Math operators<a class="headerlink" href="#math-operators" title="Permalink to this headline">¶</a></h3>
+<h2>Math operators<a class="headerlink" href="#math-operators" title="Permalink to this headline">¶</a></h2>
 <p>All math and reflected math operators are supported: <code class="code docutils literal notranslate"><span class="pre">X</span> <span class="pre">+</span> <span class="pre">Y</span></code>,  <code class="code docutils literal notranslate"><span class="pre">X</span> <span class="pre">-</span> <span class="pre">Y</span></code>,  <code class="code docutils literal notranslate"><span class="pre">X</span> <span class="pre">*</span> <span class="pre">Y</span></code>,  <code class="code docutils literal notranslate"><span class="pre">X</span> <span class="pre">/</span> <span class="pre">Y</span></code>, <code class="code docutils literal notranslate"><span class="pre">X</span> <span class="pre">//</span> <span class="pre">Y</span></code>,  <code class="code docutils literal notranslate"><span class="pre">X</span> <span class="pre">%</span> <span class="pre">Y</span></code>, <code class="code docutils literal notranslate"><span class="pre">divmod(X,</span> <span class="pre">Y)</span></code>, <code class="code docutils literal notranslate"><span class="pre">X**Y</span></code>, <code class="code docutils literal notranslate"><span class="pre">pow(X,</span> <span class="pre">Y)</span></code>, <code class="code docutils literal notranslate"><span class="pre">abs(X)</span></code>, <code class="code docutils literal notranslate"><span class="pre">+X</span></code>, <code class="code docutils literal notranslate"><span class="pre">-X</span></code></p>
 <ul class="simple">
 <li><code class="code docutils literal notranslate"><span class="pre">X</span> <span class="pre">+</span> <span class="pre">3</span></code> equals to <code class="code docutils literal notranslate"><span class="pre">lambda</span> <span class="pre">num:</span> <span class="pre">num</span> <span class="pre">+</span> <span class="pre">3</span></code></li>
@@ -99,7 +97,7 @@
 </div>
 </div>
 <div class="section" id="method-function-calling">
-<h3>Method/Function calling<a class="headerlink" href="#method-function-calling" title="Permalink to this headline">¶</a></h3>
+<h2>Method/Function calling<a class="headerlink" href="#method-function-calling" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
 <li><code class="code docutils literal notranslate"><span class="pre">X.startswith.call('https')</span></code> equals to <code class="code docutils literal notranslate"><span class="pre">lambda</span> <span class="pre">url:</span> <span class="pre">url.startswith('https')</span></code></li>
 </ul>
@@ -110,7 +108,7 @@
 </div>
 </div>
 <div class="section" id="as-function-arguments">
-<h3>As function arguments<a class="headerlink" href="#as-function-arguments" title="Permalink to this headline">¶</a></h3>
+<h2>As function arguments<a class="headerlink" href="#as-function-arguments" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
 <li><code class="code docutils literal notranslate"><span class="pre">Xcall(isinstance)(X,</span> <span class="pre">int)</span></code> equals to <code class="code docutils literal notranslate"><span class="pre">lambda</span> <span class="pre">obj:</span> <span class="pre">isinstance(obj,</span> <span class="pre">int)</span></code></li>
 </ul>
@@ -125,35 +123,17 @@
 </div>
 </div>
 <div class="section" id="multiple-x">
-<h3>Multiple X<a class="headerlink" href="#multiple-x" title="Permalink to this headline">¶</a></h3>
+<h2>Multiple X<a class="headerlink" href="#multiple-x" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
 <li><code class="code docutils literal notranslate"><span class="pre">X.height</span> <span class="pre">+</span> <span class="pre">X.width</span></code> equals to <code class="code docutils literal notranslate"><span class="pre">lambda</span> <span class="pre">obj:</span> <span class="pre">obj.height</span> <span class="pre">+</span> <span class="pre">obj.width</span></code></li>
 </ul>
-<dl class="class">
-<dt id="carriage.lambda_.Lambda">
-<em class="property">class </em><code class="descclassname">carriage.lambda_.</code><code class="descname">Lambda</code><span class="sig-paren">(</span><em>*</em>, <em>pipeline=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/carriage/lambda_.html#Lambda"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#carriage.lambda_.Lambda" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="class">
-<dt id="carriage.Xcall">
-<em class="property">class </em><code class="descclassname">carriage.</code><code class="descname">Xcall</code><span class="sig-paren">(</span><em>f</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/carriage/lambda_.html#Xcall"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#carriage.Xcall" title="Permalink to this definition">¶</a></dt>
-<dd><p>Elegant partial function builder</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="k">def</span> <span class="nf">func</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">c</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">d</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
-<span class="gp">... </span>    <span class="k">return</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">c</span><span class="p">,</span> <span class="n">d</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">partialfunc</span> <span class="o">=</span> <span class="n">Xcall</span><span class="p">(</span><span class="n">func</span><span class="p">)(</span><span class="n">X</span><span class="p">,</span> <span class="n">b</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">partialfunc</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
-<span class="go">(2, 3, 0, 0)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">partialfunc</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>
-<span class="go">(5, 3, 0, 0)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">partialfunc</span> <span class="o">=</span> <span class="n">Xcall</span><span class="p">(</span><span class="n">func</span><span class="p">)(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">c</span><span class="o">=</span><span class="n">X</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="n">d</span><span class="o">=</span><span class="n">X</span><span class="o">.</span><span class="n">y</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">carriage</span> <span class="k">import</span> <span class="n">Row</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">partialfunc</span><span class="p">(</span><span class="n">Row</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="mi">4</span><span class="p">))</span>
-<span class="go">(1, 2, 3, 4)</span>
-</pre></div>
 </div>
-</dd></dl>
-
-</div>
+<div class="section" id="in-collection">
+<h2>In collection<a class="headerlink" href="#in-collection" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><code class="code docutils literal notranslate"><span class="pre">X.in_((1,2))</span></code> equals to <code class="code docutils literal notranslate"><span class="pre">lambda</span> <span class="pre">elem:</span> <span class="pre">elem</span> <span class="pre">in</span> <span class="pre">(1,</span> <span class="pre">2)</span></code></li>
+<li><code class="code docutils literal notranslate"><span class="pre">X.has(1)</span></code> equals to <code class="code docutils literal notranslate"><span class="pre">lambda</span> <span class="pre">coll:</span> <span class="pre">1</span> <span class="pre">in</span> <span class="pre">coll</span></code></li>
+</ul>
 </div>
 </div>
 
@@ -167,7 +147,6 @@
   <h3><a href="index.html">Table Of Contents</a></h3>
   <ul>
 <li><a class="reference internal" href="#"><code class="docutils literal notranslate"><span class="pre">X,</span> <span class="pre">Xcall</span></code>: Elegant Lambda Function Builder</a><ul>
-<li><a class="reference internal" href="#elegant-lambda-builder">Elegant lambda builder</a><ul>
 <li><a class="reference internal" href="#getitem"><code class="code docutils literal notranslate"><span class="pre">getitem</span></code></a></li>
 <li><a class="reference internal" href="#getattr"><code class="code docutils literal notranslate"><span class="pre">getattr</span></code></a></li>
 <li><a class="reference internal" href="#comparison-operators">Comparison operators</a></li>
@@ -175,8 +154,7 @@
 <li><a class="reference internal" href="#method-function-calling">Method/Function calling</a></li>
 <li><a class="reference internal" href="#as-function-arguments">As function arguments</a></li>
 <li><a class="reference internal" href="#multiple-x">Multiple X</a></li>
-</ul>
-</li>
+<li><a class="reference internal" href="#in-collection">In collection</a></li>
 </ul>
 </li>
 </ul>

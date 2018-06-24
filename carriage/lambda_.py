@@ -2,6 +2,8 @@
 import functools as fnt
 import operator as op
 
+from IPython.core.debugger import set_trace
+
 from .pipeline import Pipeline, Transformer
 from .repr import repr_args
 
@@ -96,9 +98,8 @@ class Lambda:
     def __getitem__(self, key):
         return Transformer(f'X[{key!r}]', op.itemgetter(key))
 
-    @lambda_then
     def __bool__(self):
-        return Transformer(f'bool(X)', bool)
+        return False
 
     @property
     @lambda_then
@@ -106,8 +107,20 @@ class Lambda:
         return Transformer(f'not X', op.not_)
 
     @lambda_then
-    def __contains__(self, item):
-        return Transformer(f'{item!r} in X', lambda elem: item in elem)
+    def in_(self, other):
+        return Transformer(f'X in {other!r}', lambda elem: elem in other)
+
+    @in_.other_lambda
+    def in_(self, other):
+        return Transformer(f'X in {other!r}', lambda elem: self(elem) in other(elem))
+
+    @lambda_then
+    def has(self, other):
+        return Transformer(f'{other!r} in X', lambda elem: other in elem)
+
+    @has.other_lambda
+    def has(self, other):
+        return Transformer(f'{other!r} in X', lambda elem: other(elem) in self(elem))
 
     @lambda_then
     def __pos__(self):
