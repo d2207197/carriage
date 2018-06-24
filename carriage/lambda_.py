@@ -2,8 +2,6 @@
 import functools as fnt
 import operator as op
 
-from IPython.core.debugger import set_trace
-
 from .pipeline import Pipeline, Transformer
 from .repr import repr_args
 

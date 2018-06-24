@@ -6,7 +6,6 @@ import itertools as itt
 import reprlib
 from collections import Counter, defaultdict, deque
 
-from IPython.core.debugger import set_trace
 from tabulate import tabulate, tabulate_formats
 
 from .array import Array
