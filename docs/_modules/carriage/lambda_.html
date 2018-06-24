@@ -1,0 +1,381 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>carriage.lambda_ &#8212; carriage 0.1.6 documentation</title>
+    <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for carriage.lambda_</h1><div class="highlight"><pre>
+<span></span>
+<span class="kn">import</span> <span class="nn">functools</span> <span class="k">as</span> <span class="nn">fnt</span>
+<span class="kn">import</span> <span class="nn">operator</span> <span class="k">as</span> <span class="nn">op</span>
+
+<span class="kn">from</span> <span class="nn">.pipeline</span> <span class="k">import</span> <span class="n">Pipeline</span><span class="p">,</span> <span class="n">Transformer</span>
+<span class="kn">from</span> <span class="nn">.repr</span> <span class="k">import</span> <span class="n">repr_args</span>
+
+
+<span class="k">def</span> <span class="nf">lambda_then</span><span class="p">(</span><span class="n">f</span><span class="p">):</span>
+    <span class="nd">@fnt</span><span class="o">.</span><span class="n">wraps</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">wraped</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="n">trfmr</span> <span class="o">=</span> <span class="n">f</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_then</span><span class="p">(</span><span class="n">trfmr</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">other_lambda</span><span class="p">(</span><span class="n">f</span><span class="p">):</span>
+        <span class="nd">@fnt</span><span class="o">.</span><span class="n">wraps</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+        <span class="k">def</span> <span class="nf">wraped_</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+            <span class="n">other</span> <span class="o">=</span> <span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="n">Lambda</span><span class="p">):</span>
+                <span class="n">trfmr</span> <span class="o">=</span> <span class="n">f</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">)</span>
+                <span class="k">return</span> <span class="n">X</span><span class="o">.</span><span class="n">_then</span><span class="p">(</span><span class="n">trfmr</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">wraped</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">wraped_</span>
+
+    <span class="n">wraped</span><span class="o">.</span><span class="n">other_lambda</span> <span class="o">=</span> <span class="n">other_lambda</span>
+
+    <span class="k">return</span> <span class="n">wraped</span>
+
+
+<div class="viewcode-block" id="Xcall"><a class="viewcode-back" href="../../lambda.html#carriage.lambda_.Xcall">[docs]</a><span class="k">class</span> <span class="nc">Xcall</span><span class="p">:</span>
+    <span class="sd">&#39;&#39;&#39;Elegant partial function builder</span>
+
+<span class="sd">    &gt;&gt;&gt; def func(a, b, c=0, d=0):</span>
+<span class="sd">    ...     return a, b, c, d</span>
+<span class="sd">    &gt;&gt;&gt; partialfunc = Xcall(func)(X, b=3)</span>
+<span class="sd">    &gt;&gt;&gt; partialfunc(2)</span>
+<span class="sd">    (2, 3, 0, 0)</span>
+<span class="sd">    &gt;&gt;&gt; partialfunc(5)</span>
+<span class="sd">    (5, 3, 0, 0)</span>
+<span class="sd">    &gt;&gt;&gt; partialfunc = Xcall(func)(1, 2, c=X.x, d=X.y)</span>
+<span class="sd">    &gt;&gt;&gt; from carriage import Row</span>
+<span class="sd">    &gt;&gt;&gt; partialfunc(Row(x=3, y=4))</span>
+<span class="sd">    (1, 2, 3, 4)</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">f</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">f</span> <span class="o">=</span> <span class="n">f</span>
+
+    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="n">args_str</span> <span class="o">=</span> <span class="n">repr_args</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+        <span class="k">def</span> <span class="nf">func</span><span class="p">(</span><span class="n">elem</span><span class="p">):</span>
+            <span class="n">actual_args</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">arg</span><span class="p">(</span><span class="n">elem</span><span class="p">)</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">arg</span><span class="p">,</span> <span class="n">Lambda</span><span class="p">)</span> <span class="k">else</span> <span class="n">arg</span>
+                                <span class="k">for</span> <span class="n">arg</span> <span class="ow">in</span> <span class="n">args</span><span class="p">)</span>
+            <span class="n">actual_kwargs</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">arg</span><span class="p">(</span><span class="n">elem</span><span class="p">)</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">arg</span><span class="p">,</span> <span class="n">Lambda</span><span class="p">)</span> <span class="k">else</span> <span class="n">arg</span>
+                             <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">arg</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">f</span><span class="p">(</span><span class="o">*</span><span class="n">actual_args</span><span class="p">,</span> <span class="o">**</span><span class="n">actual_kwargs</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">X</span><span class="o">.</span><span class="n">_then</span><span class="p">(</span><span class="n">Transformer</span><span class="p">(</span><span class="n">f</span><span class="s1">&#39;</span><span class="si">{self.f.__name__}</span><span class="s1">(</span><span class="si">{args_str}</span><span class="s1">)&#39;</span><span class="p">,</span> <span class="n">func</span><span class="p">))</span></div>
+
+
+<div class="viewcode-block" id="Lambda"><a class="viewcode-back" href="../../lambda.html#carriage.lambda_.Lambda">[docs]</a><span class="k">class</span> <span class="nc">Lambda</span><span class="p">:</span>
+    <span class="vm">__slots__</span> <span class="o">=</span> <span class="s1">&#39;_pipeline&#39;</span><span class="p">,</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">pipeline</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">pipeline</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">pipeline</span> <span class="o">=</span> <span class="n">Pipeline</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_pipeline</span> <span class="o">=</span> <span class="n">pipeline</span>
+
+    <span class="k">def</span> <span class="nf">_then</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">trfmr</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)(</span><span class="n">pipeline</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_pipeline</span><span class="o">.</span><span class="n">then</span><span class="p">(</span><span class="n">trfmr</span><span class="p">))</span>
+
+    <span class="nd">@lambda_then</span>
+    <span class="k">def</span> <span class="nf">call</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="n">args_str</span> <span class="o">=</span> <span class="n">repr_args</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">Transformer</span><span class="p">(</span><span class="n">f</span><span class="s1">&#39;X(</span><span class="si">{args_str}</span><span class="s1">)&#39;</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">func</span><span class="p">:</span> <span class="n">func</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">))</span>
+
+    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">elem</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pipeline</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">elem</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">f</span><span class="s1">&#39;&lt;{type(self).__name__} </span><span class="si">{self._pipeline!r}</span><span class="s1">&gt;&#39;</span>
+
+    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_pipeline</span><span class="p">)</span>
+
+    <span class="nd">@lambda_then</span>
+    <span class="k">def</span> <span class="nf">__getattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">name</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;__&#39;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">name</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s1">&#39;__&#39;</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">AttributeError</span>
+        <span class="k">return</span> <span class="n">Transformer</span><span class="p">(</span><span class="n">f</span><span class="s1">&#39;X.</span><span class="si">{name}</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">op</span><span class="o">.</span><span class="n">attrgetter</span><span class="p">(</span><span class="n">name</span><span class="p">))</span>
+
+    <span class="nd">@lambda_then</span>
+    <span class="k">def</span> <span class="nf">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">Transformer</span><span class="p">(</span><span class="n">f</span><span class="s1">&#39;X[</span><span class="si">{key!r}</span><span class="s1">]&#39;</span><span class="p">,</span> <span class="n">op</span><span class="o">.</span><span class="n">itemgetter</span><span class="p">(</span><span class="n">key</span><span class="p">))</span>
+
+    <span class="nd">@lambda_then</span>
+    <span class="k">def</span> <span class="nf">__bool__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">Transformer</span><span class="p">(</span><span class="n">f</span><span class="s1">&#39;bool(X)&#39;</span><span class="p">,</span> <span class="nb">bool</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="nd">@lambda_then</span>
+    <span class="k">def</span> <span class="nf">not_</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">Transformer</span><span class="p">(</span><span class="n">f</span><span class="s1">&#39;not X&#39;</span><span class="p">,</span> <span class="n">op</span><span class="o">.</span><span class="n">not_</span><span class="p">)</span>
+
+    <span class="nd">@lambda_then</span>
+    <span class="k">def</span> <span class="nf">__contains__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">Transformer</span><span class="p">(</span><span class="n">f</span><span class="s1">&#39;</span><span class="si">{item!r}</span><span class="s1"> in X&#39;</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">elem</span><span class="p">:</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">elem</span><span class="p">)</span>
+
+    <span class="nd">@lambda_then</span>
+    <span class="k">def</span> <span class="nf">__pos__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">Transformer</span><span class="p">(</span><span class="n">f</span><span class="s1">&#39;+X&#39;</span><span class="p">,</span> <span class="n">op</span><span class="o">.</span><span class="n">pos</span><span class="p">)</span>
+
+    <span class="nd">@lambda_then</span>
+    <span class="k">def</span> <span class="nf">__neg__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">Transformer</span><span class="p">(</span><span class="n">f</span><span class="s1">&#39;-X&#39;</span><span class="p">,</span> <span class="n">op</span><span class="o">.</span><span class="n">neg</span><span class="p">)</span>
+
+    <span class="nd">@lambda_then</span>
+    <span class="k">def</span> <span class="nf">__abs__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">Transformer</span><span class="p">(</span><span class="n">f</span><span class="s1">&#39;abs(X)&#39;</span><span class="p">,</span> <span class="n">op</span><span class="o">.</span><span class="n">abs</span><span class="p">)</span>
+
+    <span class="nd">@lambda_then</span>
+    <span class="k">def</span> <span class="nf">__add__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">Transformer</span><span class="p">(</span><span class="n">f</span><span class="s1">&#39;X + </span><span class="si">{other!r}</span><span class="s1">&#39;</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">elem</span><span class="p">:</span> <span class="n">elem</span> <span class="o">+</span> <span class="n">other</span><span class="p">)</span>
+
+    <span class="nd">@__add__</span><span class="o">.</span><span class="n">other_lambda</span>
+    <span class="k">def</span> <span class="nf">__add__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">Transformer</span><span class="p">(</span><span class="n">f</span><span class="s1">&#39;X + </span><span class="si">{other!r}</span><span class="s1">&#39;</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">elem</span><span class="p">:</span> <span class="bp">self</span><span class="p">(</span><span class="n">elem</span><span class="p">)</span> <span class="o">+</span> <span class="n">other</span><span class="p">(</span><span class="n">elem</span><span class="p">))</span>
+
+    <span class="nd">@lambda_then</span>
+    <span class="k">def</span> <span class="nf">__sub__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">Transformer</span><span class="p">(</span><span class="n">f</span><span class="s1">&#39;X - </span><span class="si">{other!r}</span><span class="s1">&#39;</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">elem</span><span class="p">:</span> <span class="n">elem</span> <span class="o">-</span> <span class="n">other</span><span class="p">)</span>
+
+    <span class="nd">@__sub__</span><span class="o">.</span><span class="n">other_lambda</span>
+    <span class="k">def</span> <span class="nf">__sub__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">Transformer</span><span class="p">(</span><span class="n">f</span><span class="s1">&#39;X - </span><span class="si">{other!r}</span><span class="s1">&#39;</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">elem</span><span class="p">:</span> <span class="bp">self</span><span class="p">(</span><span class="n">elem</span><span class="p">)</span> <span class="o">-</span> <span class="n">other</span><span class="p">(</span><span class="n">elem</span><span class="p">))</span>
+
+    <span class="nd">@lambda_then</span>
+    <span class="k">def</span> <span class="nf">__mul__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">Transformer</span><span class="p">(</span><span class="n">f</span><span class="s1">&#39;X * </span><span class="si">{other!r}</span><span class="s1">&#39;</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">elem</span><span class="p">:</span> <span class="n">elem</span> <span class="o">*</span> <span class="n">other</span><span class="p">)</span>
+
+    <span class="nd">@__mul__</span><span class="o">.</span><span class="n">other_lambda</span>
+    <span class="k">def</span> <span class="nf">__mul__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">Transformer</span><span class="p">(</span><span class="n">f</span><span class="s1">&#39;X * </span><span class="si">{other!r}</span><span class="s1">&#39;</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">elem</span><span class="p">:</span> <span class="bp">self</span><span class="p">(</span><span class="n">elem</span><span class="p">)</span> <span class="o">*</span> <span class="n">other</span><span class="p">(</span><span class="n">elem</span><span class="p">))</span>
+
+    <span class="nd">@lambda_then</span>
+    <span class="k">def</span> <span class="nf">__truediv__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">Transformer</span><span class="p">(</span><span class="n">f</span><span class="s1">&#39;X / </span><span class="si">{other!r}</span><span class="s1">&#39;</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">elem</span><span class="p">:</span> <span class="n">elem</span> <span class="o">/</span> <span class="n">other</span><span class="p">)</span>
+
+    <span class="nd">@__truediv__</span><span class="o">.</span><span class="n">other_lambda</span>
+    <span class="k">def</span> <span class="nf">__truediv__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">Transformer</span><span class="p">(</span><span class="n">f</span><span class="s1">&#39;X / </span><span class="si">{other!r}</span><span class="s1">&#39;</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">elem</span><span class="p">:</span> <span class="bp">self</span><span class="p">(</span><span class="n">elem</span><span class="p">)</span> <span class="o">/</span> <span class="n">other</span><span class="p">(</span><span class="n">elem</span><span class="p">))</span>
+
+    <span class="nd">@lambda_then</span>
+    <span class="k">def</span> <span class="nf">__floordiv__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">Transformer</span><span class="p">(</span><span class="n">f</span><span class="s1">&#39;X // </span><span class="si">{other!r}</span><span class="s1">&#39;</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">elem</span><span class="p">:</span> <span class="n">elem</span> <span class="o">//</span> <span class="n">other</span><span class="p">)</span>
+
+    <span class="nd">@__floordiv__</span><span class="o">.</span><span class="n">other_lambda</span>
+    <span class="k">def</span> <span class="nf">__floordiv__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">Transformer</span><span class="p">(</span><span class="n">f</span><span class="s1">&#39;X // </span><span class="si">{other!r}</span><span class="s1">&#39;</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">elem</span><span class="p">:</span> <span class="bp">self</span><span class="p">(</span><span class="n">elem</span><span class="p">)</span> <span class="o">//</span> <span class="n">other</span><span class="p">(</span><span class="n">elem</span><span class="p">))</span>
+
+    <span class="nd">@lambda_then</span>
+    <span class="k">def</span> <span class="nf">__mod__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">Transformer</span><span class="p">(</span><span class="n">f</span><span class="s1">&#39;X % </span><span class="si">{other!r}</span><span class="s1">&#39;</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">elem</span><span class="p">:</span> <span class="n">elem</span> <span class="o">%</span> <span class="n">other</span><span class="p">)</span>
+
+    <span class="nd">@__mod__</span><span class="o">.</span><span class="n">other_lambda</span>
+    <span class="k">def</span> <span class="nf">__mod__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">Transformer</span><span class="p">(</span><span class="n">f</span><span class="s1">&#39;X % </span><span class="si">{other!r}</span><span class="s1">&#39;</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">elem</span><span class="p">:</span> <span class="bp">self</span><span class="p">(</span><span class="n">elem</span><span class="p">)</span> <span class="o">%</span> <span class="n">other</span><span class="p">(</span><span class="n">elem</span><span class="p">))</span>
+
+    <span class="nd">@lambda_then</span>
+    <span class="k">def</span> <span class="nf">__divmod__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">Transformer</span><span class="p">(</span><span class="n">f</span><span class="s1">&#39;divmod(X, </span><span class="si">{other!r}</span><span class="s1">)&#39;</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">elem</span><span class="p">:</span> <span class="nb">divmod</span><span class="p">(</span><span class="n">elem</span><span class="p">,</span> <span class="n">other</span><span class="p">))</span>
+
+    <span class="nd">@__divmod__</span><span class="o">.</span><span class="n">other_lambda</span>
+    <span class="k">def</span> <span class="nf">__divmod__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">Transformer</span><span class="p">(</span><span class="n">f</span><span class="s1">&#39;divmod(X % </span><span class="si">{other!r}</span><span class="s1">)&#39;</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">elem</span><span class="p">:</span> <span class="nb">divmod</span><span class="p">(</span><span class="bp">self</span><span class="p">(</span><span class="n">elem</span><span class="p">),</span> <span class="n">other</span><span class="p">(</span><span class="n">elem</span><span class="p">)))</span>
+
+    <span class="nd">@lambda_then</span>
+    <span class="k">def</span> <span class="nf">__pow__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">Transformer</span><span class="p">(</span><span class="n">f</span><span class="s1">&#39;pow(X % </span><span class="si">{other!r}</span><span class="s1">)&#39;</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">elem</span><span class="p">:</span> <span class="nb">pow</span><span class="p">(</span><span class="n">elem</span><span class="p">,</span> <span class="n">other</span><span class="p">))</span>
+
+    <span class="nd">@__pow__</span><span class="o">.</span><span class="n">other_lambda</span>
+    <span class="k">def</span> <span class="nf">__pow__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">Transformer</span><span class="p">(</span><span class="n">f</span><span class="s1">&#39;pow(X % </span><span class="si">{other!r}</span><span class="s1">)&#39;</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">elem</span><span class="p">:</span> <span class="nb">pow</span><span class="p">(</span><span class="bp">self</span><span class="p">(</span><span class="n">elem</span><span class="p">),</span> <span class="n">other</span><span class="p">(</span><span class="n">elem</span><span class="p">)))</span>
+
+    <span class="nd">@lambda_then</span>
+    <span class="k">def</span> <span class="nf">__radd__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">Transformer</span><span class="p">(</span><span class="n">f</span><span class="s1">&#39;</span><span class="si">{other!r}</span><span class="s1"> + X&#39;</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">elem</span><span class="p">:</span> <span class="n">other</span> <span class="o">+</span> <span class="n">elem</span><span class="p">)</span>
+
+    <span class="nd">@__radd__</span><span class="o">.</span><span class="n">other_lambda</span>
+    <span class="k">def</span> <span class="nf">__radd__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">Transformer</span><span class="p">(</span><span class="n">f</span><span class="s1">&#39;</span><span class="si">{other!r}</span><span class="s1"> + X&#39;</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">elem</span><span class="p">:</span> <span class="n">other</span><span class="p">(</span><span class="n">elem</span><span class="p">)</span> <span class="o">+</span> <span class="bp">self</span><span class="p">(</span><span class="n">elem</span><span class="p">))</span>
+
+    <span class="nd">@lambda_then</span>
+    <span class="k">def</span> <span class="nf">__rsub__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">Transformer</span><span class="p">(</span><span class="n">f</span><span class="s1">&#39;</span><span class="si">{other!r}</span><span class="s1"> - X&#39;</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">elem</span><span class="p">:</span> <span class="n">other</span> <span class="o">-</span> <span class="n">elem</span><span class="p">)</span>
+
+    <span class="nd">@__rsub__</span><span class="o">.</span><span class="n">other_lambda</span>
+    <span class="k">def</span> <span class="nf">__rsub__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">Transformer</span><span class="p">(</span><span class="n">f</span><span class="s1">&#39;</span><span class="si">{other!r}</span><span class="s1"> - X&#39;</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">elem</span><span class="p">:</span> <span class="n">other</span><span class="p">(</span><span class="n">elem</span><span class="p">)</span> <span class="o">-</span> <span class="bp">self</span><span class="p">(</span><span class="n">elem</span><span class="p">))</span>
+
+    <span class="nd">@lambda_then</span>
+    <span class="k">def</span> <span class="nf">__rmul__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">Transformer</span><span class="p">(</span><span class="n">f</span><span class="s1">&#39;</span><span class="si">{other!r}</span><span class="s1"> * X&#39;</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">elem</span><span class="p">:</span> <span class="n">other</span> <span class="o">*</span> <span class="n">elem</span><span class="p">)</span>
+
+    <span class="nd">@__rmul__</span><span class="o">.</span><span class="n">other_lambda</span>
+    <span class="k">def</span> <span class="nf">__rmul__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">Transformer</span><span class="p">(</span><span class="n">f</span><span class="s1">&#39;</span><span class="si">{other!r}</span><span class="s1"> * X&#39;</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">elem</span><span class="p">:</span> <span class="n">other</span><span class="p">(</span><span class="n">elem</span><span class="p">)</span> <span class="o">*</span> <span class="bp">self</span><span class="p">(</span><span class="n">elem</span><span class="p">))</span>
+
+    <span class="nd">@lambda_then</span>
+    <span class="k">def</span> <span class="nf">__rtruediv__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">Transformer</span><span class="p">(</span><span class="n">f</span><span class="s1">&#39;</span><span class="si">{other!r}</span><span class="s1"> / X&#39;</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">elem</span><span class="p">:</span> <span class="n">other</span> <span class="o">/</span> <span class="n">elem</span><span class="p">)</span>
+
+    <span class="nd">@__rtruediv__</span><span class="o">.</span><span class="n">other_lambda</span>
+    <span class="k">def</span> <span class="nf">__rtruediv__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">Transformer</span><span class="p">(</span><span class="n">f</span><span class="s1">&#39;</span><span class="si">{other!r}</span><span class="s1"> / X&#39;</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">elem</span><span class="p">:</span> <span class="n">other</span><span class="p">(</span><span class="n">elem</span><span class="p">)</span> <span class="o">/</span> <span class="bp">self</span><span class="p">(</span><span class="n">elem</span><span class="p">))</span>
+
+    <span class="nd">@lambda_then</span>
+    <span class="k">def</span> <span class="nf">__rfloordiv__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">Transformer</span><span class="p">(</span><span class="n">f</span><span class="s1">&#39;</span><span class="si">{other!r}</span><span class="s1"> // X&#39;</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">elem</span><span class="p">:</span> <span class="n">other</span> <span class="o">//</span> <span class="n">elem</span><span class="p">)</span>
+
+    <span class="nd">@__rfloordiv__</span><span class="o">.</span><span class="n">other_lambda</span>
+    <span class="k">def</span> <span class="nf">__rfloordiv__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">Transformer</span><span class="p">(</span><span class="n">f</span><span class="s1">&#39;</span><span class="si">{other!r}</span><span class="s1"> // X&#39;</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">elem</span><span class="p">:</span> <span class="n">other</span><span class="p">(</span><span class="n">elem</span><span class="p">)</span> <span class="o">//</span> <span class="bp">self</span><span class="p">(</span><span class="n">elem</span><span class="p">))</span>
+
+    <span class="nd">@lambda_then</span>
+    <span class="k">def</span> <span class="nf">__rmod__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">Transformer</span><span class="p">(</span><span class="n">f</span><span class="s1">&#39;</span><span class="si">{other!r}</span><span class="s1"> </span><span class="si">% X</span><span class="s1">&#39;</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">elem</span><span class="p">:</span> <span class="n">other</span> <span class="o">%</span> <span class="n">elem</span><span class="p">)</span>
+
+    <span class="nd">@__rmod__</span><span class="o">.</span><span class="n">other_lambda</span>
+    <span class="k">def</span> <span class="nf">__rmod__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">Transformer</span><span class="p">(</span><span class="n">f</span><span class="s1">&#39;</span><span class="si">{other!r}</span><span class="s1"> </span><span class="si">% X</span><span class="s1">&#39;</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">elem</span><span class="p">:</span> <span class="n">other</span><span class="p">(</span><span class="n">elem</span><span class="p">)</span> <span class="o">%</span> <span class="bp">self</span><span class="p">(</span><span class="n">elem</span><span class="p">))</span>
+
+    <span class="nd">@lambda_then</span>
+    <span class="k">def</span> <span class="nf">__rdivmod__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">Transformer</span><span class="p">(</span><span class="n">f</span><span class="s1">&#39;divmod(</span><span class="si">{other!r}</span><span class="s1">, X)&#39;</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">elem</span><span class="p">:</span> <span class="nb">divmod</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="n">elem</span><span class="p">))</span>
+
+    <span class="nd">@__rdivmod__</span><span class="o">.</span><span class="n">other_lambda</span>
+    <span class="k">def</span> <span class="nf">__rdivmod__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">Transformer</span><span class="p">(</span><span class="n">f</span><span class="s1">&#39;divmod(</span><span class="si">{other!r}</span><span class="s1">, X)&#39;</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">elem</span><span class="p">:</span> <span class="nb">divmod</span><span class="p">(</span><span class="n">other</span><span class="p">(</span><span class="n">elem</span><span class="p">),</span> <span class="bp">self</span><span class="p">(</span><span class="n">elem</span><span class="p">)))</span>
+
+    <span class="nd">@lambda_then</span>
+    <span class="k">def</span> <span class="nf">__rpow__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">Transformer</span><span class="p">(</span><span class="n">f</span><span class="s1">&#39;pow(</span><span class="si">{other!r}</span><span class="s1">, X)&#39;</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">elem</span><span class="p">:</span> <span class="nb">pow</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="n">elem</span><span class="p">))</span>
+
+    <span class="nd">@__rpow__</span><span class="o">.</span><span class="n">other_lambda</span>
+    <span class="k">def</span> <span class="nf">__rpow__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">Transformer</span><span class="p">(</span><span class="n">f</span><span class="s1">&#39;pow(</span><span class="si">{other!r}</span><span class="s1">, X)&#39;</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">elem</span><span class="p">:</span> <span class="nb">pow</span><span class="p">(</span><span class="n">other</span><span class="p">(</span><span class="n">elem</span><span class="p">),</span> <span class="bp">self</span><span class="p">(</span><span class="n">elem</span><span class="p">)))</span>
+
+    <span class="nd">@lambda_then</span>
+    <span class="k">def</span> <span class="nf">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">Transformer</span><span class="p">(</span><span class="n">f</span><span class="s1">&#39; == </span><span class="si">{other!r}</span><span class="s1">&#39;</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">elem</span><span class="p">:</span> <span class="n">elem</span> <span class="o">==</span> <span class="n">other</span><span class="p">)</span>
+
+    <span class="nd">@__eq__</span><span class="o">.</span><span class="n">other_lambda</span>
+    <span class="k">def</span> <span class="nf">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">Transformer</span><span class="p">(</span><span class="n">f</span><span class="s1">&#39; == </span><span class="si">{other!r}</span><span class="s1">&#39;</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">elem</span><span class="p">:</span> <span class="bp">self</span><span class="p">(</span><span class="n">elem</span><span class="p">)</span> <span class="o">==</span> <span class="n">other</span><span class="p">(</span><span class="n">elem</span><span class="p">))</span>
+
+    <span class="nd">@lambda_then</span>
+    <span class="k">def</span> <span class="nf">__ne__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">Transformer</span><span class="p">(</span><span class="n">f</span><span class="s1">&#39; != </span><span class="si">{other!r}</span><span class="s1">&#39;</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">elem</span><span class="p">:</span> <span class="n">elem</span> <span class="o">!=</span> <span class="n">other</span><span class="p">)</span>
+
+    <span class="nd">@__ne__</span><span class="o">.</span><span class="n">other_lambda</span>
+    <span class="k">def</span> <span class="nf">__ne__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">Transformer</span><span class="p">(</span><span class="n">f</span><span class="s1">&#39; != </span><span class="si">{other!r}</span><span class="s1">&#39;</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">elem</span><span class="p">:</span> <span class="bp">self</span><span class="p">(</span><span class="n">elem</span><span class="p">)</span> <span class="o">!=</span> <span class="n">other</span><span class="p">(</span><span class="n">elem</span><span class="p">))</span>
+
+    <span class="nd">@lambda_then</span>
+    <span class="k">def</span> <span class="nf">__gt__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">Transformer</span><span class="p">(</span><span class="n">f</span><span class="s1">&#39; &gt; </span><span class="si">{other!r}</span><span class="s1">&#39;</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">elem</span><span class="p">:</span> <span class="n">elem</span> <span class="o">&gt;</span> <span class="n">other</span><span class="p">)</span>
+
+    <span class="nd">@__gt__</span><span class="o">.</span><span class="n">other_lambda</span>
+    <span class="k">def</span> <span class="nf">__gt__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">Transformer</span><span class="p">(</span><span class="n">f</span><span class="s1">&#39; &gt; </span><span class="si">{other!r}</span><span class="s1">&#39;</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">elem</span><span class="p">:</span> <span class="bp">self</span><span class="p">(</span><span class="n">elem</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">other</span><span class="p">(</span><span class="n">elem</span><span class="p">))</span>
+
+    <span class="nd">@lambda_then</span>
+    <span class="k">def</span> <span class="nf">__ge__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">Transformer</span><span class="p">(</span><span class="n">f</span><span class="s1">&#39; &gt;= </span><span class="si">{other!r}</span><span class="s1">&#39;</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">elem</span><span class="p">:</span> <span class="n">elem</span> <span class="o">&gt;=</span> <span class="n">other</span><span class="p">)</span>
+
+    <span class="nd">@__ge__</span><span class="o">.</span><span class="n">other_lambda</span>
+    <span class="k">def</span> <span class="nf">__ge__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">Transformer</span><span class="p">(</span><span class="n">f</span><span class="s1">&#39; &gt;= </span><span class="si">{other!r}</span><span class="s1">&#39;</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">elem</span><span class="p">:</span> <span class="bp">self</span><span class="p">(</span><span class="n">elem</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="n">other</span><span class="p">(</span><span class="n">elem</span><span class="p">))</span>
+
+    <span class="nd">@lambda_then</span>
+    <span class="k">def</span> <span class="nf">__lt__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">Transformer</span><span class="p">(</span><span class="n">f</span><span class="s1">&#39; &lt; </span><span class="si">{other!r}</span><span class="s1">&#39;</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">elem</span><span class="p">:</span> <span class="n">elem</span> <span class="o">&lt;</span> <span class="n">other</span><span class="p">)</span>
+
+    <span class="nd">@__lt__</span><span class="o">.</span><span class="n">other_lambda</span>
+    <span class="k">def</span> <span class="nf">__lt__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">Transformer</span><span class="p">(</span><span class="n">f</span><span class="s1">&#39; &lt; </span><span class="si">{other!r}</span><span class="s1">&#39;</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">elem</span><span class="p">:</span> <span class="bp">self</span><span class="p">(</span><span class="n">elem</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">other</span><span class="p">(</span><span class="n">elem</span><span class="p">))</span>
+
+    <span class="nd">@lambda_then</span>
+    <span class="k">def</span> <span class="nf">__le__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">Transformer</span><span class="p">(</span><span class="n">f</span><span class="s1">&#39; &lt;= </span><span class="si">{other!r}</span><span class="s1">&#39;</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">elem</span><span class="p">:</span> <span class="n">elem</span> <span class="o">&lt;=</span> <span class="n">other</span><span class="p">)</span>
+
+    <span class="nd">@__le__</span><span class="o">.</span><span class="n">other_lambda</span>
+    <span class="k">def</span> <span class="nf">__le__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">Transformer</span><span class="p">(</span><span class="n">f</span><span class="s1">&#39; &lt;= </span><span class="si">{other!r}</span><span class="s1">&#39;</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">elem</span><span class="p">:</span> <span class="bp">self</span><span class="p">(</span><span class="n">elem</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="n">other</span><span class="p">(</span><span class="n">elem</span><span class="p">))</span></div>
+
+
+<span class="n">X</span> <span class="o">=</span> <span class="n">Lambda</span><span class="p">()</span>
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2018, Yen, Tzu-Hsi.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.5</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.11</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

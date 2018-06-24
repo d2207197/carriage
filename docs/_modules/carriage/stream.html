@@ -9,7 +9,7 @@
     <title>carriage.stream &#8212; carriage 0.1.6 documentation</title>
     <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
-    <script type="text/javascript" src="../../_static/documentation_options.js"></script>
+    <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
     <script type="text/javascript" src="../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../_static/doctools.js"></script>
@@ -27,6 +27,8 @@
     <div class="document">
       <div class="documentwrapper">
         <div class="bodywrapper">
+          
+
           <div class="body" role="main">
             
   <h1>Source code for carriage.stream</h1><div class="highlight"><pre>
@@ -38,18 +40,27 @@
 <span class="kn">import</span> <span class="nn">reprlib</span>
 <span class="kn">from</span> <span class="nn">collections</span> <span class="k">import</span> <span class="n">Counter</span><span class="p">,</span> <span class="n">defaultdict</span><span class="p">,</span> <span class="n">deque</span>
 
+<span class="kn">from</span> <span class="nn">IPython.core.debugger</span> <span class="k">import</span> <span class="n">set_trace</span>
+<span class="kn">from</span> <span class="nn">tabulate</span> <span class="k">import</span> <span class="n">tabulate</span><span class="p">,</span> <span class="n">tabulate_formats</span>
+
 <span class="kn">from</span> <span class="nn">.array</span> <span class="k">import</span> <span class="n">Array</span>
 <span class="kn">from</span> <span class="nn">.monad</span> <span class="k">import</span> <span class="n">Monad</span>
 <span class="kn">from</span> <span class="nn">.optional</span> <span class="k">import</span> <span class="n">Nothing</span><span class="p">,</span> <span class="n">Some</span>
-<span class="kn">from</span> <span class="nn">.repr</span> <span class="k">import</span> <span class="n">short_repr</span>
-<span class="kn">from</span> <span class="nn">.row</span> <span class="k">import</span> <span class="n">CurrNext</span><span class="p">,</span> <span class="n">CurrPrev</span><span class="p">,</span> <span class="n">KeyValues</span><span class="p">,</span> <span class="n">ValueIndex</span>
+<span class="kn">from</span> <span class="nn">.pipeline</span> <span class="k">import</span> <span class="n">Pipeline</span><span class="p">,</span> <span class="n">Transformer</span>
+<span class="kn">from</span> <span class="nn">.repr</span> <span class="k">import</span> <span class="n">repr_args</span><span class="p">,</span> <span class="n">short_repr</span>
+<span class="kn">from</span> <span class="nn">.row</span> <span class="k">import</span> <span class="n">CurrNext</span><span class="p">,</span> <span class="n">CurrPrev</span><span class="p">,</span> <span class="n">KeyValues</span><span class="p">,</span> <span class="n">Row</span><span class="p">,</span> <span class="n">ValueIndex</span>
 
 
 <span class="k">def</span> <span class="nf">as_stream</span><span class="p">(</span><span class="n">f</span><span class="p">):</span>
     <span class="nd">@fnt</span><span class="o">.</span><span class="n">wraps</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
     <span class="k">def</span> <span class="nf">wraped</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-        <span class="n">trfmr</span> <span class="o">=</span> <span class="n">f</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">Stream</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">trfmr</span><span class="p">)</span>
+        <span class="n">args_str</span> <span class="o">=</span> <span class="n">repr_args</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="n">trfmr</span> <span class="o">=</span> <span class="n">Transformer</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">f</span><span class="s1">&#39;</span><span class="si">{f.__name__}</span><span class="s1">(</span><span class="si">{args_str}</span><span class="s1">)&#39;</span><span class="p">,</span>
+                            <span class="n">func</span><span class="o">=</span><span class="n">f</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">))</span>
+
+        <span class="k">return</span> <span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)(</span>
+            <span class="n">iterable</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_iterable</span><span class="p">,</span>
+            <span class="n">pipeline</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_pipeline</span><span class="o">.</span><span class="n">then</span><span class="p">(</span><span class="n">trfmr</span><span class="p">))</span>
 
     <span class="n">wraped</span><span class="o">.</span><span class="n">call</span> <span class="o">=</span> <span class="n">f</span>
 
@@ -91,9 +102,9 @@
 <span class="sd">    [10, 12, 14]</span>
 
 <span class="sd">    &#39;&#39;&#39;</span>
-    <span class="vm">__slots__</span> <span class="o">=</span> <span class="s1">&#39;_iterable&#39;</span><span class="p">,</span> <span class="s1">&#39;_transformer&#39;</span>
+    <span class="vm">__slots__</span> <span class="o">=</span> <span class="s1">&#39;_iterable&#39;</span><span class="p">,</span> <span class="s1">&#39;_pipeline&#39;</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">iterable</span><span class="p">,</span> <span class="n">transformer</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">iterable</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">pipeline</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&#39;&#39;&#39;Create a Stream from any iterable object.</span>
 
 <span class="sd">        &gt;&gt;&gt; strm = Stream([1,2,3])</span>
@@ -110,7 +121,43 @@
 <span class="sd">        &#39;&#39;&#39;</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_iterable</span> <span class="o">=</span> <span class="n">iterable</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_transformer</span> <span class="o">=</span> <span class="n">transformer</span>
+
+        <span class="k">if</span> <span class="n">pipeline</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">pipeline</span> <span class="o">=</span> <span class="n">Pipeline</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_pipeline</span> <span class="o">=</span> <span class="n">pipeline</span>
+
+<div class="viewcode-block" id="Stream.show_pipeline"><a class="viewcode-back" href="../../stream.html#carriage.Stream.show_pipeline">[docs]</a>    <span class="k">def</span> <span class="nf">show_pipeline</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n</span><span class="o">=</span><span class="mi">2</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Show pipeline and some examples for debugging</span>
+
+<span class="sd">        &gt;&gt;&gt; def mul_2(x):</span>
+<span class="sd">        ...     return x*2</span>
+<span class="sd">        &gt;&gt;&gt; (Stream</span>
+<span class="sd">        ...  .range(10)</span>
+<span class="sd">        ...  .map(mul_2)</span>
+<span class="sd">        ...  .nlargest(3)</span>
+<span class="sd">        ...  .show_pipeline(2))  # doctest: +SKIP</span>
+<span class="sd">        range(0, 10)</span>
+<span class="sd">            [0] 0</span>
+<span class="sd">            [1] 1</span>
+<span class="sd">         -&gt; map(&lt;function mul_2 at 0x10a1dbd08&gt;)</span>
+<span class="sd">            [0] 0</span>
+<span class="sd">            [1] 2</span>
+<span class="sd">         -&gt; nlargest(3)</span>
+<span class="sd">            [0] 2</span>
+<span class="sd">            [1] 0</span>
+
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">short_repr</span><span class="o">.</span><span class="n">repr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_iterable</span><span class="p">))</span>
+        <span class="n">elems</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">itt</span><span class="o">.</span><span class="n">islice</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_iterable</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">n</span><span class="p">))</span>
+        <span class="k">for</span> <span class="n">index</span><span class="p">,</span> <span class="n">elem</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">elems</span><span class="p">):</span>
+            <span class="nb">print</span><span class="p">(</span><span class="n">f</span><span class="s1">&#39;    [</span><span class="si">{index}</span><span class="s1">] </span><span class="si">{elem!r}</span><span class="s1">&#39;</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">trfmr</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pipeline</span><span class="o">.</span><span class="n">transformers</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="n">f</span><span class="s1">&#39; -&gt; </span><span class="si">{trfmr.name}</span><span class="s1">&#39;</span><span class="p">)</span>
+            <span class="n">elems</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">trfmr</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">elems</span><span class="p">))</span>
+            <span class="k">for</span> <span class="n">index</span><span class="p">,</span> <span class="n">elem</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">elems</span><span class="p">):</span>
+                <span class="nb">print</span><span class="p">(</span><span class="n">f</span><span class="s1">&#39;    [</span><span class="si">{index}</span><span class="s1">] </span><span class="si">{elem!r}</span><span class="s1">&#39;</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="Stream.range"><a class="viewcode-back" href="../../stream.html#carriage.Stream.range">[docs]</a>    <span class="nd">@classmethod</span>
     <span class="k">def</span> <span class="nf">range</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
@@ -281,6 +328,32 @@
 <span class="sd">        &#39;&#39;&#39;</span>
         <span class="k">return</span> <span class="n">Array</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span></div>
 
+<div class="viewcode-block" id="Stream.as_rows"><a class="viewcode-back" href="../../stream.html#carriage.Stream.as_rows">[docs]</a>    <span class="nd">@as_stream</span>
+    <span class="k">def</span> <span class="nf">as_rows</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">field_names</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Create a new Stream with elements as Row objects</span>
+
+<span class="sd">        &gt;&gt;&gt; Stream([(1, 2), (3, 4)]).as_rows([&#39;x&#39;, &#39;y&#39;]).to_list()</span>
+<span class="sd">        [Row(x=1, y=2), Row(x=3, y=4)]</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">def</span> <span class="nf">to_rows</span><span class="p">(</span><span class="n">iterable</span><span class="p">):</span>
+            <span class="k">return</span> <span class="p">[</span><span class="n">Row</span><span class="p">(</span><span class="o">**</span><span class="p">{</span><span class="n">name</span><span class="p">:</span> <span class="n">value</span> <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">field_names</span><span class="p">,</span> <span class="n">entity</span><span class="p">)})</span>
+                    <span class="k">for</span> <span class="n">entity</span> <span class="ow">in</span> <span class="n">iterable</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">to_rows</span></div>
+
+<div class="viewcode-block" id="Stream.as_rows_opt"><a class="viewcode-back" href="../../stream.html#carriage.Stream.as_rows_opt">[docs]</a>    <span class="nd">@as_stream</span>
+    <span class="k">def</span> <span class="nf">as_rows_opt</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">field_names</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Create a new Stream with elements as Optional Row objects</span>
+
+<span class="sd">        &gt;&gt;&gt; Stream([(1, 2), (3,)]).as_rows_opt([&#39;x&#39;, &#39;y&#39;]).to_list()</span>
+<span class="sd">        [Some(Row(x=1, y=2)), Nothing]</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">def</span> <span class="nf">to_rows_opt</span><span class="p">(</span><span class="n">iterable</span><span class="p">):</span>
+            <span class="k">return</span> <span class="p">[</span><span class="n">Some</span><span class="p">(</span><span class="n">Row</span><span class="p">(</span><span class="o">**</span><span class="p">{</span><span class="n">name</span><span class="p">:</span> <span class="n">value</span> <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">field_names</span><span class="p">,</span> <span class="n">entity</span><span class="p">)}))</span>
+                    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">entity</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">field_names</span><span class="p">)</span>
+                    <span class="k">else</span> <span class="n">Nothing</span>
+                    <span class="k">for</span> <span class="n">entity</span> <span class="ow">in</span> <span class="n">iterable</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">to_rows_opt</span></div>
+
 <div class="viewcode-block" id="Stream.map"><a class="viewcode-back" href="../../stream.html#carriage.Stream.map">[docs]</a>    <span class="nd">@as_stream</span>
     <span class="k">def</span> <span class="nf">map</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">func</span><span class="p">):</span>
         <span class="sd">&#39;&#39;&#39;Create a new Stream by applying function to each element</span>
@@ -422,23 +495,18 @@
         <span class="c1"># TODO</span>
         <span class="k">pass</span>
 
-    <span class="c1"># def __len__(self):</span>
-
     <span class="k">def</span> <span class="nf">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_transformer</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">return</span> <span class="nb">iter</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_iterable</span><span class="p">)</span>
-
-        <span class="k">return</span> <span class="nb">iter</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_transformer</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_iterable</span><span class="p">))</span>
+        <span class="k">return</span> <span class="nb">iter</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_pipeline</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_iterable</span><span class="p">))</span>
 
     <span class="nd">@reprlib</span><span class="o">.</span><span class="n">recursive_repr</span><span class="p">()</span>
     <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="c1"># TODO: let user control use or not to use short_repr</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_transformer</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pipeline</span><span class="o">.</span><span class="n">is_empty</span><span class="p">():</span>
             <span class="k">return</span> <span class="p">(</span><span class="n">f</span><span class="s1">&#39;{type(self).__name__}&#39;</span>
                     <span class="n">f</span><span class="s1">&#39;({short_repr.repr(self._iterable)})&#39;</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">return</span> <span class="p">(</span><span class="n">f</span><span class="s1">&#39;{type(self).__name__}&#39;</span>
-                    <span class="n">f</span><span class="s1">&#39;({short_repr.repr(self._iterable)}, </span><span class="si">{self._transformer!r}</span><span class="s1">)&#39;</span><span class="p">)</span>
+                    <span class="n">f</span><span class="s1">&#39;({short_repr.repr(self._iterable)}, </span><span class="si">{self._pipeline!r}</span><span class="s1">)&#39;</span><span class="p">)</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">_value_for_cmp</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -485,35 +553,28 @@
 <span class="sd">        IndexError: Stream index out of range. Be aware of that indexing an iterator would consume items from it.</span>
 
 <span class="sd">        &gt;&gt;&gt; s = Stream(range(5, 12))</span>
-<span class="sd">        &gt;&gt;&gt; s[:3]</span>
-<span class="sd">        Stream(range(5, 8))</span>
+<span class="sd">        &gt;&gt;&gt; type(s[:3])</span>
+<span class="sd">        &lt;class &#39;carriage.stream.Stream&#39;&gt;</span>
+<span class="sd">        &gt;&gt;&gt; s[:3].to_list()</span>
+<span class="sd">        [5, 6, 7]</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        index : int, slice</span>
 <span class="sd">            index of target item or a slice object</span>
 <span class="sd">        &#39;&#39;&#39;</span>  <span class="c1"># noqa</span>
-
         <span class="c1"># TODO: support negative index</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_transformer</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">try</span><span class="p">:</span>
-                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">index</span><span class="p">,</span> <span class="nb">slice</span><span class="p">):</span>
-                    <span class="k">return</span> <span class="n">Stream</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_iterable</span><span class="p">[</span><span class="n">index</span><span class="p">])</span>
-                <span class="k">else</span><span class="p">:</span>
-                    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_iterable</span><span class="p">[</span><span class="n">index</span><span class="p">]</span>
-            <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
-                <span class="k">pass</span>
 
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">index</span><span class="p">,</span> <span class="nb">slice</span><span class="p">):</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">slice</span><span class="p">(</span><span class="n">index</span><span class="o">.</span><span class="n">start</span><span class="p">,</span> <span class="n">index</span><span class="o">.</span><span class="n">stop</span><span class="p">,</span> <span class="n">index</span><span class="o">.</span><span class="n">step</span><span class="p">)</span>
-
-        <span class="k">try</span><span class="p">:</span>
-            <span class="k">return</span> <span class="nb">next</span><span class="p">(</span><span class="n">itt</span><span class="o">.</span><span class="n">islice</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">,</span> <span class="kc">None</span><span class="p">))</span>
-        <span class="k">except</span> <span class="ne">StopIteration</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">IndexError</span><span class="p">(</span>
-                <span class="s1">&#39;Stream index out of range. &#39;</span>
-                <span class="s1">&#39;Be aware of that indexing an iterator would &#39;</span>
-                <span class="s1">&#39;consume items from it.&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="k">return</span> <span class="nb">next</span><span class="p">(</span><span class="n">itt</span><span class="o">.</span><span class="n">islice</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">,</span> <span class="kc">None</span><span class="p">))</span>
+            <span class="k">except</span> <span class="ne">StopIteration</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">IndexError</span><span class="p">(</span>
+                    <span class="s1">&#39;Stream index out of range. &#39;</span>
+                    <span class="s1">&#39;Be aware of that indexing an iterator would &#39;</span>
+                    <span class="s1">&#39;consume items from it.&#39;</span><span class="p">)</span>
 
 <div class="viewcode-block" id="Stream.get"><a class="viewcode-back" href="../../stream.html#carriage.Stream.get">[docs]</a>    <span class="k">def</span> <span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&#39;&#39;&#39;Get item of the index. Return default value if not exists.</span>
@@ -871,23 +932,6 @@
 <span class="sd">        &#39;&#39;&#39;</span>
         <span class="k">return</span> <span class="n">fnt</span><span class="o">.</span><span class="n">partial</span><span class="p">(</span><span class="n">itt</span><span class="o">.</span><span class="n">filterfalse</span><span class="p">,</span> <span class="n">pred</span><span class="p">)</span></div>
 
-    <span class="n">filterfalse</span> <span class="o">=</span> <span class="n">filter_false</span>
-
-<div class="viewcode-block" id="Stream.where"><a class="viewcode-back" href="../../stream.html#carriage.Stream.where">[docs]</a>    <span class="k">def</span> <span class="nf">where</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">conds</span><span class="p">):</span>
-        <span class="sd">&#39;&#39;&#39;Create a new Stream contains only mapping pass all conditions.</span>
-
-<span class="sd">        &gt;&gt;&gt; s = Stream([dict(x=3, y=4), dict(x=3, y=5), dict(x=4, y=5)])</span>
-<span class="sd">        &gt;&gt;&gt; s.where(x=3).to_list()</span>
-<span class="sd">        [{&#39;x&#39;: 3, &#39;y&#39;: 4}, {&#39;x&#39;: 3, &#39;y&#39;: 5}]</span>
-<span class="sd">        &gt;&gt;&gt; s.where(y=5).to_list()</span>
-<span class="sd">        [{&#39;x&#39;: 3, &#39;y&#39;: 5}, {&#39;x&#39;: 4, &#39;y&#39;: 5}]</span>
-
-
-<span class="sd">        &#39;&#39;&#39;</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="k">lambda</span> <span class="n">d</span><span class="p">:</span>
-                           <span class="nb">all</span><span class="p">(</span><span class="n">key</span> <span class="ow">in</span> <span class="n">d</span> <span class="ow">and</span> <span class="n">d</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">==</span> <span class="n">value</span>
-                               <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">conds</span><span class="o">.</span><span class="n">items</span><span class="p">()))</span></div>
-
 <div class="viewcode-block" id="Stream.interpose"><a class="viewcode-back" href="../../stream.html#carriage.Stream.interpose">[docs]</a>    <span class="nd">@as_stream</span>
     <span class="k">def</span> <span class="nf">interpose</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sep</span><span class="p">):</span>
         <span class="sd">&#39;&#39;&#39;Create a new Stream by interposing separater between elemens.</span>
@@ -1039,8 +1083,8 @@
     <span class="c1"># def key_by(self, func):</span>
     <span class="c1">#     return self.map(lambda elem: Row(key=func(elem), value=elem))</span>
 
-<div class="viewcode-block" id="Stream.group_by"><a class="viewcode-back" href="../../stream.html#carriage.Stream.group_by">[docs]</a>    <span class="nd">@as_stream</span>
-    <span class="k">def</span> <span class="nf">group_by</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<div class="viewcode-block" id="Stream.group_by_as_stream"><a class="viewcode-back" href="../../stream.html#carriage.Stream.group_by_as_stream">[docs]</a>    <span class="nd">@as_stream</span>
+    <span class="k">def</span> <span class="nf">group_by_as_stream</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&#39;&#39;&#39;Create a new Stream using the builtin itertools.groupby,</span>
 <span class="sd">        which sequentially groups elements as long as the key function</span>
 <span class="sd">        evaluates to the same value.</span>
@@ -1071,7 +1115,7 @@
         <span class="sd">&#39;&#39;&#39;Group values in to a Map by the value of key function evaluation</span>
 <span class="sd">        result.</span>
 
-<span class="sd">        Comparing to ``group_by``, there&#39;re some pros and cons.</span>
+<span class="sd">        Comparing to ``group_by_as_stream``, there&#39;re some pros and cons.</span>
 
 <span class="sd">        Pros:</span>
 
@@ -1310,9 +1354,155 @@
         <span class="n">elems_str</span> <span class="o">=</span> <span class="n">elem_sep</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">elem_format</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="n">idx</span><span class="p">,</span> <span class="n">elem</span><span class="o">=</span><span class="n">elem</span><span class="p">)</span>
                                   <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">elem</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="p">))</span>
         <span class="k">return</span> <span class="n">start</span> <span class="o">+</span> <span class="n">elems_str</span> <span class="o">+</span> <span class="n">end</span></div></div>
+
+
+<span class="k">def</span> <span class="nf">as_streamtable</span><span class="p">(</span><span class="n">f</span><span class="p">):</span>
+    <span class="nd">@fnt</span><span class="o">.</span><span class="n">wraps</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">wraped</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="n">args_str</span> <span class="o">=</span> <span class="n">repr_args</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="n">trfmr</span> <span class="o">=</span> <span class="n">Transformer</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">f</span><span class="s1">&#39;</span><span class="si">{f.__name__}</span><span class="s1">(</span><span class="si">{args_str}</span><span class="s1">)&#39;</span><span class="p">,</span>
+                            <span class="n">func</span><span class="o">=</span><span class="n">f</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">))</span>
+
+        <span class="k">return</span> <span class="n">StreamTable</span><span class="p">(</span>
+            <span class="n">iterable</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_iterable</span><span class="p">,</span>
+            <span class="n">pipeline</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_pipeline</span><span class="o">.</span><span class="n">then</span><span class="p">(</span><span class="n">trfmr</span><span class="p">))</span>
+
+    <span class="n">wraped</span><span class="o">.</span><span class="n">call</span> <span class="o">=</span> <span class="n">f</span>
+
+    <span class="k">return</span> <span class="n">wraped</span>
+
+
+<span class="k">def</span> <span class="nf">stream_to_streamtable</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">elem_to_row</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="nd">@fnt</span><span class="o">.</span><span class="n">wraps</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">wraped</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="n">strm</span> <span class="o">=</span> <span class="n">f</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">StreamTable</span><span class="p">(</span><span class="n">iterable</span><span class="o">=</span><span class="n">strm</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="n">elem_to_row</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">wraped</span>
+
+
+<span class="k">class</span> <span class="nc">StreamTable</span><span class="p">(</span><span class="n">Stream</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;StreamTable is similar to Stream but designed to work on Rows only.</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">iterable</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">pipeline</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Create a StreamTable from an iterable object of Rows</span>
+
+<span class="sd">        &gt;&gt;&gt; strm = StreamTable([Row(x=1, y=3), Row(x=2, y=4)])</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+
+        <span class="n">Stream</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">iterable</span><span class="p">,</span> <span class="n">pipeline</span><span class="o">=</span><span class="n">pipeline</span><span class="p">)</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">range</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+        <span class="n">strm</span> <span class="o">=</span> <span class="n">Stream</span><span class="o">.</span><span class="n">range</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">,</span> <span class="n">step</span><span class="p">)</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">elem</span><span class="p">:</span> <span class="n">Row</span><span class="p">(</span><span class="nb">range</span><span class="o">=</span><span class="n">elem</span><span class="p">))</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">strm</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">show</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">tablefmt</span><span class="o">=</span><span class="s1">&#39;orgtbl&#39;</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;print rows</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        n : int</span>
+<span class="sd">            number of rows to show</span>
+<span class="sd">        tablefmt : str</span>
+<span class="sd">            output table format.</span>
+<span class="sd">            all possible format strings are in `tabulate.tabulate_formats`</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="nb">print</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tabulate</span><span class="p">(</span><span class="n">n</span><span class="o">=</span><span class="n">n</span><span class="p">,</span> <span class="n">tablefmt</span><span class="o">=</span><span class="n">tablefmt</span><span class="p">))</span>
+
+    <span class="k">def</span> <span class="nf">tabulate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">tablefmt</span><span class="o">=</span><span class="s1">&#39;orgtbl&#39;</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;return tabulate formatted string</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        n : int</span>
+<span class="sd">            number of rows to show</span>
+<span class="sd">        tablefmt : str</span>
+<span class="sd">            output table format.</span>
+<span class="sd">            all possible format strings are in `tabulate.tabulate_formats`</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">header_fields</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_scan_fields</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">tabulate</span><span class="p">(</span>
+            <span class="n">itt</span><span class="o">.</span><span class="n">islice</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">n</span><span class="p">),</span>
+            <span class="n">headers</span><span class="o">=</span><span class="n">header_fields</span><span class="p">,</span>
+            <span class="n">tablefmt</span><span class="o">=</span><span class="n">tablefmt</span><span class="p">)</span>
+
+    <span class="nd">@as_stream</span>
+    <span class="k">def</span> <span class="nf">select</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">fields</span><span class="p">,</span> <span class="o">**</span><span class="n">field_funcs</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Assume elements in Stream is in Row type and</span>
+<span class="sd">        create a new Stream by keeping only specified fields in each Row</span>
+
+<span class="sd">        &gt;&gt;&gt; from carriage import Row</span>
+<span class="sd">        &gt;&gt;&gt; st = StreamTable([Row(x=3, y=4), Row(x=-1, y=2)])</span>
+<span class="sd">        &gt;&gt;&gt; st.select(&#39;x&#39;, z=lambda row: row.x + row.y).to_list()</span>
+<span class="sd">        [Row(x=3, z=7), Row(x=-1, z=1)]</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        *fields : List[str]</span>
+<span class="sd">            fields to keep</span>
+<span class="sd">        **field_funcs : Map[str, Function]</span>
+<span class="sd">            functions for creating fields</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        StreamTable</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">return</span> <span class="n">fnt</span><span class="o">.</span><span class="n">partial</span><span class="p">(</span>
+            <span class="nb">map</span><span class="p">,</span>
+            <span class="k">lambda</span> <span class="n">row</span><span class="p">:</span>
+            <span class="n">row</span><span class="o">.</span><span class="n">evolve</span><span class="p">(</span><span class="o">**</span><span class="p">{</span><span class="n">field</span><span class="p">:</span> <span class="n">func</span><span class="p">(</span><span class="n">row</span><span class="p">)</span>
+                          <span class="k">for</span> <span class="n">field</span><span class="p">,</span> <span class="n">func</span> <span class="ow">in</span> <span class="n">field_funcs</span><span class="o">.</span><span class="n">items</span><span class="p">()})</span>
+            <span class="o">.</span><span class="n">project</span><span class="p">(</span><span class="o">*</span><span class="n">fields</span><span class="p">,</span> <span class="o">*</span><span class="n">field_funcs</span><span class="o">.</span><span class="n">keys</span><span class="p">()))</span>
+
+    <span class="nd">@as_stream</span>
+    <span class="k">def</span> <span class="nf">where</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">conds</span><span class="p">,</span> <span class="o">**</span><span class="n">kwconds</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Create a new Stream contains only Rows pass all conditions.</span>
+
+<span class="sd">        &gt;&gt;&gt; from carriage import Row, X</span>
+<span class="sd">        &gt;&gt;&gt; st = StreamTable([Row(x=3, y=4), Row(x=3, y=5), Row(x=4, y=5)])</span>
+<span class="sd">        &gt;&gt;&gt; st.where(x=3).to_list()</span>
+<span class="sd">        [Row(x=3, y=4), Row(x=3, y=5)]</span>
+<span class="sd">        &gt;&gt;&gt; st.where(X.y &gt; 4).to_list()</span>
+<span class="sd">        [Row(x=3, y=5), Row(x=4, y=5)]</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        StreamTable</span>
+
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">return</span> <span class="n">fnt</span><span class="o">.</span><span class="n">partial</span><span class="p">(</span>
+            <span class="nb">filter</span><span class="p">,</span>
+            <span class="k">lambda</span> <span class="n">row</span><span class="p">:</span>
+            <span class="nb">all</span><span class="p">(</span><span class="n">cond</span><span class="p">(</span><span class="n">row</span><span class="p">)</span> <span class="k">for</span> <span class="n">cond</span> <span class="ow">in</span> <span class="n">conds</span><span class="p">)</span> <span class="ow">and</span>
+            <span class="nb">all</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="n">row</span><span class="p">,</span> <span class="n">field</span><span class="p">)</span> <span class="o">==</span> <span class="n">value</span>
+                <span class="k">for</span> <span class="n">field</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">kwconds</span><span class="o">.</span><span class="n">items</span><span class="p">()))</span>
+
+    <span class="k">def</span> <span class="nf">_scan_fields</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n</span><span class="p">):</span>
+        <span class="n">rows</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">itt</span><span class="o">.</span><span class="n">islice</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">n</span><span class="p">))</span>
+
+        <span class="n">all_fields</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">all_fields_set</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">rows</span><span class="p">:</span>
+            <span class="n">missing_fields</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">row</span><span class="o">.</span><span class="n">fields</span><span class="p">())</span> <span class="o">-</span> <span class="n">all_fields_set</span>
+            <span class="k">for</span> <span class="n">field</span> <span class="ow">in</span> <span class="n">row</span><span class="o">.</span><span class="n">fields</span><span class="p">():</span>
+                <span class="k">if</span> <span class="n">field</span> <span class="ow">in</span> <span class="n">missing_fields</span><span class="p">:</span>
+                    <span class="n">all_fields</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">field</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">all_fields</span>
+
+    <span class="k">def</span> <span class="nf">_repr_html_</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">tabulate</span><span class="p">(</span><span class="n">tablefmt</span><span class="o">=</span><span class="s1">&#39;html&#39;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_repr_str_</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">tabulate</span><span class="p">(</span><span class="n">tablefmt</span><span class="o">=</span><span class="s1">&#39;orgtbl&#39;</span><span class="p">)</span>
+
+
+<span class="n">StreamTable</span><span class="o">.</span><span class="n">tabulate</span><span class="o">.</span><span class="n">tablefmts</span> <span class="o">=</span> <span class="n">tabulate_formats</span>
 </pre></div>
 
           </div>
+          
         </div>
       </div>
       <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
@@ -1345,8 +1535,8 @@
       &copy;2018, Yen, Tzu-Hsi.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.2</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.5</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.11</a>
       
     </div>
 

@@ -48,8 +48,9 @@ API References
    :maxdepth: 2
 
    row
-   map
    stream
+   lambda
+   map
    array
    optional
    

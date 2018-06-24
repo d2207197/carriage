@@ -9,7 +9,7 @@
     <title>carriage.row &#8212; carriage 0.1.6 documentation</title>
     <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
-    <script type="text/javascript" src="../../_static/documentation_options.js"></script>
+    <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
     <script type="text/javascript" src="../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../_static/doctools.js"></script>
@@ -27,6 +27,8 @@
     <div class="document">
       <div class="documentwrapper">
         <div class="bodywrapper">
+          
+
           <div class="body" role="main">
             
   <h1>Source code for carriage.row</h1><div class="highlight"><pre>
@@ -95,7 +97,11 @@
 
 <div class="viewcode-block" id="Row.from_dict"><a class="viewcode-back" href="../../row.html#carriage.Row.from_dict">[docs]</a>    <span class="nd">@classmethod</span>
     <span class="k">def</span> <span class="nf">from_dict</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">adict</span><span class="p">):</span>
-        <span class="sd">&#39;&#39;&#39;Create Row from a iterable&#39;&#39;&#39;</span>
+        <span class="sd">&#39;&#39;&#39;Create Row from a iterable</span>
+
+<span class="sd">        &gt;&gt;&gt; Row.from_dict({&#39;name&#39;: &#39;Joe&#39;, &#39;age&#39;: 30})</span>
+<span class="sd">        Row(name=&#39;Joe&#39;, age=30)</span>
+<span class="sd">        &#39;&#39;&#39;</span>
         <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="o">**</span><span class="n">adict</span><span class="p">)</span></div>
 
     <span class="k">def</span> <span class="nf">__new__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
@@ -264,6 +270,7 @@
 </pre></div>
 
           </div>
+          
         </div>
       </div>
       <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
@@ -296,8 +303,8 @@
       &copy;2018, Yen, Tzu-Hsi.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.2</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.5</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.11</a>
       
     </div>
 

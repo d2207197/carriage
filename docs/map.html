@@ -9,14 +9,14 @@
     <title>Map: Ordered dictionary with magic powers &#8212; carriage 0.1.6 documentation</title>
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-    <script type="text/javascript" src="_static/documentation_options.js"></script>
+    <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="Stream: Lazy-evaluating sequential collection type" href="stream.html" />
-    <link rel="prev" title="Row: Better named tuple for everyday use" href="row.html" />
+    <link rel="next" title="Array: All you want for a List type is here" href="array.html" />
+    <link rel="prev" title="X, Xcall: Elegant Lambda Function Builder" href="lambda.html" />
    
   <link rel="stylesheet" href="_static/custom.css" type="text/css" />
   
@@ -29,6 +29,8 @@
     <div class="document">
       <div class="documentwrapper">
         <div class="bodywrapper">
+          
+
           <div class="body" role="main">
             
   <div class="section" id="map-ordered-dictionary-with-magic-powers">
@@ -776,6 +778,27 @@ otherwise return Nothing.</p>
 </dd></dl>
 
 <dl class="method">
+<dt id="carriage.Map.to_list">
+<code class="descname">to_list</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/carriage/map.html#Map.to_list"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#carriage.Map.to_list" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convert to an list instance of <code class="docutils literal notranslate"><span class="pre">Row(key,</span> <span class="pre">value)</span></code> iterable.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">m</span> <span class="o">=</span> <span class="n">Map</span><span class="p">(</span><span class="n">a</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">b</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">m</span><span class="o">.</span><span class="n">to_list</span><span class="p">()</span>
+<span class="go">[Row(key=&#39;a&#39;, value=4), Row(key=&#39;b&#39;, value=5)]</span>
+</pre></div>
+</div>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"></td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference internal" href="array.html#carriage.Array" title="carriage.Array">Array</a>[<a class="reference internal" href="row.html#carriage.Row" title="carriage.Row">Row</a>[key, value]]</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
 <dt id="carriage.Map.to_dict">
 <code class="descname">to_dict</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/carriage/map.html#Map.to_dict"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#carriage.Map.to_dict" title="Permalink to this definition">¶</a></dt>
 <dd><p>Convert to dict</p>
@@ -877,6 +900,7 @@ otherwise return Nothing.</p>
 
 
           </div>
+          
         </div>
       </div>
       <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
@@ -884,8 +908,8 @@ otherwise return Nothing.</p>
 <h3>Related Topics</h3>
 <ul>
   <li><a href="index.html">Documentation overview</a><ul>
-      <li>Previous: <a href="row.html" title="previous chapter"><code class="docutils literal notranslate"><span class="pre">Row</span></code>: Better named tuple for everyday use</a></li>
-      <li>Next: <a href="stream.html" title="next chapter"><code class="docutils literal notranslate"><span class="pre">Stream</span></code>: Lazy-evaluating sequential collection type</a></li>
+      <li>Previous: <a href="lambda.html" title="previous chapter"><code class="docutils literal notranslate"><span class="pre">X,</span> <span class="pre">Xcall</span></code>: Elegant Lambda Function Builder</a></li>
+      <li>Next: <a href="array.html" title="next chapter"><code class="docutils literal notranslate"><span class="pre">Array</span></code>: All you want for a List type is here</a></li>
   </ul></li>
 </ul>
 </div>
@@ -916,8 +940,8 @@ otherwise return Nothing.</p>
       &copy;2018, Yen, Tzu-Hsi.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.2</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.5</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.11</a>
       
       |
       <a href="_sources/map.rst.txt"
