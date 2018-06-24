@@ -28,8 +28,6 @@ setup(name='carriage',
           'Topic :: Software Development :: Libraries :: Python Modules',
           'Operating System :: OS Independent',
 
-
-
           # Pick your license as you wish (should match "license" above)
           'License :: OSI Approved :: MIT License',
 
