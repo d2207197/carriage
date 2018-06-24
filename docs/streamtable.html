@@ -1,0 +1,379 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>StreamTable: Lazy-evaluating sequential rows &#8212; carriage 0.1.6 documentation</title>
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="X, Xcall: Elegant Lambda Function Builder" href="lambda.html" />
+    <link rel="prev" title="Stream: Lazy-evaluating sequential collection type" href="stream.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <div class="section" id="streamtable-lazy-evaluating-sequential-rows">
+<h1><code class="docutils literal notranslate"><span class="pre">StreamTable</span></code>: Lazy-evaluating sequential rows<a class="headerlink" href="#streamtable-lazy-evaluating-sequential-rows" title="Permalink to this headline">¶</a></h1>
+<dl class="class">
+<dt id="carriage.StreamTable">
+<em class="property">class </em><code class="descclassname">carriage.</code><code class="descname">StreamTable</code><span class="sig-paren">(</span><em>iterable</em>, <em>*</em>, <em>pipeline=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/carriage/streamtable.html#StreamTable"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#carriage.StreamTable" title="Permalink to this definition">¶</a></dt>
+<dd><p>StreamTable is similar to Stream but designed to work on Rows only.</p>
+<dl class="classmethod">
+<dt id="carriage.StreamTable.range">
+<em class="property">classmethod </em><code class="descname">range</code><span class="sig-paren">(</span><em>start</em>, <em>end=None</em>, <em>step=1</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/carriage/streamtable.html#StreamTable.range"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#carriage.StreamTable.range" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a StreamTable from range</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">StreamTable</span><span class="o">.</span><span class="n">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+<span class="go">|   range |</span>
+<span class="go">|---------|</span>
+<span class="go">|       1 |</span>
+<span class="go">|       4 |</span>
+<span class="go">|       7 |</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="classmethod">
+<dt id="carriage.StreamTable.count">
+<em class="property">classmethod </em><code class="descname">count</code><span class="sig-paren">(</span><em>start</em>, <em>step=1</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/carriage/streamtable.html#StreamTable.count"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#carriage.StreamTable.count" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a inifinite consecutive StreamTable</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">StreamTable</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span><span class="o">.</span><span class="n">take</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+<span class="go">|   count |</span>
+<span class="go">|---------|</span>
+<span class="go">|       3 |</span>
+<span class="go">|       8 |</span>
+<span class="go">|      13 |</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="classmethod">
+<dt id="carriage.StreamTable.repeat">
+<em class="property">classmethod </em><code class="descname">repeat</code><span class="sig-paren">(</span><em>elems</em>, <em>times=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/carriage/streamtable.html#StreamTable.repeat"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#carriage.StreamTable.repeat" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a StreamTable repeating elems</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">StreamTable</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+<span class="go">|   repeat |</span>
+<span class="go">|----------|</span>
+<span class="go">|        1 |</span>
+<span class="go">|        1 |</span>
+<span class="go">|        1 |</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="classmethod">
+<dt id="carriage.StreamTable.cycle">
+<em class="property">classmethod </em><code class="descname">cycle</code><span class="sig-paren">(</span><em>iterable</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/carriage/streamtable.html#StreamTable.cycle"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#carriage.StreamTable.cycle" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a StreamTable cycling a iterable</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">StreamTable</span><span class="o">.</span><span class="n">cycle</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">])</span><span class="o">.</span><span class="n">take</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+<span class="go">|   cycle |</span>
+<span class="go">|---------|</span>
+<span class="go">|       1 |</span>
+<span class="go">|       2 |</span>
+<span class="go">|       1 |</span>
+<span class="go">|       2 |</span>
+<span class="go">|       1 |</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="classmethod">
+<dt id="carriage.StreamTable.repeatedly">
+<em class="property">classmethod </em><code class="descname">repeatedly</code><span class="sig-paren">(</span><em>func</em>, <em>times=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/carriage/streamtable.html#StreamTable.repeatedly"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#carriage.StreamTable.repeatedly" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a StreamTable repeatedly calling a zero parameter function</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="k">def</span> <span class="nf">counter</span><span class="p">():</span>
+<span class="gp">... </span>    <span class="n">counter</span><span class="o">.</span><span class="n">num</span> <span class="o">+=</span> <span class="mi">1</span>
+<span class="gp">... </span>    <span class="k">return</span> <span class="n">counter</span><span class="o">.</span><span class="n">num</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">counter</span><span class="o">.</span><span class="n">num</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">StreamTable</span><span class="o">.</span><span class="n">repeatedly</span><span class="p">(</span><span class="n">counter</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+<span class="go">|   repeatedly |</span>
+<span class="go">|--------------|</span>
+<span class="go">|            0 |</span>
+<span class="go">|            1 |</span>
+<span class="go">|            2 |</span>
+<span class="go">|            3 |</span>
+<span class="go">|            4 |</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="classmethod">
+<dt id="carriage.StreamTable.iterate">
+<em class="property">classmethod </em><code class="descname">iterate</code><span class="sig-paren">(</span><em>func</em>, <em>x</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/carriage/streamtable.html#StreamTable.iterate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#carriage.StreamTable.iterate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a StreamTable recursively applying a function to
+last return value.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="k">def</span> <span class="nf">multiply2</span><span class="p">(</span><span class="n">x</span><span class="p">):</span> <span class="k">return</span> <span class="n">x</span> <span class="o">*</span> <span class="mi">2</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">StreamTable</span><span class="o">.</span><span class="n">iterate</span><span class="p">(</span><span class="n">multiply2</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span><span class="o">.</span><span class="n">take</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+<span class="go">|   iterate |</span>
+<span class="go">|-----------|</span>
+<span class="go">|         3 |</span>
+<span class="go">|         6 |</span>
+<span class="go">|        12 |</span>
+<span class="go">|        24 |</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="classmethod">
+<dt id="carriage.StreamTable.from_dataframe">
+<em class="property">classmethod </em><code class="descname">from_dataframe</code><span class="sig-paren">(</span><em>df</em>, <em>with_index=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/carriage/streamtable.html#StreamTable.from_dataframe"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#carriage.StreamTable.from_dataframe" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create from Pandas DataFrame</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">([(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">)],</span> <span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;a&#39;</span><span class="p">,</span> <span class="s1">&#39;b&#39;</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">StreamTable</span><span class="o">.</span><span class="n">from_dataframe</span><span class="p">(</span><span class="n">df</span><span class="p">)</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+<span class="go">|   a |   b |</span>
+<span class="go">|-----+-----|</span>
+<span class="go">|   0 |   1 |</span>
+<span class="go">|   2 |   3 |</span>
+</pre></div>
+</div>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>df</strong> (<em>pandas.DataFrame</em>) – source DataFrame</li>
+<li><strong>with_index</strong> (<em>bool</em>) – include index value or not</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"></p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><a class="reference internal" href="#carriage.StreamTable" title="carriage.StreamTable">StreamTable</a></p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="classmethod">
+<dt id="carriage.StreamTable.from_tuples">
+<em class="property">classmethod </em><code class="descname">from_tuples</code><span class="sig-paren">(</span><em>tuples</em>, <em>fields=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/carriage/streamtable.html#StreamTable.from_tuples"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#carriage.StreamTable.from_tuples" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create from iterable of tuple</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">StreamTable</span><span class="o">.</span><span class="n">from_tuples</span><span class="p">([(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span> <span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">)],</span> <span class="n">fields</span><span class="o">=</span><span class="p">(</span><span class="s1">&#39;x&#39;</span><span class="p">,</span> <span class="s1">&#39;y&#39;</span><span class="p">))</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+<span class="go">|   x |   y |</span>
+<span class="go">|-----+-----|</span>
+<span class="go">|   1 |   2 |</span>
+<span class="go">|   3 |   4 |</span>
+</pre></div>
+</div>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>tuples</strong> (<em>Iterable</em><em>[</em><em>tuple</em><em>]</em>) – data</li>
+<li><strong>fields</strong> (<em>Tuple</em><em>[</em><em>str</em><em>]</em>) – field names</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="carriage.StreamTable.to_dataframe">
+<code class="descname">to_dataframe</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/carriage/streamtable.html#StreamTable.to_dataframe"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#carriage.StreamTable.to_dataframe" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convert to Pandas DataFrame</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"></td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">pandas.DataFrame</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="carriage.StreamTable.to_stream">
+<code class="descname">to_stream</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/carriage/streamtable.html#StreamTable.to_stream"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#carriage.StreamTable.to_stream" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convert to Stream</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"></td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference internal" href="stream.html#carriage.Stream" title="carriage.Stream">Stream</a></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="carriage.StreamTable.show">
+<code class="descname">show</code><span class="sig-paren">(</span><em>n=10</em>, <em>tablefmt='orgtbl'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/carriage/streamtable.html#StreamTable.show"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#carriage.StreamTable.show" title="Permalink to this definition">¶</a></dt>
+<dd><p>print rows</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>n</strong> (<em>int</em>) – number of rows to show</li>
+<li><strong>tablefmt</strong> (<em>str</em>) – output table format.
+all possible format strings are in <cite>tabulate.tabulate_formats</cite></li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="carriage.StreamTable.tabulate">
+<code class="descname">tabulate</code><span class="sig-paren">(</span><em>n=10</em>, <em>tablefmt='orgtbl'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/carriage/streamtable.html#StreamTable.tabulate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#carriage.StreamTable.tabulate" title="Permalink to this definition">¶</a></dt>
+<dd><p>return tabulate formatted string</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>n</strong> (<em>int</em>) – number of rows to show</li>
+<li><strong>tablefmt</strong> (<em>str</em>) – output table format.
+all possible format strings are in <cite>StreamTable.tabulate.tablefmts`</cite></li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="carriage.StreamTable.select">
+<code class="descname">select</code><span class="sig-paren">(</span><em>*fields</em>, <em>**field_funcs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/carriage/streamtable.html#StreamTable.select"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#carriage.StreamTable.select" title="Permalink to this definition">¶</a></dt>
+<dd><p>Assume elements in Stream is in Row type and
+create a new Stream by keeping only specified fields in each Row</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">carriage</span> <span class="k">import</span> <span class="n">Row</span><span class="p">,</span> <span class="n">X</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">st</span> <span class="o">=</span> <span class="n">StreamTable</span><span class="p">([</span><span class="n">Row</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="mi">4</span><span class="p">),</span> <span class="n">Row</span><span class="p">(</span><span class="n">x</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="mi">2</span><span class="p">)])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">st</span><span class="o">.</span><span class="n">select</span><span class="p">(</span><span class="s1">&#39;x&#39;</span><span class="p">,</span> <span class="n">z</span><span class="o">=</span><span class="n">X</span><span class="o">.</span><span class="n">x</span> <span class="o">+</span> <span class="n">X</span><span class="o">.</span><span class="n">y</span><span class="p">,</span> <span class="n">pi</span><span class="o">=</span><span class="mf">3.14</span><span class="p">)</span><span class="o">.</span><span class="n">to_list</span><span class="p">()</span>
+<span class="go">[Row(x=3, z=7, pi=3.14), Row(x=-1, z=1, pi=3.14)]</span>
+</pre></div>
+</div>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>*fields</strong> (<em>List</em><em>[</em><em>str</em><em>]</em>) – fields to keep</li>
+<li><strong>**field_funcs</strong> (<a class="reference internal" href="map.html#carriage.Map" title="carriage.Map"><em>Map</em></a><em>[</em><em>str</em><em>, </em><em>Function</em><em> or </em><em>scalar</em><em>]</em>) – If value is a function, this function will be evaluated with the current row as the only argument.
+If value is not callable, use the value directly.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"></p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><a class="reference internal" href="#carriage.StreamTable" title="carriage.StreamTable">StreamTable</a></p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="carriage.StreamTable.where">
+<code class="descname">where</code><span class="sig-paren">(</span><em>*conds</em>, <em>**kwconds</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/carriage/streamtable.html#StreamTable.where"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#carriage.StreamTable.where" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a new Stream contains only Rows pass all conditions.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">carriage</span> <span class="k">import</span> <span class="n">Row</span><span class="p">,</span> <span class="n">X</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">st</span> <span class="o">=</span> <span class="n">StreamTable</span><span class="p">([</span><span class="n">Row</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="mi">4</span><span class="p">),</span> <span class="n">Row</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="mi">5</span><span class="p">),</span> <span class="n">Row</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="mi">5</span><span class="p">)])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">st</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span><span class="o">.</span><span class="n">to_list</span><span class="p">()</span>
+<span class="go">[Row(x=3, y=4), Row(x=3, y=5)]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">st</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">X</span><span class="o">.</span><span class="n">y</span> <span class="o">&gt;</span> <span class="mi">4</span><span class="p">)</span><span class="o">.</span><span class="n">to_list</span><span class="p">()</span>
+<span class="go">[Row(x=3, y=5), Row(x=4, y=5)]</span>
+</pre></div>
+</div>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"></td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference internal" href="#carriage.StreamTable" title="carriage.StreamTable">StreamTable</a></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="stream.html" title="previous chapter"><code class="docutils literal notranslate"><span class="pre">Stream</span></code>: Lazy-evaluating sequential collection type</a></li>
+      <li>Next: <a href="lambda.html" title="next chapter"><code class="docutils literal notranslate"><span class="pre">X,</span> <span class="pre">Xcall</span></code>: Elegant Lambda Function Builder</a></li>
+  </ul></li>
+</ul>
+</div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/streamtable.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2018, Yen, Tzu-Hsi.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.5</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.11</a>
+      
+      |
+      <a href="_sources/streamtable.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

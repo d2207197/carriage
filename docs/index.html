@@ -34,33 +34,91 @@
             
   <div class="section" id="carriage-less-code-more-productive">
 <h1><code class="docutils literal notranslate"><span class="pre">carriage</span></code>: Less code, More productive<a class="headerlink" href="#carriage-less-code-more-productive" title="Permalink to this headline">¶</a></h1>
-<p><strong>carriage</strong> aims to make your Python coding life easier. It includes a bunch of powerful collection classes with many practical methods you might use everyday. By using it, you can write your code faster, make your code more readable, and test your data pipeline more less painfully.</p>
-<p><a class="reference internal" href="map.html"><span class="doc">Map</span></a> and <a class="reference internal" href="array.html"><span class="doc">Array</span></a> work just like Python primitive <code class="docutils literal notranslate"><span class="pre">dict</span></code> and <code class="docutils literal notranslate"><span class="pre">list</span></code>
-but enhanced with a lot of practical methods.</p>
-<p><a class="reference internal" href="row.html"><span class="doc">Row</span></a> is a handy and more powerful <a class="reference external" href="https://docs.python.org/3.6/library/collections.html#collections.namedtuple">namedtuple</a>. You can create arbitrary <a class="reference internal" href="row.html"><span class="doc">Row</span></a> anytime without declaring fields in advance.</p>
-<p><a class="reference internal" href="stream.html"><span class="doc">Stream</span></a> is a very powerful wrapper type for any iterable object. You can write less code to transform, inspect, and manipulate any iterable. And with the property of lazy-evaluating, building and testing the pipeline for handling big, long sequential data are now faster, easier and painlessly.</p>
-<p><a class="reference internal" href="optional.html"><span class="doc">Optional</span></a> is a object wrapper for handling errors. It makes <code class="docutils literal notranslate"><span class="pre">None</span></code> value, exceptions or other unexpected condition won’t break your data processing pipeline.</p>
-</div>
-<div class="section" id="getting-start">
-<h1>Getting Start<a class="headerlink" href="#getting-start" title="Permalink to this headline">¶</a></h1>
+<p><strong>carriage</strong> aims to make your Python coding life easier. It includes a bunch of powerful collection classes with many practical methods you might use everyday. You can write your code faster, make your code more readable, and test your data pipeline more less painfully.</p>
 <p><code class="docutils literal notranslate"><span class="pre">carriage</span></code> is a Python package <a class="reference external" href="https://pypi.org/project/carriage/">hosted on PyPI</a> and works only on Python 3.6 up.</p>
 <p>Just like other Python package, install it by <a class="reference external" href="https://pip.pypa.io/en/stable/">pip</a> into a <a class="reference external" href="https://hynek.me/articles/virtualenv-lives/">virtualenv</a>, or use <a class="reference external" href="https://docs.pipenv.org/">pipenev</a> to automatically create and manage the virtualenv.</p>
 <div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> pip install carriage
 </pre></div>
 </div>
+</div>
+<div class="section" id="getting-start">
+<h1>Getting Start<a class="headerlink" href="#getting-start" title="Permalink to this headline">¶</a></h1>
 <p>All collection classes can be imported from the top level of this package.</p>
-<div class="highlight-pycon notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">carriage</span> <span class="kn">import</span> <span class="n">Row</span><span class="p">,</span> <span class="n">Map</span><span class="p">,</span> <span class="n">Stream</span><span class="p">,</span> <span class="n">Array</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Some</span><span class="p">,</span> <span class="n">Nothing</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">Row</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span><span class="o">.</span><span class="n">evolve</span><span class="p">(</span><span class="n">y</span><span class="o">=</span><span class="mi">6</span><span class="p">,</span> <span class="n">z</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
-<span class="go">Row(x=3, y=4, z=5)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">Map</span><span class="p">(</span><span class="n">joe</span><span class="o">=</span><span class="mi">32</span><span class="p">,</span> <span class="n">may</span><span class="o">=</span><span class="mi">59</span><span class="p">,</span> <span class="n">joy</span><span class="o">=</span><span class="mi">31</span><span class="p">)</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="s1">&#39;joy&#39;</span><span class="p">)</span>
-<span class="go">Map({&#39;joe&#39;: 32, &#39;may&#39;: 59)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">Array</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">])</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="k">lambda</span> <span class="n">n</span><span class="p">:</span> <span class="n">n</span> <span class="o">%</span> <span class="mi">2</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span>
-<span class="go">Array([2, 4])</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">Stream</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">8</span><span class="p">))</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">n</span><span class="p">:</span> <span class="n">n</span> <span class="o">*</span> <span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">take</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">to_list</span><span class="p">()</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">carriage</span> <span class="kn">import</span> <span class="n">Row</span><span class="p">,</span> <span class="n">Stream</span><span class="p">,</span> <span class="n">StreamTable</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">Xcall</span><span class="p">,</span> <span class="n">Map</span>
+<span class="kn">from</span> <span class="nn">carriage</span> <span class="kn">import</span> <span class="n">Array</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Some</span><span class="p">,</span> <span class="n">Nothing</span>
+</pre></div>
+</div>
+<div class="section" id="row">
+<h2>Row<a class="headerlink" href="#row" title="Permalink to this headline">¶</a></h2>
+<p><a class="reference internal" href="row.html"><span class="doc">Row</span></a> is a handy and more powerful <a class="reference external" href="https://docs.python.org/3.6/library/collections.html#collections.namedtuple">namedtuple</a>. You can create arbitrary <a class="reference internal" href="row.html"><span class="doc">Row</span></a> anytime without declaring fields in advance.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">row</span> <span class="o">=</span> <span class="n">Row</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">row</span><span class="o">.</span><span class="n">x</span>
+<span class="go">3</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">row2</span> <span class="o">=</span> <span class="n">row</span><span class="o">.</span><span class="n">evolve</span><span class="p">(</span><span class="n">y</span><span class="o">=</span><span class="mi">6</span><span class="p">,</span> <span class="n">z</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">row3</span> <span class="o">=</span> <span class="n">row2</span><span class="o">.</span><span class="n">without</span><span class="p">(</span><span class="s1">&#39;y&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">row</span>
+<span class="go">Row(x=3, y=4)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">row2</span>
+<span class="go">Row(x=3, y=6, z=5)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">row3</span>
+<span class="go">Row(x=3, z=5)</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="stream">
+<h2>Stream<a class="headerlink" href="#stream" title="Permalink to this headline">¶</a></h2>
+<p><a class="reference internal" href="stream.html"><span class="doc">Stream</span></a> is a very powerful wrapper type for any iterable object. You can write less code to transform, inspect, and manipulate any iterable. And with the property of lazy-evaluating, building and testing the pipeline for handling big, long sequential data are now faster, easier and painlessly.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">Stream</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">8</span><span class="p">))</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="n">X</span> <span class="o">*</span> <span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">take</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">to_list</span><span class="p">()</span>
 <span class="go">[10, 12]</span>
 </pre></div>
 </div>
+</div>
+<div class="section" id="streamtable">
+<h2>StreamTable<a class="headerlink" href="#streamtable" title="Permalink to this headline">¶</a></h2>
+<p><a class="reference internal" href="streamtable.html"><span class="doc">StreamTable</span></a> is a subclass of Stream but it assumes all elements are in Row type. This requirement allows StreamTable to provide a more refined interface.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">stb</span> <span class="o">=</span> <span class="n">StreamTable</span><span class="o">.</span><span class="n">from_tuples</span><span class="p">(</span>
+<span class="gp">... </span>       <span class="p">[(</span><span class="s1">&#39;joe&#39;</span><span class="p">,</span> <span class="mi">170</span><span class="p">,</span> <span class="mi">59</span><span class="p">),</span> <span class="p">(</span><span class="s1">&#39;joy&#39;</span><span class="p">,</span> <span class="mi">160</span><span class="p">,</span> <span class="mi">54</span><span class="p">),</span> <span class="p">(</span><span class="s1">&#39;may&#39;</span><span class="p">,</span> <span class="mi">163</span><span class="p">,</span> <span class="mi">55</span><span class="p">)],</span>
+<span class="gp">... </span>       <span class="n">fields</span><span class="o">=</span><span class="p">(</span><span class="s1">&#39;name&#39;</span><span class="p">,</span> <span class="s1">&#39;height&#39;</span><span class="p">,</span> <span class="s1">&#39;weight&#39;</span><span class="p">))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">stb</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+<span class="go">| name   |   height |   weight |</span>
+<span class="go">|--------+----------+----------|</span>
+<span class="go">| joe    |      170 |       59 |</span>
+<span class="go">| joy    |      160 |       54 |</span>
+<span class="go">| may    |      163 |       55 |</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">stb_bmi</span> <span class="o">=</span> <span class="n">stb</span><span class="o">.</span><span class="n">select</span><span class="p">(</span><span class="s1">&#39;name&#39;</span><span class="p">,</span> <span class="n">bmi</span><span class="o">=</span><span class="n">X</span><span class="o">.</span><span class="n">weight</span> <span class="o">/</span> <span class="p">(</span><span class="n">X</span><span class="o">.</span><span class="n">height</span><span class="o">/</span><span class="mi">100</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">stb_bmi</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+<span class="go">| name   |     bmi |</span>
+<span class="go">|--------+---------|</span>
+<span class="go">| joe    | 20.4152 |</span>
+<span class="go">| joy    | 21.0937 |</span>
+<span class="go">| may    | 20.7008 |</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">stb_bmi</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">X</span><span class="o">.</span><span class="n">bmi</span> <span class="o">&gt;</span> <span class="mf">20.5</span><span class="p">)</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+<span class="go">| name   |     bmi |</span>
+<span class="go">|--------+---------|</span>
+<span class="go">| joy    | 21.0937 |</span>
+<span class="go">| may    | 20.7008 |</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="x-xcall">
+<h2>X, Xcall<a class="headerlink" href="#x-xcall" title="Permalink to this headline">¶</a></h2>
+<p><a class="reference internal" href="lambda.html"><span class="doc">X</span></a> and <a class="reference internal" href="lambda.html"><span class="doc">Xcall</span></a> are function creators. Make your lambda function more readable and elegant. See examples above in Stream and StreamTable sections.</p>
+</div>
+<div class="section" id="map-array">
+<h2>Map, Array<a class="headerlink" href="#map-array" title="Permalink to this headline">¶</a></h2>
+<p><a class="reference internal" href="map.html"><span class="doc">Map</span></a> and <a class="reference internal" href="array.html"><span class="doc">Array</span></a> work just like Python primitive <code class="docutils literal notranslate"><span class="pre">dict</span></code> and <code class="docutils literal notranslate"><span class="pre">list</span></code> but enhanced with a lot of practical methods.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">Map</span><span class="p">(</span><span class="n">joe</span><span class="o">=</span><span class="mi">32</span><span class="p">,</span> <span class="n">may</span><span class="o">=</span><span class="mi">59</span><span class="p">,</span> <span class="n">joy</span><span class="o">=</span><span class="mi">31</span><span class="p">)</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="s1">&#39;joy&#39;</span><span class="p">)</span>
+<span class="go">Map({&#39;joe&#39;: 32, &#39;may&#39;: 59})</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">Array</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">])</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="k">lambda</span> <span class="n">n</span><span class="p">:</span> <span class="n">n</span> <span class="o">%</span> <span class="mi">2</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span>
+<span class="go">Array([2, 4])</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="optional">
+<h2>Optional<a class="headerlink" href="#optional" title="Permalink to this headline">¶</a></h2>
+<p><a class="reference internal" href="optional.html"><span class="doc">Optional</span></a> is a object wrapper for handling errors. It makes <code class="docutils literal notranslate"><span class="pre">None</span></code> value, exceptions or other unexpected condition won’t break your data processing pipeline.</p>
 <p>Read the following API References for further information of each collection class.</p>
+</div>
 </div>
 <div class="section" id="api-references">
 <h1>API References<a class="headerlink" href="#api-references" title="Permalink to this headline">¶</a></h1>
@@ -68,6 +126,7 @@ but enhanced with a lot of practical methods.</p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="row.html"><code class="docutils literal notranslate"><span class="pre">Row</span></code>: Better named tuple for everyday use</a></li>
 <li class="toctree-l1"><a class="reference internal" href="stream.html"><code class="docutils literal notranslate"><span class="pre">Stream</span></code>: Lazy-evaluating sequential collection type</a></li>
+<li class="toctree-l1"><a class="reference internal" href="streamtable.html"><code class="docutils literal notranslate"><span class="pre">StreamTable</span></code>: Lazy-evaluating sequential rows</a></li>
 <li class="toctree-l1"><a class="reference internal" href="lambda.html"><code class="docutils literal notranslate"><span class="pre">X,</span> <span class="pre">Xcall</span></code>: Elegant Lambda Function Builder</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="lambda.html#getitem"><code class="code docutils literal notranslate"><span class="pre">getitem</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="lambda.html#getattr"><code class="code docutils literal notranslate"><span class="pre">getattr</span></code></a></li>
@@ -76,7 +135,7 @@ but enhanced with a lot of practical methods.</p>
 <li class="toctree-l2"><a class="reference internal" href="lambda.html#method-function-calling">Method/Function calling</a></li>
 <li class="toctree-l2"><a class="reference internal" href="lambda.html#as-function-arguments">As function arguments</a></li>
 <li class="toctree-l2"><a class="reference internal" href="lambda.html#multiple-x">Multiple X</a></li>
-<li class="toctree-l2"><a class="reference internal" href="lambda.html#in-collection">In collection</a></li>
+<li class="toctree-l2"><a class="reference internal" href="lambda.html#in-collection-checking">In collection checking</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="map.html"><code class="docutils literal notranslate"><span class="pre">Map</span></code>: Ordered dictionary with magic powers</a></li>
@@ -112,7 +171,15 @@ but enhanced with a lot of practical methods.</p>
   <h3><a href="#">Table Of Contents</a></h3>
   <ul>
 <li><a class="reference internal" href="#"><code class="docutils literal notranslate"><span class="pre">carriage</span></code>: Less code, More productive</a></li>
-<li><a class="reference internal" href="#getting-start">Getting Start</a></li>
+<li><a class="reference internal" href="#getting-start">Getting Start</a><ul>
+<li><a class="reference internal" href="#row">Row</a></li>
+<li><a class="reference internal" href="#stream">Stream</a></li>
+<li><a class="reference internal" href="#streamtable">StreamTable</a></li>
+<li><a class="reference internal" href="#x-xcall">X, Xcall</a></li>
+<li><a class="reference internal" href="#map-array">Map, Array</a></li>
+<li><a class="reference internal" href="#optional">Optional</a></li>
+</ul>
+</li>
 <li><a class="reference internal" href="#api-references">API References</a></li>
 <li><a class="reference internal" href="#to-do">To Do</a></li>
 <li><a class="reference internal" href="#indices-and-tables">Indices and tables</a></li>

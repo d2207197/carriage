@@ -102,8 +102,8 @@ Multiple X
 
 
 
-In collection
-^^^^^^^^^^^^^
+In collection checking
+^^^^^^^^^^^^^^^^^^^^^^
 
 - :code:`X.in_((1,2))` equals to :code:`lambda elem: elem in (1, 2)`
 - :code:`X.has(1)` equals to :code:`lambda coll: 1 in coll` 

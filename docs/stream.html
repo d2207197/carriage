@@ -15,7 +15,7 @@
     <script type="text/javascript" src="_static/doctools.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="X, Xcall: Elegant Lambda Function Builder" href="lambda.html" />
+    <link rel="next" title="StreamTable: Lazy-evaluating sequential rows" href="streamtable.html" />
     <link rel="prev" title="Row: Better named tuple for everyday use" href="row.html" />
    
   <link rel="stylesheet" href="_static/custom.css" type="text/css" />
@@ -207,6 +207,23 @@ last return value.</p>
 </dd></dl>
 
 <dl class="method">
+<dt id="carriage.Stream.to_streamtable">
+<code class="descname">to_streamtable</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/carriage/stream.html#Stream.to_streamtable"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#carriage.Stream.to_streamtable" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convert to StreamTable</p>
+<p>All elements should be in Row type</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"></td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference internal" href="streamtable.html#carriage.StreamTable" title="carriage.StreamTable">StreamTable</a></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
 <dt id="carriage.Stream.to_set">
 <code class="descname">to_set</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/carriage/stream.html#Stream.to_set"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#carriage.Stream.to_set" title="Permalink to this definition">¶</a></dt>
 <dd><p>Convert to a set</p>
@@ -287,21 +304,25 @@ last return value.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="carriage.Stream.as_rows">
-<code class="descname">as_rows</code><span class="sig-paren">(</span><em>field_names</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/carriage/stream.html#Stream.as_rows"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#carriage.Stream.as_rows" title="Permalink to this definition">¶</a></dt>
+<dt id="carriage.Stream.tuple_as_row">
+<code class="descname">tuple_as_row</code><span class="sig-paren">(</span><em>fields</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/carriage/stream.html#Stream.tuple_as_row"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#carriage.Stream.tuple_as_row" title="Permalink to this definition">¶</a></dt>
 <dd><p>Create a new Stream with elements as Row objects</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">Stream</span><span class="p">([(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span> <span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">)])</span><span class="o">.</span><span class="n">as_rows</span><span class="p">([</span><span class="s1">&#39;x&#39;</span><span class="p">,</span> <span class="s1">&#39;y&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">to_list</span><span class="p">()</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">Stream</span><span class="p">([(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span> <span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">)])</span><span class="o">.</span><span class="n">tuple_as_row</span><span class="p">([</span><span class="s1">&#39;x&#39;</span><span class="p">,</span> <span class="s1">&#39;y&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">to_list</span><span class="p">()</span>
 <span class="go">[Row(x=1, y=2), Row(x=3, y=4)]</span>
 </pre></div>
 </div>
 </dd></dl>
 
 <dl class="method">
-<dt id="carriage.Stream.as_rows_opt">
-<code class="descname">as_rows_opt</code><span class="sig-paren">(</span><em>field_names</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/carriage/stream.html#Stream.as_rows_opt"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#carriage.Stream.as_rows_opt" title="Permalink to this definition">¶</a></dt>
-<dd><p>Create a new Stream with elements as Optional Row objects</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">Stream</span><span class="p">([(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span> <span class="p">(</span><span class="mi">3</span><span class="p">,)])</span><span class="o">.</span><span class="n">as_rows_opt</span><span class="p">([</span><span class="s1">&#39;x&#39;</span><span class="p">,</span> <span class="s1">&#39;y&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">to_list</span><span class="p">()</span>
-<span class="go">[Some(Row(x=1, y=2)), Nothing]</span>
+<dt id="carriage.Stream.dict_as_row">
+<code class="descname">dict_as_row</code><span class="sig-paren">(</span><em>fields=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/carriage/stream.html#Stream.dict_as_row"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#carriage.Stream.dict_as_row" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a new Stream with elements as Row objects</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">stm</span> <span class="o">=</span> <span class="n">Stream</span><span class="p">([{</span><span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="s1">&#39;John&#39;</span><span class="p">,</span> <span class="s1">&#39;age&#39;</span><span class="p">:</span> <span class="mi">35</span><span class="p">},</span>
+<span class="gp">... </span>              <span class="p">{</span><span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="s1">&#39;Frank&#39;</span><span class="p">,</span> <span class="s1">&#39;age&#39;</span><span class="p">:</span> <span class="mi">28</span><span class="p">}])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">stm</span><span class="o">.</span><span class="n">dict_as_row</span><span class="p">()</span><span class="o">.</span><span class="n">to_list</span><span class="p">()</span>
+<span class="go">[Row(name=&#39;John&#39;, age=35), Row(name=&#39;Frank&#39;, age=28)]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">stm</span><span class="o">.</span><span class="n">dict_as_row</span><span class="p">([</span><span class="s1">&#39;age&#39;</span><span class="p">,</span> <span class="s1">&#39;name&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">to_list</span><span class="p">()</span>
+<span class="go">[Row(age=35, name=&#39;John&#39;), Row(age=28, name=&#39;Frank&#39;)]</span>
 </pre></div>
 </div>
 </dd></dl>
@@ -1168,6 +1189,12 @@ with the same order of first occurence in the source Stream.</p>
 </dd></dl>
 
 <dl class="method">
+<dt id="carriage.Stream.cache">
+<code class="descname">cache</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/carriage/stream.html#Stream.cache"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#carriage.Stream.cache" title="Permalink to this definition">¶</a></dt>
+<dd><p>Cache result</p>
+</dd></dl>
+
+<dl class="method">
 <dt id="carriage.Stream.chunk">
 <code class="descname">chunk</code><span class="sig-paren">(</span><em>n</em>, <em>strict=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/carriage/stream.html#Stream.chunk"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#carriage.Stream.chunk" title="Permalink to this definition">¶</a></dt>
 <dd><p>divide elements into chunks of n elements</p>
@@ -1235,7 +1262,7 @@ with the same order of first occurence in the source Stream.</p>
 <ul>
   <li><a href="index.html">Documentation overview</a><ul>
       <li>Previous: <a href="row.html" title="previous chapter"><code class="docutils literal notranslate"><span class="pre">Row</span></code>: Better named tuple for everyday use</a></li>
-      <li>Next: <a href="lambda.html" title="next chapter"><code class="docutils literal notranslate"><span class="pre">X,</span> <span class="pre">Xcall</span></code>: Elegant Lambda Function Builder</a></li>
+      <li>Next: <a href="streamtable.html" title="next chapter"><code class="docutils literal notranslate"><span class="pre">StreamTable</span></code>: Lazy-evaluating sequential rows</a></li>
   </ul></li>
 </ul>
 </div>

@@ -45,11 +45,13 @@ in advance.</p>
 <span class="go">Row(name=&#39;Joe&#39;, age=30, height=170)</span>
 </pre></div>
 </div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">Row</span><span class="o">.</span><span class="n">from_values</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span> <span class="n">fields</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;x&#39;</span><span class="p">,</span> <span class="s1">&#39;y&#39;</span><span class="p">,</span> <span class="s1">&#39;z&#39;</span><span class="p">])</span>
+<span class="go">Row(x=1, y=2, z=3)</span>
+</pre></div>
+</div>
 <p>If you are too lazy to name the fields.</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">Row</span><span class="o">.</span><span class="n">from_values</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;a&#39;</span><span class="p">,</span> <span class="mi">9</span><span class="p">)</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">Row</span><span class="o">.</span><span class="n">from_values</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;a&#39;</span><span class="p">,</span> <span class="mi">9</span><span class="p">])</span>
 <span class="go">Row(v0=1, v1=&#39;a&#39;, v2=9)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">Row</span><span class="o">.</span><span class="n">from_iterable</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">))</span>
-<span class="go">Row(v0=0, v1=1, v2=2)</span>
 </pre></div>
 </div>
 <p>You can access field using index or field name in <code class="docutils literal notranslate"><span class="pre">O(1)</span></code>.</p>
@@ -88,19 +90,19 @@ Because Row is immutable type, all these method create a new Row object.</p>
 </div>
 <dl class="classmethod">
 <dt id="carriage.Row.from_values">
-<em class="property">classmethod </em><code class="descname">from_values</code><span class="sig-paren">(</span><em>*args</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/carriage/row.html#Row.from_values"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#carriage.Row.from_values" title="Permalink to this definition">¶</a></dt>
+<em class="property">classmethod </em><code class="descname">from_values</code><span class="sig-paren">(</span><em>values</em>, <em>fields=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/carriage/row.html#Row.from_values"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#carriage.Row.from_values" title="Permalink to this definition">¶</a></dt>
 <dd><p>Create Row from values</p>
-</dd></dl>
-
-<dl class="classmethod">
-<dt id="carriage.Row.from_iterable">
-<em class="property">classmethod </em><code class="descname">from_iterable</code><span class="sig-paren">(</span><em>iterable</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/carriage/row.html#Row.from_iterable"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#carriage.Row.from_iterable" title="Permalink to this definition">¶</a></dt>
-<dd><p>Create Row from a iterable</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">Row</span><span class="o">.</span><span class="n">from_values</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">])</span>
+<span class="go">Row(v0=1, v1=2, v2=3)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">Row</span><span class="o">.</span><span class="n">from_values</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span> <span class="n">fields</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;x&#39;</span><span class="p">,</span> <span class="s1">&#39;y&#39;</span><span class="p">,</span> <span class="s1">&#39;z&#39;</span><span class="p">])</span>
+<span class="go">Row(x=1, y=2, z=3)</span>
+</pre></div>
+</div>
 </dd></dl>
 
 <dl class="classmethod">
 <dt id="carriage.Row.from_dict">
-<em class="property">classmethod </em><code class="descname">from_dict</code><span class="sig-paren">(</span><em>adict</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/carriage/row.html#Row.from_dict"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#carriage.Row.from_dict" title="Permalink to this definition">¶</a></dt>
+<em class="property">classmethod </em><code class="descname">from_dict</code><span class="sig-paren">(</span><em>adict</em>, <em>fields=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/carriage/row.html#Row.from_dict"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#carriage.Row.from_dict" title="Permalink to this definition">¶</a></dt>
 <dd><p>Create Row from a iterable</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">Row</span><span class="o">.</span><span class="n">from_dict</span><span class="p">({</span><span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="s1">&#39;Joe&#39;</span><span class="p">,</span> <span class="s1">&#39;age&#39;</span><span class="p">:</span> <span class="mi">30</span><span class="p">})</span>
 <span class="go">Row(name=&#39;Joe&#39;, age=30)</span>

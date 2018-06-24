@@ -16,7 +16,7 @@
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="Map: Ordered dictionary with magic powers" href="map.html" />
-    <link rel="prev" title="Stream: Lazy-evaluating sequential collection type" href="stream.html" />
+    <link rel="prev" title="StreamTable: Lazy-evaluating sequential rows" href="streamtable.html" />
    
   <link rel="stylesheet" href="_static/custom.css" type="text/css" />
   
@@ -73,8 +73,7 @@
 <span class="gp">... </span>              <span class="n">Row</span><span class="p">(</span><span class="n">first_name</span><span class="o">=</span><span class="s1">&#39;Richard&#39;</span><span class="p">,</span> <span class="n">last_name</span><span class="o">=</span><span class="s1">&#39;Roe&#39;</span><span class="p">,</span> <span class="n">height</span><span class="o">=</span><span class="mi">190</span><span class="p">),</span>
 <span class="gp">... </span>              <span class="n">Row</span><span class="p">(</span><span class="n">first_name</span><span class="o">=</span><span class="s1">&#39;Jane&#39;</span><span class="p">,</span> <span class="n">last_name</span><span class="o">=</span><span class="s1">&#39;Doe&#39;</span><span class="p">,</span> <span class="n">height</span><span class="o">=</span><span class="mi">170</span><span class="p">)])</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">stm</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">X</span><span class="o">.</span><span class="n">height</span> <span class="o">&gt;=</span> <span class="mi">180</span><span class="p">)</span><span class="o">.</span><span class="n">to_list</span><span class="p">()</span>
-<span class="go">[Row(first_name=&#39;John&#39;, last_name=&#39;Doe&#39;, height=180),</span>
-<span class="go"> Row(first_name=&#39;Richard&#39;, last_name=&#39;Roe&#39;, height=190)]</span>
+<span class="go">[Row(first_name=&#39;John&#39;, last_name=&#39;Doe&#39;, height=180), Row(first_name=&#39;Richard&#39;, last_name=&#39;Roe&#39;, height=190)]</span>
 </pre></div>
 </div>
 </div>
@@ -92,7 +91,7 @@
 <span class="gp">... </span>              <span class="n">Row</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="mi">9</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="mi">3</span><span class="p">),</span>
 <span class="gp">... </span>              <span class="n">Row</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="mi">8</span><span class="p">)])</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">stm</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="n">X</span><span class="o">.</span><span class="n">x</span> <span class="o">-</span> <span class="n">X</span><span class="o">.</span><span class="n">y</span><span class="p">)</span><span class="o">.</span><span class="n">to_list</span><span class="p">()</span>
-<span class="go">[-2, 6, -5]</span>
+<span class="go">[2, 6, -5]</span>
 </pre></div>
 </div>
 </div>
@@ -113,7 +112,7 @@
 <li><code class="code docutils literal notranslate"><span class="pre">Xcall(isinstance)(X,</span> <span class="pre">int)</span></code> equals to <code class="code docutils literal notranslate"><span class="pre">lambda</span> <span class="pre">obj:</span> <span class="pre">isinstance(obj,</span> <span class="pre">int)</span></code></li>
 </ul>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">math</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">carriage</span> <span class="k">import</span> <span class="n">X</span><span class="p">,</span> <span class="n">Stream</span><span class="p">,</span> <span class="n">Row</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">carriage</span> <span class="k">import</span> <span class="n">X</span><span class="p">,</span> <span class="n">Stream</span><span class="p">,</span> <span class="n">Row</span><span class="p">,</span> <span class="n">Xcall</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">stm</span> <span class="o">=</span> <span class="n">Stream</span><span class="p">([</span><span class="n">Row</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="mi">3</span><span class="p">),</span>
 <span class="gp">... </span>              <span class="n">Row</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="mi">9</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="mi">3</span><span class="p">),</span>
 <span class="gp">... </span>              <span class="n">Row</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="mi">8</span><span class="p">)])</span>
@@ -128,8 +127,8 @@
 <li><code class="code docutils literal notranslate"><span class="pre">X.height</span> <span class="pre">+</span> <span class="pre">X.width</span></code> equals to <code class="code docutils literal notranslate"><span class="pre">lambda</span> <span class="pre">obj:</span> <span class="pre">obj.height</span> <span class="pre">+</span> <span class="pre">obj.width</span></code></li>
 </ul>
 </div>
-<div class="section" id="in-collection">
-<h2>In collection<a class="headerlink" href="#in-collection" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="in-collection-checking">
+<h2>In collection checking<a class="headerlink" href="#in-collection-checking" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
 <li><code class="code docutils literal notranslate"><span class="pre">X.in_((1,2))</span></code> equals to <code class="code docutils literal notranslate"><span class="pre">lambda</span> <span class="pre">elem:</span> <span class="pre">elem</span> <span class="pre">in</span> <span class="pre">(1,</span> <span class="pre">2)</span></code></li>
 <li><code class="code docutils literal notranslate"><span class="pre">X.has(1)</span></code> equals to <code class="code docutils literal notranslate"><span class="pre">lambda</span> <span class="pre">coll:</span> <span class="pre">1</span> <span class="pre">in</span> <span class="pre">coll</span></code></li>
@@ -154,7 +153,7 @@
 <li><a class="reference internal" href="#method-function-calling">Method/Function calling</a></li>
 <li><a class="reference internal" href="#as-function-arguments">As function arguments</a></li>
 <li><a class="reference internal" href="#multiple-x">Multiple X</a></li>
-<li><a class="reference internal" href="#in-collection">In collection</a></li>
+<li><a class="reference internal" href="#in-collection-checking">In collection checking</a></li>
 </ul>
 </li>
 </ul>
@@ -162,7 +161,7 @@
 <h3>Related Topics</h3>
 <ul>
   <li><a href="index.html">Documentation overview</a><ul>
-      <li>Previous: <a href="stream.html" title="previous chapter"><code class="docutils literal notranslate"><span class="pre">Stream</span></code>: Lazy-evaluating sequential collection type</a></li>
+      <li>Previous: <a href="streamtable.html" title="previous chapter"><code class="docutils literal notranslate"><span class="pre">StreamTable</span></code>: Lazy-evaluating sequential rows</a></li>
       <li>Next: <a href="map.html" title="next chapter"><code class="docutils literal notranslate"><span class="pre">Map</span></code>: Ordered dictionary with magic powers</a></li>
   </ul></li>
 </ul>

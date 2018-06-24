@@ -47,8 +47,7 @@ All comparison operators are supported: :code:`==`,  :code:`!=`,  :code:`>`,  :c
    ...               Row(first_name='Richard', last_name='Roe', height=190),
    ...               Row(first_name='Jane', last_name='Doe', height=170)])
    >>> stm.filter(X.height >= 180).to_list()
-   [Row(first_name='John', last_name='Doe', height=180),
-    Row(first_name='Richard', last_name='Roe', height=190)]
+   [Row(first_name='John', last_name='Doe', height=180), Row(first_name='Richard', last_name='Roe', height=190)]
 
    
 Math operators
@@ -70,7 +69,7 @@ All math and reflected math operators are supported: :code:`X + Y`,  :code:`X - 
    ...               Row(x=9, y=3),
    ...               Row(x=3, y=8)])
    >>> stm.map(X.x - X.y).to_list()
-   [-2, 6, -5]
+   [2, 6, -5]
    
 Method/Function calling
 ^^^^^^^^^^^^^^^^^^^^^^^
@@ -88,7 +87,7 @@ As function arguments
 - :code:`Xcall(isinstance)(X, int)` equals to :code:`lambda obj: isinstance(obj, int)`
 
 >>> import math
->>> from carriage import X, Stream, Row
+>>> from carriage import X, Stream, Row, Xcall
 >>> stm = Stream([Row(x=5, y=3),
 ...               Row(x=9, y=3),
 ...               Row(x=3, y=8)])
@@ -103,8 +102,8 @@ Multiple X
 
 
 
-In collection
-^^^^^^^^^^^^^
+In collection checking
+^^^^^^^^^^^^^^^^^^^^^^
 
 - :code:`X.in_((1,2))` equals to :code:`lambda elem: elem in (1, 2)`
 - :code:`X.has(1)` equals to :code:`lambda coll: 1 in coll` 

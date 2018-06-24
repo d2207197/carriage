@@ -46,12 +46,13 @@
 <span class="sd">    &gt;&gt;&gt; Row(name=&#39;Joe&#39;, age=30, height=170)</span>
 <span class="sd">    Row(name=&#39;Joe&#39;, age=30, height=170)</span>
 
+<span class="sd">    &gt;&gt;&gt; Row.from_values([1, 2, 3], fields=[&#39;x&#39;, &#39;y&#39;, &#39;z&#39;])</span>
+<span class="sd">    Row(x=1, y=2, z=3)</span>
+
 <span class="sd">    If you are too lazy to name the fields.</span>
 
-<span class="sd">    &gt;&gt;&gt; Row.from_values(1, &#39;a&#39;, 9)</span>
+<span class="sd">    &gt;&gt;&gt; Row.from_values([1, &#39;a&#39;, 9])</span>
 <span class="sd">    Row(v0=1, v1=&#39;a&#39;, v2=9)</span>
-<span class="sd">    &gt;&gt;&gt; Row.from_iterable(range(3))</span>
-<span class="sd">    Row(v0=0, v1=1, v2=2)</span>
 
 <span class="sd">    You can access field using index or field name in ``O(1)``.</span>
 
@@ -86,23 +87,31 @@
 
 <span class="sd">    &#39;&#39;&#39;</span>
 <div class="viewcode-block" id="Row.from_values"><a class="viewcode-back" href="../../row.html#carriage.Row.from_values">[docs]</a>    <span class="nd">@classmethod</span>
-    <span class="k">def</span> <span class="nf">from_values</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
-        <span class="sd">&#39;&#39;&#39;Create Row from values&#39;&#39;&#39;</span>
-        <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">from_iterable</span><span class="p">(</span><span class="n">args</span><span class="p">)</span></div>
+    <span class="k">def</span> <span class="nf">from_values</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">values</span><span class="p">,</span> <span class="n">fields</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Create Row from values</span>
 
-<div class="viewcode-block" id="Row.from_iterable"><a class="viewcode-back" href="../../row.html#carriage.Row.from_iterable">[docs]</a>    <span class="nd">@classmethod</span>
-    <span class="k">def</span> <span class="nf">from_iterable</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">iterable</span><span class="p">):</span>
-        <span class="sd">&#39;&#39;&#39;Create Row from a iterable&#39;&#39;&#39;</span>
-        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="o">**</span><span class="p">{</span><span class="n">f</span><span class="s1">&#39;v</span><span class="si">{i}</span><span class="s1">&#39;</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">iterable</span><span class="p">)})</span></div>
+<span class="sd">        &gt;&gt;&gt; Row.from_values([1, 2, 3])</span>
+<span class="sd">        Row(v0=1, v1=2, v2=3)</span>
+<span class="sd">        &gt;&gt;&gt; Row.from_values([1, 2, 3], fields=[&#39;x&#39;, &#39;y&#39;, &#39;z&#39;])</span>
+<span class="sd">        Row(x=1, y=2, z=3)</span>
+
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">if</span> <span class="n">fields</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="o">**</span><span class="p">{</span><span class="n">f</span><span class="s1">&#39;v</span><span class="si">{i}</span><span class="s1">&#39;</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">values</span><span class="p">)})</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="o">**</span><span class="p">{</span><span class="n">f</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">f</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">fields</span><span class="p">,</span> <span class="n">values</span><span class="p">)})</span></div>
 
 <div class="viewcode-block" id="Row.from_dict"><a class="viewcode-back" href="../../row.html#carriage.Row.from_dict">[docs]</a>    <span class="nd">@classmethod</span>
-    <span class="k">def</span> <span class="nf">from_dict</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">adict</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">from_dict</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">adict</span><span class="p">,</span> <span class="n">fields</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&#39;&#39;&#39;Create Row from a iterable</span>
 
 <span class="sd">        &gt;&gt;&gt; Row.from_dict({&#39;name&#39;: &#39;Joe&#39;, &#39;age&#39;: 30})</span>
 <span class="sd">        Row(name=&#39;Joe&#39;, age=30)</span>
 <span class="sd">        &#39;&#39;&#39;</span>
-        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="o">**</span><span class="n">adict</span><span class="p">)</span></div>
+        <span class="k">if</span> <span class="n">fields</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="o">**</span><span class="n">adict</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="o">**</span><span class="p">{</span><span class="n">f</span><span class="p">:</span> <span class="n">adict</span><span class="p">[</span><span class="n">f</span><span class="p">]</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">fields</span><span class="p">})</span></div>
 
     <span class="k">def</span> <span class="nf">__new__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="sd">&#39;&#39;&#39;Create Row by field names and values</span>
