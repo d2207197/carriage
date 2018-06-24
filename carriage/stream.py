@@ -246,6 +246,17 @@ class Stream(Monad):
         import pandas as pd
         return pd.Series(list(self))
 
+    def to_streamtable(self):
+        '''Convert to StreamTable
+
+        All elements should be in Row type
+
+        Returns
+        -------
+        StreamTable
+        '''
+        return StreamTable(self)
+
     def to_set(self):
         '''Convert to a set
 
@@ -296,30 +307,26 @@ class Stream(Monad):
         return Array(self)
 
     @as_stream
-    def as_rows(self, field_names):
+    def tuple_as_row(self, fields):
         '''Create a new Stream with elements as Row objects
 
-        >>> Stream([(1, 2), (3, 4)]).as_rows(['x', 'y']).to_list()
+        >>> Stream([(1, 2), (3, 4)]).tuple_as_row(['x', 'y']).to_list()
         [Row(x=1, y=2), Row(x=3, y=4)]
         '''
-        def to_rows(iterable):
-            return [Row(**{name: value for name, value in zip(field_names, entity)})
-                    for entity in iterable]
-        return to_rows
+        return fnt.partial(map, lambda tpl: Row.from_values(tpl, fields=fields))
 
     @as_stream
-    def as_rows_opt(self, field_names):
-        '''Create a new Stream with elements as Optional Row objects
+    def dict_as_row(self, fields=None):
+        '''Create a new Stream with elements as Row objects
 
-        >>> Stream([(1, 2), (3,)]).as_rows_opt(['x', 'y']).to_list()
-        [Some(Row(x=1, y=2)), Nothing]
+        >>> stm = Stream([{'name': 'John', 'age': 35},
+        ...               {'name': 'Frank', 'age': 28}])
+        >>> stm.dict_as_row().to_list()
+        [Row(name='John', age=35), Row(name='Frank', age=28)]
+        >>> stm.dict_as_row(['age', 'name']).to_list()
+        [Row(age=35, name='John'), Row(age=28, name='Frank')]
         '''
-        def to_rows_opt(iterable):
-            return [Some(Row(**{name: value for name, value in zip(field_names, entity)}))
-                    if len(entity) == len(field_names)
-                    else Nothing
-                    for entity in iterable]
-        return to_rows_opt
+        return fnt.partial(map, lambda d: Row.from_dict(d, fields=fields))
 
     @as_stream
     def map(self, func):
@@ -1253,10 +1260,16 @@ class Stream(Monad):
 
         '''
         itrs = itt.tee(self, 2)
-        return tuple(map(Stream, itrs))
+        return tuple(map(type(self), itrs))
 
     # def copy(self):
     #     return Array(copy(self._items))
+
+    def cache(self):
+        '''Cache result
+
+        '''
+        return type(self)(self.to_list())
 
     @as_stream
     def chunk(self, n, strict=False):
@@ -1321,30 +1334,6 @@ class Stream(Monad):
         elems_str = elem_sep.join(elem_format.format(index=idx, elem=elem)
                                   for idx, elem in enumerate(self))
         return start + elems_str + end
-
-
-def as_streamtable(f):
-    @fnt.wraps(f)
-    def wraped(self, *args, **kwargs):
-        args_str = repr_args(*args, **kwargs)
-        trfmr = Transformer(name=f'{f.__name__}({args_str})',
-                            func=f(self, *args, **kwargs))
-
-        return StreamTable(
-            iterable=self._iterable,
-            pipeline=self._pipeline.then(trfmr))
-
-    wraped.call = f
-
-    return wraped
-
-
-def stream_to_streamtable(f, elem_to_row=None):
-    @fnt.wraps(f)
-    def wraped(self, *args, **kwargs):
-        strm = f(self, *args, **kwargs)
-        return StreamTable(iterable=strm.map(elem_to_row))
-    return wraped
 
 
 class StreamTable(Stream):
@@ -1506,6 +1495,18 @@ class StreamTable(Stream):
         rows = self.to_list()
         fields = self._scan_fields(rows[:10])
         return pd.DataFrame(rows, columns=fields)
+
+    def to_stream(self):
+        '''Convert to Stream
+
+        Returns
+        -------
+        Stream
+        '''
+        return Stream(self)
+
+    def to_dicts(self):
+        return self.map(lambda row: row.to_dict()).to_list()
 
     def show(self, n=10, tablefmt='orgtbl'):
         '''print rows

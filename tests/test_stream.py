@@ -281,13 +281,7 @@ def test_pipeline_iterable():
     assert list(pipeline.transform(range(5))) == [6, 9, 12, 15, 18]
 
 
-def test_as_rows():
+def test_tuple_as_row():
     strm = Stream([(1, 2), (3, 4)])
-    rows = strm.as_rows(['x', 'y']).to_list()
+    rows = strm.tuple_as_row(['x', 'y']).to_list()
     assert rows == [Row(x=1, y=2), Row(x=3, y=4)]
-
-
-def test_as_rows_opt():
-    strm = Stream([(1, 2), (3,)])
-    rows = strm.as_rows_opt(['x', 'y']).to_list()
-    assert rows == [Some(Row(x=1, y=2)), Nothing]

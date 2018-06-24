@@ -68,13 +68,16 @@ class Row(tuple):
             return cls(**{f: v for f, v in zip(fields, values)})
 
     @classmethod
-    def from_dict(cls, adict):
+    def from_dict(cls, adict, fields=None):
         '''Create Row from a iterable
 
         >>> Row.from_dict({'name': 'Joe', 'age': 30})
         Row(name='Joe', age=30)
         '''
-        return cls(**adict)
+        if fields is None:
+            return cls(**adict)
+        else:
+            return cls(**{f: adict[f] for f in fields})
 
     def __new__(self, **kwargs):
         '''Create Row by field names and values
