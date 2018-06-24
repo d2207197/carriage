@@ -26,6 +26,7 @@ sphinx = "*"
 pytest-pudb = "*"
 ptipython = "*"
 "autopep8" = "*"
+autoflake = "*"
 
 [requires]
 python_version = "3.6"
