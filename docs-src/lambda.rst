@@ -2,10 +2,6 @@
 ======================================================
 
 
-Elegant lambda builder
-----------------------
-
-
 .. role:: py(code)
    :language: python
 
