@@ -100,7 +100,7 @@ class Map(OrderedDict):
         dicts = (self,) + others
         for key in keys:
             yield Row(key=key,
-                      values=agg(Row.from_iterable(
+                      values=agg(Row.from_values(
                           d.get(key, fillvalue)
                           for d in dicts)))
 
@@ -669,7 +669,6 @@ class Map(OrderedDict):
 
         '''
         return self.to_stream().to_list()
-
 
     def to_dict(self):
         '''Convert to dict'''

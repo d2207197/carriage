@@ -12,12 +12,13 @@ class Row(tuple):
     >>> Row(name='Joe', age=30, height=170)
     Row(name='Joe', age=30, height=170)
 
+    >>> Row.from_values([1, 2, 3], fields=['x', 'y', 'z'])
+    Row(x=1, y=2, z=3)
+
     If you are too lazy to name the fields.
 
-    >>> Row.from_values(1, 'a', 9)
+    >>> Row.from_values([1, 'a', 9])
     Row(v0=1, v1='a', v2=9)
-    >>> Row.from_iterable(range(3))
-    Row(v0=0, v1=1, v2=2)
 
     You can access field using index or field name in ``O(1)``.
 
@@ -52,14 +53,19 @@ class Row(tuple):
 
     '''
     @classmethod
-    def from_values(cls, *args):
-        '''Create Row from values'''
-        return cls.from_iterable(args)
+    def from_values(cls, values, fields=None):
+        '''Create Row from values
 
-    @classmethod
-    def from_iterable(cls, iterable):
-        '''Create Row from a iterable'''
-        return cls(**{f'v{i}': v for i, v in enumerate(iterable)})
+        >>> Row.from_values([1, 2, 3])
+        Row(v0=1, v1=2, v2=3)
+        >>> Row.from_values([1, 2, 3], fields=['x', 'y', 'z'])
+        Row(x=1, y=2, z=3)
+
+        '''
+        if fields is None:
+            return cls(**{f'v{i}': v for i, v in enumerate(values)})
+        else:
+            return cls(**{f: v for f, v in zip(fields, values)})
 
     @classmethod
     def from_dict(cls, adict):

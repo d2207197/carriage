@@ -158,6 +158,8 @@ class Stream(Monad):
         >>> Stream.repeat([1, 2, 3], 2).to_list()
         [[1, 2, 3], [1, 2, 3]]
         '''
+        if times is None:
+            return cls(itt.repeat(elems))
         return cls(itt.repeat(elems, times=times))
 
     @classmethod
@@ -934,7 +936,7 @@ class Stream(Monad):
         from carriage import Row
 
         def zip_tr(items):
-            return map(Row.from_iterable, builtins.zip(items, *iterables))
+            return map(Row.from_values, builtins.zip(items, *iterables))
 
         return zip_tr
 
@@ -953,7 +955,7 @@ class Stream(Monad):
         from carriage import Row
 
         def zip_longest_tr(items):
-            return map(Row.from_iterable,
+            return map(Row.from_values,
                        itt.zip_longest(items, *iterables, fillvalue=fillvalue))
 
         return zip_longest_tr
@@ -1271,7 +1273,7 @@ class Stream(Monad):
         def chunk_tr(self_):
             self_ = iter(self_)
             while True:
-                row = Row.from_iterable(itt.islice(self_, n))
+                row = Row.from_values(itt.islice(self_, n))
                 if len(row) == 0 or strict and len(row) != n:
                     break
                 yield row
@@ -1352,15 +1354,158 @@ class StreamTable(Stream):
     def __init__(self, iterable, *, pipeline=None):
         '''Create a StreamTable from an iterable object of Rows
 
-        >>> strm = StreamTable([Row(x=1, y=3), Row(x=2, y=4)])
+        >>> stb = StreamTable([Row(x=1, y=3), Row(x=2, y=4)])
+        >>> stb.show()
+        |   x |   y |
+        |-----+-----|
+        |   1 |   3 |
+        |   2 |   4 |
+
         '''
 
         Stream.__init__(self, iterable, pipeline=pipeline)
 
     @classmethod
     def range(cls, start, end=None, step=1):
+        '''Create a StreamTable from range
+
+        >>> StreamTable.range(1, 10, 3).show()
+        |   range |
+        |---------|
+        |       1 |
+        |       4 |
+        |       7 |
+        '''
         strm = Stream.range(start, end, step).map(lambda elem: Row(range=elem))
         return cls(strm)
+
+    @classmethod
+    def count(cls, start, step=1):
+        '''Create a inifinite consecutive StreamTable
+
+        >>> StreamTable.count(3, 5).take(3).show()
+        |   count |
+        |---------|
+        |       3 |
+        |       8 |
+        |      13 |
+
+        '''
+        strm = Stream.count(start, step).map(lambda elem: Row(count=elem))
+        return cls(strm)
+
+    @classmethod
+    def repeat(cls, elems, times=None):
+        '''Create a StreamTable repeating elems
+
+        >>> StreamTable.repeat(1, 3).show()
+        |   repeat |
+        |----------|
+        |        1 |
+        |        1 |
+        |        1 |
+        '''
+        strm = Stream.repeat(elems, times).map(lambda elem: Row(repeat=elem))
+        return cls(strm)
+
+    @classmethod
+    def cycle(cls, iterable):
+        '''Create a StreamTable cycling a iterable
+
+        >>> StreamTable.cycle([1,2]).take(5).show()
+        |   cycle |
+        |---------|
+        |       1 |
+        |       2 |
+        |       1 |
+        |       2 |
+        |       1 |
+        '''
+
+        strm = Stream.cycle(iterable).map(lambda elem: Row(cycle=elem))
+        return cls(strm)
+
+    @classmethod
+    def repeatedly(cls, func, times=None):
+        '''Create a StreamTable repeatedly calling a zero parameter function
+
+        >>> def counter():
+        ...     counter.num += 1
+        ...     return counter.num
+        >>> counter.num = -1
+        >>> StreamTable.repeatedly(counter, 5).show()
+        |   repeatedly |
+        |--------------|
+        |            0 |
+        |            1 |
+        |            2 |
+        |            3 |
+        |            4 |
+        '''
+        strm = Stream.repeatedly(func, times).map(
+            lambda elem: Row(repeatedly=elem))
+        return cls(strm)
+
+    @classmethod
+    def iterate(cls, func, x):
+        '''Create a StreamTable recursively applying a function to
+        last return value.
+
+        >>> def multiply2(x): return x * 2
+        >>> StreamTable.iterate(multiply2, 3).take(4).show()
+        |   iterate |
+        |-----------|
+        |         3 |
+        |         6 |
+        |        12 |
+        |        24 |
+        '''
+        strm = Stream.iterate(func, x).map(lambda elem: Row(iterate=elem))
+        return cls(strm)
+
+    @classmethod
+    def from_dataframe(cls, df, with_index=False):
+        '''Create a StreamTable from Pandas DataFrame
+
+        >>> import pandas as pd
+        >>> df = pd.DataFrame([(0, 1), (2, 3)], columns=['a', 'b'])
+        >>> StreamTable.from_dataframe(df).show()
+        |   a |   b |
+        |-----+-----|
+        |   0 |   1 |
+        |   2 |   3 |
+
+        Parameters
+        ----------
+        df : pandas.DataFrame
+            source DataFrame
+        with_index : bool
+            include index value or not
+
+        Returns
+        -------
+        StreamTable
+
+        '''
+        rows = Stream(df.itertuples())
+        rows = rows.map(lambda t: Row.from_values(t, fields=t._fields))
+
+        if not with_index:
+            rows = rows.map(lambda row: row.without('Index'))
+
+        return cls(rows.to_list())
+
+    def to_dataframe(self):
+        '''Convert to Pandas DataFrame
+
+        Returns
+        -------
+        pandas.DataFrame
+        '''
+        import pandas as pd
+        rows = self.to_list()
+        fields = self._scan_fields(rows[:10])
+        return pd.DataFrame(rows, columns=fields)
 
     def show(self, n=10, tablefmt='orgtbl'):
         '''print rows
@@ -1384,11 +1529,12 @@ class StreamTable(Stream):
             number of rows to show
         tablefmt : str
             output table format.
-            all possible format strings are in `tabulate.tabulate_formats`
+            all possible format strings are in `StreamTable.tabulate.tablefmts``
         '''
-        header_fields = self._scan_fields(n)
+        rows = list(itt.islice(self, 0, n))
+        header_fields = self._scan_fields(rows)
         return tabulate(
-            itt.islice(self, 0, n),
+            rows,
             headers=header_fields,
             tablefmt=tablefmt)
 
@@ -1397,9 +1543,9 @@ class StreamTable(Stream):
         '''Assume elements in Stream is in Row type and
         create a new Stream by keeping only specified fields in each Row
 
-        >>> from carriage import Row
+        >>> from carriage import Row, X
         >>> st = StreamTable([Row(x=3, y=4), Row(x=-1, y=2)])
-        >>> st.select('x', z=lambda row: row.x + row.y).to_list()
+        >>> st.select('x', z=X.x + X.y).to_list()
         [Row(x=3, z=7), Row(x=-1, z=1)]
 
         Parameters
@@ -1443,9 +1589,8 @@ class StreamTable(Stream):
             all(getattr(row, field) == value
                 for field, value in kwconds.items()))
 
-    def _scan_fields(self, n):
-        rows = list(itt.islice(self, 0, n))
-
+    @classmethod
+    def _scan_fields(cls, rows):
         all_fields = []
         all_fields_set = set()
         for row in rows:
@@ -1453,6 +1598,8 @@ class StreamTable(Stream):
             for field in row.fields():
                 if field in missing_fields:
                     all_fields.append(field)
+
+            all_fields_set.update(missing_fields)
 
         return all_fields
 
