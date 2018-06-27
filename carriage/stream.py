@@ -931,17 +931,17 @@ class Stream(Monad):
         '''Create a new Stream by zipping elements with other iterables.
 
         >>> Stream.range(5, 8).zip([1,2,3]).to_list()
-        [Row(v0=5, v1=1), Row(v0=6, v1=2), Row(v0=7, v1=3)]
+        [Row(f0=5, f1=1), Row(f0=6, f1=2), Row(f0=7, f1=3)]
 
         >>> Stream.range(5, 8).zip([1,2,3], [9, 10, 11]).to_list()
-        [Row(v0=5, v1=1, v2=9), Row(v0=6, v1=2, v2=10), Row(v0=7, v1=3, v2=11)]
+        [Row(f0=5, f1=1, f2=9), Row(f0=6, f1=2, f2=10), Row(f0=7, f1=3, f2=11)]
 
         >>> Stream.range(5, 8).zip([1,2]).to_list()
-        [Row(v0=5, v1=1), Row(v0=6, v1=2)]
+        [Row(f0=5, f1=1), Row(f0=6, f1=2)]
 
         >>> import itertools as itt
         >>> Stream.range(5, 8).zip(itt.count(10)).to_list()
-        [Row(v0=5, v1=10), Row(v0=6, v1=11), Row(v0=7, v1=12)]
+        [Row(f0=5, f1=10), Row(f0=6, f1=11), Row(f0=7, f1=12)]
         '''
         from carriage import Row
 
@@ -956,10 +956,10 @@ class Stream(Monad):
         as long as possible.
 
         >>> Stream.range(5, 8).zip_longest([1,2]).to_list()
-        [Row(v0=5, v1=1), Row(v0=6, v1=2), Row(v0=7, v1=None)]
+        [Row(f0=5, f1=1), Row(f0=6, f1=2), Row(f0=7, f1=None)]
 
         >>> Stream.range(5, 8).zip_longest([1,2], fillvalue=0).to_list()
-        [Row(v0=5, v1=1), Row(v0=6, v1=2), Row(v0=7, v1=0)]
+        [Row(f0=5, f1=1), Row(f0=6, f1=2), Row(f0=7, f1=0)]
 
         '''
         from carriage import Row
@@ -1280,9 +1280,9 @@ class Stream(Monad):
 
         >>> s = Stream.range(5)
         >>> s.chunk(2).to_list()
-        [Row(v0=0, v1=1), Row(v0=2, v1=3), Row(v0=4)]
+        [Row(f0=0, f1=1), Row(f0=2, f1=3), Row(f0=4)]
         >>> s.chunk(2, strict=True).to_list()
-        [Row(v0=0, v1=1), Row(v0=2, v1=3)]
+        [Row(f0=0, f1=1), Row(f0=2, f1=3)]
         '''
         from .row import Row
 

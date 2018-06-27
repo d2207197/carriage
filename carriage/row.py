@@ -18,7 +18,7 @@ class Row(tuple):
     If you are too lazy to name the fields.
 
     >>> Row.from_values([1, 'a', 9])
-    Row(v0=1, v1='a', v2=9)
+    Row(f0=1, f1='a', f2=9)
 
     You can access field using index or field name in ``O(1)``.
 
@@ -57,13 +57,13 @@ class Row(tuple):
         '''Create Row from values
 
         >>> Row.from_values([1, 2, 3])
-        Row(v0=1, v1=2, v2=3)
+        Row(f0=1, f1=2, f2=3)
         >>> Row.from_values([1, 2, 3], fields=['x', 'y', 'z'])
         Row(x=1, y=2, z=3)
 
         '''
         if fields is None:
-            return cls(**{f'v{i}': v for i, v in enumerate(values)})
+            return cls(**{f'f{i}': v for i, v in enumerate(values)})
         else:
             return cls(**{f: v for f, v in zip(fields, values)})
 
@@ -90,6 +90,9 @@ class Row(tuple):
         row._dict = kwargs
 
         return row
+
+    def __getnewargs_ex__(self):
+        return ((), self._dict)
 
     def __getattribute__(self, name):
         if name in tuple.__getattribute__(self, '_dict'):

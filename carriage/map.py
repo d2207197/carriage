@@ -61,7 +61,7 @@ class Map(OrderedDict):
         >>> m2 is m1
         False
         >>> m2
-        Map({'a': Row(v0=1, v1=3), 'b': Row(v0=2, v1=4), 'c': Row(v0=None, v1=5)})
+        Map({'a': Row(f0=1, f1=3), 'b': Row(f0=2, f1=4), 'c': Row(f0=None, f1=5)})
 
         >>> m1 = Map(a=1, b=2)
         >>> m2 = m1.join(dict(a=3, b=4, c=5), agg=sum, fillvalue=0)
@@ -80,11 +80,11 @@ class Map(OrderedDict):
         ...          Map(a=6, c=7),
         ...          fillvalue=0))
         >>> l[0]
-        Row(key='a', values=Row(v0=1, v1=3, v2=6))
+        Row(key='a', values=Row(f0=1, f1=3, f2=6))
         >>> l[1]
-        Row(key='b', values=Row(v0=2, v1=4, v2=0))
+        Row(key='b', values=Row(f0=2, f1=4, f2=0))
         >>> l[2]
-        Row(key='c', values=Row(v0=0, v1=5, v2=7))
+        Row(key='c', values=Row(f0=0, f1=5, f2=7))
         """
         if agg is None:
             agg = identity
