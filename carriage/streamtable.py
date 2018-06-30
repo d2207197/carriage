@@ -1,5 +1,8 @@
 import functools as fnt
+import io
 import itertools as itt
+import json
+from pathlib import Path
 
 from tabulate import tabulate, tabulate_formats
 
@@ -176,6 +179,61 @@ class StreamTable(Stream):
         stm = Stream(tuples).tuple_as_row(fields=fields)
         return cls(stm)
 
+    @classmethod
+    def read_jsonl(cls, path):
+        '''Create from a jsonlines file
+
+        >>> StreamTable.from_jsonlines('person.jsonl') # doctest: +SKIP
+        |   name |   age |
+        |--------+-------|
+        |   john |    18 |
+        |   jane |    26 |
+
+        Parameters
+        ----------
+        path : str or path or file object
+            path to the input file
+
+        '''
+        from carriage import Row
+
+        if isinstance(path, io.TextIOBase):
+            f = path
+        else:
+            f = Path(path).open('rt')
+
+        stm = (Stream(f)
+               .map(json.loads)  # dicts
+               .map(Row.from_dict)
+               )
+        return cls(stm)
+
+    def write_jsonl(self, path):
+        '''Write into file in the format of jsonlines
+
+        >>> stb.write_jsonl('person.jsonl') # doctest: +SKIP
+
+        Parameters
+        ----------
+        path : str or path or file object
+            path to the input file
+
+        '''
+        if isinstance(path, io.TextIOBase):
+            f = path
+            self._write_jsonlines_file(f)
+        else:
+            with Path(path).open('wt') as f:
+                self._write_jsonlines_file(f)
+
+    def _write_jsonlines_file(self, f):
+        (
+            self
+            .map(Row.to_dict)
+            .map(json.dumps)
+            .for_each(lambda line: f.write(line + '\n'))
+        )
+
     def to_dataframe(self):
         '''Convert to Pandas DataFrame
 
@@ -200,18 +258,21 @@ class StreamTable(Stream):
     def to_dicts(self):
         return self.map(lambda row: row.to_dict()).to_list()
 
-    def show(self, n=10, tablefmt='orgtbl'):
+    def show(self, n=10):
         '''print rows
 
         Parameters
         ----------
         n : int
             number of rows to show
-        tablefmt : str
-            output table format.
-            all possible format strings are in `tabulate.tabulate_formats`
         '''
-        print(self.tabulate(n=n, tablefmt=tablefmt))
+        try:
+            from IPython.display import display
+            display_func = display
+        except ImportError:
+            display_func = print
+
+        display_func(_StreamTableShowing(self, n))
 
     def tabulate(self, n=10, tablefmt='orgtbl'):
         '''return tabulate formatted string
@@ -302,6 +363,19 @@ class StreamTable(Stream):
 
     def _repr_str_(self):
         return self.tabulate(tablefmt='orgtbl')
+
+
+class _StreamTableShowing():
+
+    def __init__(self, streamtable, n):
+        self.streamtable = streamtable
+        self.n = n
+
+    def _repr_html_(self):
+        return self.streamtable.tabulate(n=self.n, tablefmt='html')
+
+    def _repr_str_(self):
+        return self.streamtable.tabulate(n=self.n, tablefmt='orgtbl')
 
 
 StreamTable.tabulate.tablefmts = tabulate_formats
