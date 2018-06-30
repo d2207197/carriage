@@ -6,3 +6,4 @@ maybee.egg-info
 /build
 /carriage.egg-info
 /dist
+/.venv/
