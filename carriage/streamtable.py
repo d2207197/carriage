@@ -272,7 +272,8 @@ class StreamTable(Stream):
         except ImportError:
             display_func = print
 
-        display_func(_StreamTableShowing(self, n))
+        showing_obj = _StreamTableShowing(self, n)
+        display_func(showing_obj)
 
     def tabulate(self, n=10, tablefmt='orgtbl'):
         '''return tabulate formatted string
@@ -361,7 +362,7 @@ class StreamTable(Stream):
     def _repr_html_(self):
         return self.tabulate(tablefmt='html')
 
-    def _repr_str_(self):
+    def __str__(self):
         return self.tabulate(tablefmt='orgtbl')
 
 
@@ -374,7 +375,7 @@ class _StreamTableShowing():
     def _repr_html_(self):
         return self.streamtable.tabulate(n=self.n, tablefmt='html')
 
-    def _repr_str_(self):
+    def __repr__(self):
         return self.streamtable.tabulate(n=self.n, tablefmt='orgtbl')
 
 
