@@ -294,9 +294,33 @@ class StreamTable(Stream):
             tablefmt=tablefmt)
 
     @as_stream
+    def map_fields(self, **field_funcs):
+        '''Add or replace fields by applying each row to function
+
+        >>> from carriage import Row, X
+        >>> st = StreamTable([Row(x=3, y=4), Row(x=-1, y=2)])
+        >>> st.map_fields(z=X.x + X.y).to_list()
+        [Row(x=3, y=4, z=7), Row(x=-1, y=2, z=1)]
+
+        Parameters
+        ----------
+        **field_funcs : Map[field_name, Function]
+            Each function will be evaluated with the current row as the only argument, and the return value will be the new value of the field.
+
+        Returns
+        -------
+        StreamTable
+        '''
+
+        return fnt.partial(
+            map,
+            lambda row:
+            row.evolve(**{field: func(row)
+                          for field, func in field_funcs.items()}))
+
+    @as_stream
     def select(self, *fields, **field_funcs):
-        '''Assume elements in Stream is in Row type and
-        create a new Stream by keeping only specified fields in each Row
+        '''Keep only specified fields, and add/replace fields.
 
         >>> from carriage import Row, X
         >>> st = StreamTable([Row(x=3, y=4), Row(x=-1, y=2)])
