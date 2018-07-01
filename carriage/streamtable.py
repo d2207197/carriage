@@ -347,6 +347,30 @@ class StreamTable(Stream):
             .project(*fields, *field_funcs.keys()))
 
     @as_stream
+    def explode(self, field):
+        '''Expand each row into multiple rows for each element in the field
+
+        >>> stb = StreamTable([Row(name='a', nums=[1,3,4]), Row(name='b', nums=[2, 1])])
+        >>> stb.explode('nums').show()
+        | name   |   nums |
+        |--------+--------|
+        | a      |      1 |
+        | a      |      3 |
+        | a      |      4 |
+        | b      |      2 |
+        | b      |      1 |
+        '''
+        def _explode_row(row):
+            for field_elem in getattr(row, field):
+                yield row.evolve(**{field: field_elem})
+
+        def _flatmap_explodes(rows_iter):
+            for row in rows_iter:
+                yield from _explode_row(row)
+
+        return _flatmap_explodes
+
+    @as_stream
     def where(self, *conds, **kwconds):
         '''Create a new Stream contains only Rows pass all conditions.
 
