@@ -102,6 +102,32 @@ class Row(tuple):
         else:
             return tuple.__getattribute__(self, name)
 
+    def get_opt(self, field):
+        '''Get field in Optional type
+
+        >>> from carriage.optional import Some, Nothing
+        >>> Row(x=3, y=4).get_opt('x')
+        Some(3)
+        >>> Row(x=3, y=4).get_opt('z')
+        Nothing
+
+        Parameters
+        ----------
+        field : str
+            field name
+
+        Returns
+        -------
+        Just(value) if field exist
+        Nothing if field doesn't exist
+
+        '''
+        from .optional import Some, Nothing
+        if field in self._dict:
+            return Some(getattr(self, field))
+
+        return Nothing
+
     def __setattr__(self, name, value):
         if name != '_dict':
             raise TypeError("'Row' object does not support item assignment")
