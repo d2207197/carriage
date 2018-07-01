@@ -2,9 +2,11 @@
 import builtins
 import functools as fnt
 import heapq
+import io
 import itertools as itt
 import reprlib
 from collections import Counter, defaultdict, deque
+from pathlib import Path
 
 from tabulate import tabulate, tabulate_formats
 
@@ -209,6 +211,49 @@ class Stream(Monad):
                 yield x
                 x = func(x)
         return cls(iterate_gen(x))
+
+    @classmethod
+    def read_txt(cls, path):
+        '''Create from a text file.
+        Treat lines as elements and remove newline character.
+
+        >>> Stream.read_txt(path) # doctest: +SKIP
+
+        Parameters
+        ----------
+        path : str or path or file object
+            path to the input file
+        '''
+        if isinstance(path, io.TextIOBase):
+            f = path
+        else:
+            f = Path(path).open('rt')
+
+        return Stream(f).map(lambda line: line.strip('\n'))
+
+    def write_txt(self, path, sep='\n'):
+        '''Write into a text file.
+
+        All elements will be applied ``str()`` before write to the file.
+
+        >>> Stream.range(10).write_txt('nums.txt')
+
+        Parameters
+        ----------
+        path : str or path or file object
+            path to the input file
+        sep : str
+            element separator. defaults to '\n'
+        '''
+        if isinstance(path, io.TextIOBase):
+            f = path
+            self._write_txt_file(f, sep)
+        else:
+            with Path(path).open('wt') as f:
+                self._write_txt_file(f, sep)
+
+    def _write_txt_file(self, f, sep='\n'):
+        self.for_each(lambda line: f.write(str(line) + sep))
 
     @property
     def _base_type(self):

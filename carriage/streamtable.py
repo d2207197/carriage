@@ -183,7 +183,7 @@ class StreamTable(Stream):
     def read_jsonl(cls, path):
         '''Create from a jsonlines file
 
-        >>> StreamTable.from_jsonlines('person.jsonl') # doctest: +SKIP
+        >>> StreamTable.read_jsonl('person.jsonl') # doctest: +SKIP
         |   name |   age |
         |--------+-------|
         |   john |    18 |
@@ -221,12 +221,12 @@ class StreamTable(Stream):
         '''
         if isinstance(path, io.TextIOBase):
             f = path
-            self._write_jsonlines_file(f)
+            self._write_jsonl_file(f)
         else:
             with Path(path).open('wt') as f:
-                self._write_jsonlines_file(f)
+                self._write_jsonl_file(f)
 
-    def _write_jsonlines_file(self, f):
+    def _write_jsonl_file(self, f):
         (
             self
             .map(Row.to_dict)
