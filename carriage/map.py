@@ -628,7 +628,7 @@ class Map(OrderedDict):
         '''
         return len(self)
 
-    def to_stream(self):
+    def to_stream(self, key_field='key', value_field='value'):
         '''Convert to a Stream instance of ``Row(key, value)`` iterable.
 
         >>> m = Map(a=4, b=5, c=6, d=7)
@@ -640,7 +640,9 @@ class Map(OrderedDict):
         Stream[Row[key, value]]
 
         '''
-        return self.items()
+        return (Stream(super().items())
+                .starmap(lambda key, value:
+                         Row(**{key_field: key, value_field: value})))
 
     def to_array(self):
         '''Convert to an Array instance of ``Row(key, value)`` iterable.

@@ -102,6 +102,12 @@ class Row(tuple):
         else:
             return tuple.__getattribute__(self, name)
 
+    # def __getattr__(self, name):
+    #     if name in self._dict:
+    #         return self._dict[name]
+    #     else:
+    #         raise AttributeError(f'{self!r} has no attribute {name!r}')
+
     def get_opt(self, field):
         '''Get field in Optional type
 
@@ -128,17 +134,33 @@ class Row(tuple):
 
         return Nothing
 
+    def get(self, field, fillvalue=None):
+        '''Get field
+
+        >>> Row(x=3, y=4).get('x')
+        3
+        >>> Row(x=3, y=4).get('z', 0)
+        0
+        '''
+        if field in self._dict:
+            return getattr(self, field)
+
+        return fillvalue
+
+    def has_field(self, field):
+        '''Has field
+
+        >>> Row(x=3, y=4).has_field('x')
+        True
+
+        '''
+        return field in self._dict
+
     def __setattr__(self, name, value):
         if name != '_dict':
             raise TypeError("'Row' object does not support item assignment")
         else:
             super().__setattr__(name, value)
-
-    # def __getattr__(self, name):
-    #     if name in self._dict:
-    #         return self._dict[name]
-    #     else:
-    #         raise AttributeError(f'{self!r} has no attribute {name!r}')
 
     def fields(self):
         return self._dict.keys()

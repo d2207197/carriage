@@ -1,5 +1,6 @@
 import attr
 import pytest
+
 from carriage import Array, Nothing, Some, Stream
 from carriage.row import CurrNext, CurrPrev, ValueIndex
 
@@ -172,7 +173,7 @@ def test_to():
     assert stm.to_list() == [5, 6, 7]
 
 
-def test_repr():
-    assert repr(Array.range(3)) == 'Array([0, 1, 2])'
-    assert repr(Array.range(
-        100)) == 'Array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, ...])'
+# def test_repr():
+#     assert repr(Array.range(3)) == 'Array([0, 1, 2])'
+#     assert repr(Array.range(
+#         100)) == 'Array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, ...])'

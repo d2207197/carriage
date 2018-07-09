@@ -256,10 +256,10 @@ length count:1: Row(length=2, count=10)
     assert captured.err == ''
 
 
-def test_repr():
-    assert repr(Stream([1, 2, 3, 4])) == 'Stream([1, 2, 3, 4])'
-    assert repr(Stream(list(range(100)))
-                ) == 'Stream([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, ...])'
+# def test_repr():
+#     assert repr(Stream([1, 2, 3, 4])) == 'Stream([1, 2, 3, 4])'
+#     assert repr(Stream(list(range(100)))
+#                 ) == 'Stream([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, ...])'
 
 
 # def test_row_stream():
