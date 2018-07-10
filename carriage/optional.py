@@ -242,6 +242,10 @@ class Optional(Monad):
         raise NotImplementedError()
 
     @abstractmethod
+    def or_opt_call(self, func):
+        raise NotImplementedError()
+
+    @abstractmethod
     def get_or_none(self):
         raise NotImplementedError()
 
@@ -303,6 +307,9 @@ class NothingCls(Optional):
 
     def get_or_none(self):
         return None
+
+    def or_opt_call(self, func):
+        return func()
 
     def is_some(self):
         return False
@@ -378,6 +385,9 @@ class Some(Optional):
 
     def get_or(self, else_value=None):
         return self._some_value
+
+    def or_opt_call(self, func):
+        return self
 
     def get_or_none(self):
         return self._some_value
