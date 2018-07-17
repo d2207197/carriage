@@ -1238,16 +1238,22 @@ class Stream(Monad):
         return self.extended((elem,))
 
     @as_stream
-    def distincted(self):
+    def distincted(self, key_func=None):
         '''Create a new Stream with non-repeating elements. And elements are
         with the same order of first occurence in the source Stream.
 
+        >>> Stream.range(10).distincted(lambda n: n//3).to_list()
+        [0, 3, 6, 9]
         '''
+        if key_func is None:
+            def key_func(x): return x
+
         def distincted_tr(items):
-            item_set = set()
+            key_set = set()
             for item in items:
-                if item not in item_set:
-                    item_set.add(item)
+                key_value = key_func(item)
+                if key_value not in key_set:
+                    key_set.add(key_value)
                     yield item
 
         return distincted_tr
