@@ -955,6 +955,27 @@ class Stream(Monad):
         return fnt.partial(itt.filterfalse, pred)
 
     @as_stream
+    def unique(self, key_func=None):
+        '''Create a new Stream of unique elements
+
+        >>> Stream.range(10).unique(lambda x: x // 3).to_list()
+        [0, 3, 6, 9]
+
+        '''
+        if key_func is None:
+            def key_func(x): return x
+
+        def unique_tr(iterable):
+            visited_keys = set()
+            for item in iterable:
+                key = key_func(item)
+                if key not in visited_keys:
+                    visited_keys.add(key)
+                    yield item
+
+        return unique_tr
+
+    @as_stream
     def interpose(self, sep):
         '''Create a new Stream by interposing separater between elemens.
 
