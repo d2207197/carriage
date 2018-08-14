@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "carriage"
-version = "0.4.12"
+version = "0.4.13"
 description = "Enhanced collection classes for programming fluently"
 authors = ["顏孜羲 <joseph.yen@gmail.com>"]
 license = "apache-2.0"
