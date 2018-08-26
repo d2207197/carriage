@@ -285,7 +285,7 @@ class Array(Monad):
         return f'{type(self).__name__}({short_repr.repr(self._items)})'
 
     @property
-    def _value_for_cmp(self):
+    def _comparing_value(self):
         return self._items
 
     def len(self):

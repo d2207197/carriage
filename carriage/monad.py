@@ -65,12 +65,12 @@ class Monad(ABC):
         raise NotImplementedError()
 
     @abstractproperty
-    def _value_for_cmp(self):
+    def _comparing_value(self):
         raise NotImplementedError()
 
     def __eq__(self, other):
         if isinstance(other, self._base_type):
-            return self._value_for_cmp == other._value_for_cmp
+            return self._comparing_value == other._comparing_value
 
         raise TypeError(
             "'==' not supported between instances of "
@@ -78,7 +78,7 @@ class Monad(ABC):
 
     def __ne__(self, other):
         if isinstance(other, self._base_type):
-            return self._value_for_cmp != other._value_for_cmp
+            return self._comparing_value != other._comparing_value
 
         raise TypeError(
             "'!=' not supported between instances of "
@@ -86,7 +86,7 @@ class Monad(ABC):
 
     def __gt__(self, other):
         if isinstance(other, self._base_type):
-            return self._value_for_cmp > other._value_for_cmp
+            return self._comparing_value > other._comparing_value
 
         raise TypeError(
             "'>' not supported between instances of "
@@ -94,7 +94,7 @@ class Monad(ABC):
 
     def __lt__(self, other):
         if isinstance(other, self._base_type):
-            return self._value_for_cmp < other._value_for_cmp
+            return self._comparing_value < other._comparing_value
 
         raise TypeError(
             "'<' not supported between instances of "
@@ -102,7 +102,7 @@ class Monad(ABC):
 
     def __ge__(self, other):
         if isinstance(other, self._base_type):
-            return self._value_for_cmp >= other._value_for_cmp
+            return self._comparing_value >= other._comparing_value
 
         raise TypeError(
             "'>=' not supported between instances of "
@@ -110,7 +110,7 @@ class Monad(ABC):
 
     def __le__(self, other):
         if isinstance(other, self._base_type):
-            return self._value_for_cmp <= other._value_for_cmp
+            return self._comparing_value <= other._comparing_value
 
         raise TypeError(
             "'<=' not supported between instances of "

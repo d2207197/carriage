@@ -1,158 +1,120 @@
 import inspect
+import warnings
 from abc import abstractmethod, abstractproperty
 from functools import wraps
 
 from .monad import Monad
 
 
-class NothingError(AttributeError):
+class NothingAttrError(AttributeError):
+    pass
+
+
+class OkAttrError(AttributeError):
+    pass
+
+
+class ErrAttrError(AttributeError):
     pass
 
 
 class Optional(Monad):
     '''An type for handling special value or exception.
 
-    Create Optional from a function call that may raise exception.
+    Here is a contacts data constructed with multiple levels dictionary.
+
+    >>> contacts = {
+    ...     'John Doe': {
+    ...         'phone': '0911-222-333',
+    ...         'address': {'city': 'hsinchu',
+    ...                     'street': '185 Somewhere St.'}},
+    ...     'Richard Roe': {
+    ...         'phone': '0933-444-555',
+    ...         'address': {'city': None,
+    ...                     'street': None}},
+    ...     'Mark Moe': {
+    ...         'address': None},
+    ...     'Larry Loe': None
+    ... }
+
+    If we want a function to get the formatted city name of some contact,
+    we will need a lot of nested `if` statement for handling None or
+    other unexpected values.
+
+    >>> def get_city(name):
+    ...     contact = contacts.get(name)
+    ...     if contact is not None:
+    ...         address = contact.get('address')
+    ...         if address is not None:
+    ...             city = address.get('city')
+    ...             if city is not None:
+    ...                 return f'City: {city}'
+    ...
+    ...     return 'No city available'
+    >>> get_city('John Doe')
+    'City: hsinchu'
+    >>> get_city('Richard Roe')
+    'No city available'
+    >>> get_city('Mark Moe')
+    'No city available'
+    >>> get_city('Larray Loe')
+    'No city available'
+    >>> get_city('Not Existing')
+    'No city available'
+
+    Optional is useful on handling unexpected return values or exceptions
+    and makes the code shorter and more readable.
+
+    >>> def getitem_opt(obj, key):
+    ...     """The same as Optional.from_getitem()"""
+    ...     try:
+    ...         return Some(obj[key])
+    ...     except (KeyError, TypeError):
+    ...         return Nothing
+
+    >>> def get_city2(name):
+    ...     return (getitem_opt(contacts, name)
+    ...             .and_then(lambda contact: getitem_opt(contact, 'address'))
+    ...             .and_then(lambda address: getitem_opt(address, 'city'))
+    ...             .filter(lambda city: city is not None)
+    ...             .map(lambda city: f'City: {city}')
+    ...             .get_or('No city available')
+    ...             )
+
+    >>> get_city2('John Doe')
+    'City: hsinchu'
+    >>> get_city2('Richard Roe')
+    'No city available'
+    >>> get_city2('Mark Moe')
+    'No city available'
+    >>> get_city2('Larray Loe')
+    'No city available'
+    >>> get_city('Not Existing')
+    'No city available'
+
+    Create Optional directly
+
+    >>> Some(3)
+    Some(3)
+    >>> Nothing
+    Nothing
+
+    Create Optional by calling a function that may throw exception
 
     >>> def divide(a, b):
     ...     return a / b
-    >>> Optional.call_exceptable(divide, 2, 4)
+    >>> Optional.from_call(divide, 2, 4, errors=ZeroDivisionError)
     Some(0.5)
-    >>> Optional.call_exceptable(divide, 2, 0)
+    >>> Optional.from_call(divide, 2, 0, errors=ZeroDivisionError)
     Nothing
 
-    Create Optional from a value that may be None.
+    Create Optional from a value that may be None or other spectial value.
 
     >>> adict = {'a': 1, 'b': 2, 'c': 3}
-    >>> Optional.value_noneable(adict.get('c'))
+    >>> Optional.from_value(adict.get('c'), nothing_value=None)
     Some(3)
-    >>> Optional.value_noneable(adict.get('d'))
+    >>> Optional.from_value(adict.get('d'), nothing_value=None)
     Nothing
-
-
-    Escape from if hell of handling None value or exception. 
-
-    >>> class TreeNode:
-    ...     def __init__(self, value, left=None, right=None):
-    ...         self.value = value
-    ...         self.left = left
-    ...         self.right = right
-
-    >>> n = TreeNode(30, TreeNode(5, TreeNode(2)))
-
-    It seem convenient to traversal in tree.
-    >>> n.left.left.value
-    2
-
-    But both ``left`` and ``right`` might be None. You should take care of
-    that.
-
-    >>> result = 0
-    >>> if n.left is not None:
-    ...     if n.left.left is not None:
-    ...         if n.left.left.right is not None:
-    ...             if n.left.left.right.left is not None:
-    ...                 result = n.left.left.right.left.value * 2
-    >>> result
-    0
-
-
-    Now let's replace Noneable value with Optional.
-
-    >>> class TreeNodeOpt:
-    ...     def __init__(self, value, left=None, right=None):
-    ...         self.value = value
-    ...         self.left = Some(left) if left is not None else Nothing
-    ...         self.right = Some(left) if left is not None else Nothing
-
-    >>> nopt = TreeNodeOpt(30, TreeNodeOpt(5, TreeNodeOpt(2)))
-    >>> (nopt.left
-    ...  .bind(lambda n: n.left)
-    ...  .map(lambda n: n.value)
-    ...  .get_or())
-    2
-
-    It seems getting harder to get a value, but actually you are now free from
-    having the risk of getting attribute from None. And you don't have to build
-    a big, nested if statement for handling it.
-
-    >>> (nopt.left
-    ...  .bind(lambda n: n.left)
-    ...  .bind(lambda n: n.right)
-    ...  .bind(lambda n: n.left)
-    ...  .map(lambda n: n.value * 2)
-    ...  .get_or(0))
-    0
-
-    >>> (nopt.left
-    ...  .pluck_attr('left').join()
-    ...  .pluck_attr('right').join()
-    ...  .pluck_attr('left').join()
-    ...  .pluck_attr('value')
-    ...  .map(lambda v: v * 2)
-    ...  .get_or(0))
-    0
-
-    And you can use Optional to handle the original TreeNode.
-
-    >>> n = TreeNode(30, TreeNode(5, TreeNode(2)))
-    >>> (Optional.value_noneable(n.left)
-    ...  .map(lambda n: n.left).join_noneable()
-    ...  .map(lambda n: n.right).join_noneable()
-    ...  .map(lambda n: n.left).join_noneable()
-    ...  .map(lambda n: n.value * 2)
-    ...  .get_or(0))
-    0
-
-    It's more elegant to have functions return Optional rather than None or
-    other special value.
-
-    >>> def get_right_opt(tn):
-    ...     if tn.right is None:
-    ...         return Nothing
-    ...     return Some(tn.right)
-
-    >>> def get_left_opt(tn):
-    ...     if tn.left is None:
-    ...         return Nothing
-    ...     return Some(tn.left)
-
-    >>> (Optional.value_noneable(n)
-    ...  .bind(get_left_opt)
-    ...  .bind(get_left_opt)
-    ...  .bind(get_right_opt)
-    ...  .bind(get_left_opt)
-    ...  .map(lambda n: n.value * 2)
-    ...  .get_or(0))
-    0
-
-    You can create an Optional function with these decorator.
-
-
-    >>> @Optional.noneable
-    ... def get_first(l):
-    ...     if len(l) > 0:
-    ...         return l[0]
-    ...     return None
-    >>> get_first([3,4,5])
-    Some(3)
-    >>> get_first([])
-    Nothing
-
-    >>> @Optional.exceptable(IndexError)
-    ... def get_first(l):
-    ...     return l[0]
-    >>> get_first([3,4,5])
-    Some(3)
-    >>> get_first([])
-    Nothing
-
-
-
-
-
-
-
     '''
 
     @property
@@ -160,28 +122,35 @@ class Optional(Monad):
         return Optional
 
     @classmethod
-    def call_exceptable(cls, getter, *args, errors=Exception, **kwargs):
+    def from_call(cls, func, *args, errors=(Exception,), **kwargs):
+        '''Create an Optional by calling a function
+
+        return Nothing if exception is raised
+        '''
         try:
-            value = getter(*args, **kwargs)
+            value = func(*args, **kwargs)
         except errors:
             return Nothing
         else:
             return Some(value)
 
-    ecall = call_exceptable
-    expcall = call_exceptable
-
     @classmethod
-    def value_noneable(cls, value):
-        if value is None:
+    def from_value(cls, value, nothing_value=None):
+        '''Create an Optional from a value
+
+        return Nothing if ``value`` equals to ``nothing_value``
+        '''
+        if value == nothing_value:
             return Nothing
         return Some(value)
 
-    noneval = value_noneable
-
     @classmethod
     def noneable(cls, f):
-
+        warnings.warn('Optional.noneable decorator is unnessesary '
+                      'and a bad pattern. '
+                      'Functions should return Some or Nothing directly '
+                      'instead of return None and rely on this decorator.',
+                      DeprecationWarning)
         if not callable(f):
             raise TypeError("'f' should be a callable: {f!r}")
 
@@ -196,6 +165,11 @@ class Optional(Monad):
 
     @classmethod
     def exceptable(cls, f_or_error, *more_errors):
+        warnings.warn('Optional.exceptable decorator is unnessesary '
+                      'and a bad pattern. '
+                      'Functions should return Some or Nothing directly '
+                      'instead of return None and rely on this decorator.',
+                      DeprecationWarning)
         if inspect.isclass(f_or_error) and issubclass(f_or_error, Exception):
             errors = (f_or_error,) + tuple(more_errors)
 
@@ -225,36 +199,66 @@ class Optional(Monad):
     def unit(cls, value):
         return Some(value)
 
+    @classmethod
+    def from_getitem(cls, obj, key):
+        '''Create an Optional by calling ``obj[key]``
+
+        return ``Nothing`` if ``KeyError`` or ``TypeError`` is raised
+        '''
+        try:
+            return Some(obj[key])
+        except (KeyError, TypeError):
+            return Nothing
+
+    @classmethod
+    def from_getattr(cls, obj, attr_name):
+        '''Create an Optional by calling ``obj.attr_name``
+
+        return Nothing if AttributeError is raised
+        '''
+        try:
+            Some(obj[attr_name])
+        except AttributeError:
+            return Nothing
+
     @abstractmethod
     def join_noneable(self):
         raise NotImplementedError()
 
     @abstractproperty
-    def value(self):
+    def some(self):
+        '''Get the value if it is Some or raise AttributeError if it is not'''
         raise NotImplementedError()
 
+    def value(self):
+        return self.some
+
     @abstractproperty
-    def _value_for_cmp(self):
+    def _comparing_value(self):
         raise NotImplementedError()
 
     @abstractmethod
     def get_or(self, default):
-        raise NotImplementedError()
-
-    @abstractmethod
-    def or_opt_call(self, func):
+        '''Get the value if it is Some or get `default` if it is Nothing'''
         raise NotImplementedError()
 
     @abstractmethod
     def get_or_none(self):
+        '''Get the value if it is Some or get None if it is Nothing'''
         raise NotImplementedError()
 
     @abstractmethod
+    def filter(self, pred):
+        '''Return Nothing if Some doesn't satisfy the predicate'''
+
+    @abstractmethod
     def is_some(self):
+        '''Check if it is Some'''
         raise NotImplementedError()
 
     @abstractmethod
     def is_nothing(self):
+        '''Check if it is Nothing'''
         raise NotImplementedError()
 
     def pluck(self, key):
@@ -278,10 +282,12 @@ class NothingCls(Optional):
 
         return cls.__instance
 
-    def flat_map(self, maybe_action):
+    def and_then(self, maybe_action):
         return Nothing
 
-    def map(self, action):
+    flat_map = and_then
+
+    def map(self, func):
         return Nothing
 
     def then(self, maybe_value):
@@ -297,10 +303,16 @@ class NothingCls(Optional):
         return Nothing
 
     @property
-    def value(self):
-        raise NothingError('Nothing here')
+    def some(self):
+        raise NothingAttrError(
+            '`some` attribute does not exist in Nothing instance')
 
-    _value_for_cmp = ()
+    @property
+    def value(self):
+        raise NothingAttrError(
+            '`value` attribute does not exist in Nothing instance')
+
+    _comparing_value = ()
 
     def get_or(self, else_value=None):
         return else_value
@@ -308,8 +320,8 @@ class NothingCls(Optional):
     def get_or_none(self):
         return None
 
-    def or_opt_call(self, func):
-        return func()
+    def filter(self, pred):
+        return Nothing
 
     def is_some(self):
         return False
@@ -329,6 +341,9 @@ class NothingCls(Optional):
     def __str__(self):
         return 'Nothing'
 
+    def to_result(self, err_value):
+        return Err(self._err_value)
+
 
 NothingCls.__name__ = 'Nothing'
 
@@ -345,15 +360,17 @@ class Some(Optional):
     def __init__(self, value):
         self._some_value = value
 
-    def flat_map(self, maybe_action):
+    def map(self, func):
+        return Some(func(self._some_value))
+
+    def and_then(self, maybe_action):
         value = maybe_action(self._some_value)
         if isinstance(value, Optional):
             return value
         else:
             raise TypeError('function should return a Optional')
 
-    def map(self, action):
-        return Some(action(self._some_value))
+    flat_map = and_then
 
     def then(self, maybe_value):
         return maybe_value
@@ -376,21 +393,28 @@ class Some(Optional):
             return Nothing
 
     @property
+    def some(self):
+        return self._some_value
+
+    @property
     def value(self):
         return self._some_value
 
     @property
-    def _value_for_cmp(self):
+    def _comparing_value(self):
         return (self._some_value,)
 
     def get_or(self, else_value=None):
         return self._some_value
 
-    def or_opt_call(self, func):
-        return self
-
     def get_or_none(self):
         return self._some_value
+
+    def filter(self, pred):
+        if pred(self._some_value):
+            return self
+        else:
+            return Nothing
 
     def is_some(self):
         return True
@@ -410,11 +434,228 @@ class Some(Optional):
     def __str__(self):
         return f'Some({self._some_value!s})'
 
+    def to_result(self, err_value):
+        return Ok(self._some_value)
+
     def do(self, func):
         '''Call function using this item as parameter.
 
         '''
         func(self._some_value)
+
+
+class Result(Monad):
+
+    @property
+    def _base_type(self):
+        return Optional
+
+    @classmethod
+    def unit(cls, value):
+        return Ok(value)
+
+    @classmethod
+    def from_optional(cls, opt, err_value):
+        if isinstance(opt, Some):
+            return Ok(opt.value)
+        elif opt is Nothing:
+            return Err(err_value)
+        else:
+            raise ValueError('opt should be in Optional type')
+
+    @abstractmethod
+    def __iter__(self):
+        raise NotImplementedError()
+
+    @abstractmethod
+    def __repr__(self):
+        raise NotImplementedError()
+
+    @abstractmethod
+    def __len__(self):
+        raise NotImplementedError()
+
+    @abstractmethod
+    def ok_opt(self):
+        raise NotImplementedError()
+
+    @abstractmethod
+    def err_opt(self):
+        raise NotImplementedError()
+
+    @abstractmethod
+    def ok(self):
+        raise NotImplementedError()
+
+    @abstractmethod
+    def err(self):
+        raise NotImplementedError()
+
+    @abstractmethod
+    def and_then(self, ok_result_func):
+        raise NotImplementedError()
+
+    @abstractmethod
+    def or_else(self, err_result_func):
+        raise NotImplementedError()
+
+    @abstractmethod
+    def get_or(self, default):
+        raise NotImplementedError()
+
+    @abstractmethod
+    def get_or_none(self):
+        raise NotImplementedError()
+
+    @abstractmethod
+    def map(self, func):
+        raise NotImplementedError()
+
+    @abstractmethod
+    def map_error(self, func):
+        raise NotImplementedError()
+
+    @abstractmethod
+    def to_optional(self):
+        raise NotImplementedError()
+
+    @abstractmethod
+    def is_ok(self):
+        raise NotImplementedError()
+
+    @abstractmethod
+    def is_err(self):
+        raise NotImplementedError()
+
+
+class Ok(Result):
+    __slots__ = '_ok_value'
+
+    def __init__(self, ok_value):
+        self._ok_value = ok_value
+
+    @property
+    def _comparing_value(self):
+        return (self._ok_value,)
+
+    def __iter__(self):
+        yield self._ok_value
+
+    def __len__(self):
+        return 1
+
+    def __repr__(self):
+        return f'Ok({self._ok_value})'
+
+    def ok_opt(self):
+        return Some(self._ok_value)
+
+    def err_opt(self):
+        return Nothing
+
+    @property
+    def ok(self):
+        return self._ok_value
+
+    value = ok
+
+    @property
+    def err(self):
+        raise OkAttrError(
+            'err attribute does not exist in Ok object')
+
+    def and_then(self, result_func):
+        result = result_func(self._ok_value)
+        if not isinstance(result, Result):
+            raise ValueError('function should return Result object')
+        return result
+
+    def or_else(self, result_func):
+        return self
+
+    def get_or(self, default):
+        return self._ok_value
+
+    def get_or_none(self):
+        return self._ok_value
+
+    def get_err_or(self, default):
+        return default
+
+    def map(self, func):
+        return Ok(func(self._ok_value))
+
+    def map_error(self, func):
+        return self
+
+    def to_optional(self):
+        return Some(self._ok_value)
+
+    def is_ok(self):
+        return True
+
+    def is_err(self):
+        return False
+
+
+class Err(Result):
+    __slots__ = '_err_value'
+
+    def __init__(self, err_value):
+        self._err_value = err_value
+
+    def __iter__(self):
+        return
+
+    def __len__(self):
+        return 0
+
+    def __repr__(self):
+        return f'Err({self._err_value})'
+
+    def ok_opt(self):
+        return Nothing
+
+    def err_opt(self):
+        return Some(self._err_value)
+
+    @property
+    def ok(self):
+        raise OkAttrError('ok attribute does not exist in Err object')
+
+    @property
+    def err(self):
+        return self._err_value
+
+    def and_then(self, ok_result_func):
+        return self
+
+    def or_else(self, err_result_func):
+        result = err_result_func(self._err_value)
+        if not isinstance(result, Result):
+            raise ValueError('function should return Result object')
+        return result
+
+    def get_or(self, default):
+        return default
+
+    def get_or_none(self):
+        return None
+
+    def map(self, func):
+        return self
+
+    def map_error(self, func):
+        return Err(func(self._err_value))
+
+    def to_optional(self):
+        return Nothing
+
+    def is_ok(self):
+        return False
+
+    def is_err(self):
+        return True
 
 
 class SomeOp(Some):

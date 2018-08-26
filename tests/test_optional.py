@@ -1,23 +1,23 @@
 import pytest
-from carriage import Nothing, NothingError, Optional, Some
+from carriage import Nothing, NothingAttrError, Optional, Some
 
 
-def test_value_noneable_init():
-    nothing = Optional.value_noneable(None)
+def test_from_value_init():
+    nothing = Optional.from_value(None)
     assert nothing is Nothing
-    with pytest.raises(NothingError):
+    with pytest.raises(NothingAttrError):
         Nothing.value
 
-    some = Optional.value_noneable(30)
+    some = Optional.from_value(30)
     assert type(some) is Some
     assert some.value == 30
 
-    some = Optional.value_noneable("hello")
+    some = Optional.from_value("hello")
     assert type(some) is Some
     assert some.value == "hello"
 
     adict = {'apple': 1, 'orange': 2}
-    some = Optional.value_noneable(adict)
+    some = Optional.from_value(adict)
     assert type(some) is Some
     assert some.value == {'apple': 1, 'orange': 2}
     assert some.value is adict
@@ -26,80 +26,28 @@ def test_value_noneable_init():
 def test_call_exceptable():
     def raise_exception():
         raise Exception
-    assert Optional.call_exceptable(raise_exception) is Nothing
-    assert Optional.ecall(raise_exception) is Nothing
+    assert Optional.from_call(raise_exception) is Nothing
 
     def raise_typeerror():
         raise TypeError
-    assert Optional.call_exceptable(raise_typeerror, TypeError) is Nothing
-    assert Optional.ecall(raise_typeerror, TypeError) is Nothing
+    assert Optional.from_call(raise_typeerror, TypeError) is Nothing
 
     with pytest.raises(TypeError):
-        Optional.call_exceptable(raise_typeerror, errors=ValueError)
+        Optional.from_call(raise_typeerror, errors=ValueError)
 
     def identity(x):
         return x
 
-    assert Optional.ecall(identity, 10).value == 10
+    assert Optional.from_call(identity, 10).value == 10
 
     def raise_error(error):
         raise error
 
     with pytest.raises(TypeError):
-        Optional.call_exceptable(raise_error, TypeError, errors=ValueError)
+        Optional.from_call(raise_error, TypeError, errors=ValueError)
 
-    assert Optional.call_exceptable(raise_error, AttributeError,
-                                    errors=AttributeError) is Nothing
-
-
-def test_noneable():
-    @Optional.noneable
-    def odd_return_none(n):
-        if n % 2 == 1:
-            return None
-        return n
-
-    assert odd_return_none(3) is Nothing
-    assert odd_return_none(4).value == 4
-
-
-def test_exceptable():
-    @Optional.exceptable
-    def odd_raise_valueerror(n):
-        if n % 2 == 1:
-            raise ValueError
-        return n
-
-    assert odd_raise_valueerror(3) is Nothing
-    assert odd_raise_valueerror(4).value == 4
-
-    @Optional.exceptable(ValueError)
-    def odd_raise_valueerror(n):
-        if n % 2 == 1:
-            raise ValueError
-        return n
-
-    assert odd_raise_valueerror(3) is Nothing
-    assert odd_raise_valueerror(4).value == 4
-
-    @Optional.exceptable(AttributeError)
-    def odd_raise_valueerror(n):
-        if n % 2 == 1:
-            raise ValueError
-        return n
-
-    with pytest.raises(ValueError):
-        odd_raise_valueerror(3)
-    assert odd_raise_valueerror(4).value == 4
-
-    @Optional.exceptable(AttributeError, ValueError)
-    def odd_raise_valueerror(n):
-        if n % 2 == 1:
-            raise ValueError
-        return n
-
-    assert odd_raise_valueerror(3) is Nothing
-    assert odd_raise_valueerror(4).value == 4
+    assert Optional.from_call(raise_error, AttributeError,
+                              errors=AttributeError) is Nothing
 
 
 def test_some_value():
@@ -181,16 +129,16 @@ def test_flat_map():
 
     res = (Some(nofoo_adict)
            .map(lambda d: d.get('foo'))
-           .flat_map(Optional.value_noneable))
+           .flat_map(Optional.from_value))
     assert res is Nothing
 
     res = (Some(nofoo_adict)
-           .map(lambda d: Optional.value_noneable(d.get('foo')))
+           .map(lambda d: Optional.from_value(d.get('foo')))
            .join())
     assert res is Nothing
 
     res = (Some(nofoo_adict)
-           .map(lambda d: Optional.value_noneable(d.get('foo')))
+           .map(lambda d: Optional.from_value(d.get('foo')))
            .flatten())
     assert res is Nothing
 
@@ -321,22 +269,75 @@ def test_general():
 
     n = TreeNodeOpt(30)
     result = (n.left
-              .bind(lambda n: n.left)
-              .bind(lambda n: n.right)
-              .bind(lambda n: n.left)
-              .bind(lambda n: n.right)
+              .and_then(lambda n: n.left)
+              .and_then(lambda n: n.right)
+              .and_then(lambda n: n.left)
+              .and_then(lambda n: n.right)
               .map(lambda n: n.value * 2)
               .get_or(0)
               )
     assert result == 0
 
     n = TreeNode(30)
-    result = (Optional.value_noneable(n.left)
-              .bind(lambda n: n.left).join_noneable()
-              .bind(lambda n: n.right).join_noneable()
-              .bind(lambda n: n.left).join_noneable()
-              .bind(lambda n: n.right).join_noneable()
+    result = (Optional.from_value(n.left)
+              .and_then(lambda n: n.left).join_noneable()
+              .and_then(lambda n: n.right).join_noneable()
+              .and_then(lambda n: n.left).join_noneable()
+              .and_then(lambda n: n.right).join_noneable()
               .map(lambda n: n.value * 2)
               .get_or(0)
               )
     assert result == 0
+
+
+def test_first_elem_is_odd():
+
+    contacts = {
+        'John Doe': {
+            'phone': '0911-222-333',
+            'address': {'city': 'hsinchu',
+                        'street': '185 Somewhere St.'}},
+        'Richard Roe': {
+            'phone': '0933-444-555',
+            'address': {'city': None,
+                        'street': None}},
+        'Mark Moe': {
+            'address': None},
+        'Larry Loe': None
+    }
+
+    def get_city(name):
+        contact = contacts.get(name)
+        if contact is not None:
+            address = contact.get('address')
+            if address is not None:
+                city = address.get('city')
+                if city is not None:
+                    return f'City: {city}'
+
+        return 'No city available'
+
+    def getitem_opt(obj, key):
+        try:
+            return Some(obj[key])
+        except (KeyError, TypeError) as e:
+            return Nothing
+
+    def get_city2(name):
+        return (getitem_opt(contacts, name)
+                .and_then(lambda contact: getitem_opt(contact, 'address'))
+                .and_then(lambda address: getitem_opt(address, 'city'))
+                .filter(lambda city: city is not None)
+                .map(lambda city: f'City: {city}')
+                .get_or('No city available')
+                )
+
+    assert get_city('John Doe') == 'City: hsinchu'
+    assert get_city('Richard Roe') == 'No city available'
+    assert get_city('Mark Moe') == 'No city available'
+    assert get_city('Larray Loe') == 'No city available'
+
+    assert get_city2('John Doe') == 'City: hsinchu'
+    assert get_city2('Richard Roe') == 'No city available'
+    assert get_city2('Mark Moe') == 'No city available'
+    assert get_city2('Larray Loe') == 'No city available'

@@ -531,7 +531,7 @@ class Stream(Monad):
                     f'({short_repr.repr(self._iterable)}, {self._pipeline!r})')
 
     @property
-    def _value_for_cmp(self):
+    def _comparing_value(self):
         return list(self)
 
     def len(self):
@@ -985,7 +985,10 @@ class Stream(Monad):
         '''
         def interpose_tr(iterable):
             iterator = iter(iterable)
-            yield next(iterator)
+            try:
+                yield next(iterator)
+            except StopIteration:
+                return
             for item in iterator:
                 yield sep
                 yield item
