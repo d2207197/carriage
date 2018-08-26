@@ -37,8 +37,8 @@ class Optional(Monad):
     ...     'Larry Loe': None
     ... }
 
-    If we want a function to get the formatted city name of some contact,
-    we will need a lot of nested `if` statement for handling None or
+    If we need a function to get the formatted city name of some contact,
+    we will have a lot of nested `if` statement for handling None or
     other unexpected values.
 
     >>> def get_city(name):
@@ -71,7 +71,7 @@ class Optional(Monad):
     ...         return Some(obj[key])
     ...     except (KeyError, TypeError):
     ...         return Nothing
-
+    ...
     >>> def get_city2(name):
     ...     return (getitem_opt(contacts, name)
     ...             .and_then(lambda contact: getitem_opt(contact, 'address'))
@@ -80,7 +80,7 @@ class Optional(Monad):
     ...             .map(lambda city: f'City: {city}')
     ...             .get_or('No city available')
     ...             )
-
+    ...
     >>> get_city2('John Doe')
     'City: hsinchu'
     >>> get_city2('Richard Roe')
@@ -92,7 +92,11 @@ class Optional(Monad):
     >>> get_city('Not Existing')
     'No city available'
 
-    Create Optional directly
+    Create Optional
+    ===============
+
+    Create directly
+    ---------------
 
     >>> Some(3)
     Some(3)
@@ -100,6 +104,7 @@ class Optional(Monad):
     Nothing
 
     Create Optional by calling a function that may throw exception
+    --------------------------------------------------------------
 
     >>> def divide(a, b):
     ...     return a / b
@@ -109,6 +114,7 @@ class Optional(Monad):
     Nothing
 
     Create Optional from a value that may be None or other spectial value.
+    ----------------------------------------------------------------------
 
     >>> adict = {'a': 1, 'b': 2, 'c': 3}
     >>> Optional.from_value(adict.get('c'), nothing_value=None)
@@ -222,6 +228,22 @@ class Optional(Monad):
             return Nothing
 
     @abstractmethod
+    def and_then(self, optional_func):
+        '''Return ``optional_func(value)`` if it is Some
+        ``optional_func`` should return Optional
+
+        ``and_then`` is useful for chaining functions that return Optional
+
+        '''
+        raise NotImplementedError()
+
+    @abstractmethod
+    def map(self, func):
+        '''Return ``Some(func(value))`` if it is Some
+        '''
+        raise NotImplementedError()
+
+    @abstractmethod
     def join_noneable(self):
         raise NotImplementedError()
 
@@ -282,7 +304,7 @@ class NothingCls(Optional):
 
         return cls.__instance
 
-    def and_then(self, maybe_action):
+    def and_then(self, optional_func):
         return Nothing
 
     flat_map = and_then
@@ -290,7 +312,7 @@ class NothingCls(Optional):
     def map(self, func):
         return Nothing
 
-    def then(self, maybe_value):
+    def then(self, optional_value):
         return Nothing
 
     def flatten(self):
@@ -299,7 +321,7 @@ class NothingCls(Optional):
     def join_noneable(self):
         return Nothing
 
-    def ap(self, maybe_value):
+    def ap(self, optional_value):
         return Nothing
 
     @property
@@ -363,8 +385,8 @@ class Some(Optional):
     def map(self, func):
         return Some(func(self._some_value))
 
-    def and_then(self, maybe_action):
-        value = maybe_action(self._some_value)
+    def and_then(self, optional_func):
+        value = optional_func(self._some_value)
         if isinstance(value, Optional):
             return value
         else:
@@ -372,8 +394,8 @@ class Some(Optional):
 
     flat_map = and_then
 
-    def then(self, maybe_value):
-        return maybe_value
+    def then(self, optional_value):
+        return optional_value
 
     def flatten(self):
         if isinstance(self._some_value, Optional):
@@ -386,10 +408,10 @@ class Some(Optional):
             return Nothing
         return self
 
-    def ap(self, maybe_value):
-        if maybe_value.is_some():
-            return self._some_value(maybe_value.get())
-        elif maybe_value.is_nothing():
+    def ap(self, optional_value):
+        if optional_value.is_some():
+            return self._some_value(optional_value.get())
+        elif optional_value.is_nothing():
             return Nothing
 
     @property
