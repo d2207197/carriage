@@ -92,11 +92,7 @@ class Optional(Monad):
     >>> get_city('Not Existing')
     'No city available'
 
-    Create Optional
-    ===============
-
-    Create directly
-    ---------------
+    Create Optional directly
 
     >>> Some(3)
     Some(3)
@@ -104,7 +100,6 @@ class Optional(Monad):
     Nothing
 
     Create Optional by calling a function that may throw exception
-    --------------------------------------------------------------
 
     >>> def divide(a, b):
     ...     return a / b
@@ -114,7 +109,6 @@ class Optional(Monad):
     Nothing
 
     Create Optional from a value that may be None or other spectial value.
-    ----------------------------------------------------------------------
 
     >>> adict = {'a': 1, 'b': 2, 'c': 3}
     >>> Optional.from_value(adict.get('c'), nothing_value=None)
