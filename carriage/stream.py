@@ -236,7 +236,8 @@ class Stream(Monad):
 
         All elements will be applied ``str()`` before write to the file.
 
-        >>> Stream.range(10).write_txt('nums.txt')
+        >>> Stream.range(10).write_txt('nums.txt') #doctest: +SKIP
+
 
         Parameters
         ----------
@@ -1225,7 +1226,7 @@ class Stream(Monad):
     def mean(self):
         '''Get the average of elements.
 
-        >>> Array.range(10).mean()
+        >>> Stream.range(10).mean()
         4.5
         '''
         length, summation = deque(enumerate(itt.accumulate(self), 1), 1).pop()

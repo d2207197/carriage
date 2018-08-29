@@ -173,4 +173,3 @@ todo_include_todos = True
 # -- Options for autodoc extension -------------------------------------------
 
 autodoc_member_order = 'bysource'
-

@@ -223,7 +223,7 @@ class Optional(Monad):
 
     @abstractmethod
     def and_then(self, optional_func):
-        '''Return ``optional_func(value)`` if it is Some
+        '''Return ``optional_func(value)`` if it is Some.
         ``optional_func`` should return Optional
 
         ``and_then`` is useful for chaining functions that return Optional
@@ -233,7 +233,7 @@ class Optional(Monad):
 
     @abstractmethod
     def map(self, func):
-        '''Return ``Some(func(value))`` if it is Some
+        '''Return ``Some(func(value))`` if it is Some.
         '''
         raise NotImplementedError()
 
