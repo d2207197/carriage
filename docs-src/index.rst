@@ -5,7 +5,7 @@
 
 ``carriage`` is a Python package `hosted on PyPI <https://pypi.org/project/carriage/>`_ and works only on Python 3.6 up.
 
-Just like other Python package, install it by `pip <https://pip.pypa.io/en/stable/>`_ into a `virtualenv <https://hynek.me/articles/virtualenv-lives/>`_, or use `pipenev <https://docs.pipenv.org/>`_ to automatically create and manage the virtualenv.
+Just like other Python package, install it by `pip <https://pip.pypa.io/en/stable/>`_ into a `virtualenv <https://hynek.me/articles/virtualenv-lives/>`_, or use  `poetry <https://poetry.eustace.io/>`_ to automatically create and manage the virtualenv.
 
 .. code-block:: console
 
@@ -24,13 +24,13 @@ All collection classes can be imported from the top level of this package.
 Row
 ---
 
-:doc:`Row </row>` is a handy and more powerful `namedtuple <https://docs.python.org/3.6/library/collections.html#collections.namedtuple>`_. You can create arbitrary :doc:`Row </row>` anytime without declaring fields in advance. 
+:doc:`Row </row>` is a handy and more powerful `namedtuple <https://docs.python.org/3.6/library/collections.html#collections.namedtuple>`_. You can create arbitrary :doc:`Row </row>` anytime without declaring fields in advance.
 
    >>> row = Row(x=3, y=4)
    >>> row.x
    3
    >>> row2 = row.evolve(y=6, z=5)
-   >>> row3 = row2.without('y') 
+   >>> row3 = row2.without('y')
    >>> row
    Row(x=3, y=4)
    >>> row2
@@ -49,7 +49,7 @@ Stream
 StreamTable
 -----------
 
-:doc:`StreamTable </streamtable>` is a subclass of Stream but it assumes all elements are in Row type. This requirement allows StreamTable to provide a more refined interface. 
+:doc:`StreamTable </streamtable>` is a subclass of Stream but it assumes all elements are in Row type. This requirement allows StreamTable to provide a more refined interface.
 
    >>> stb = StreamTable.from_tuples(
    ...        [('joe', 170, 59), ('joy', 160, 54), ('may', 163, 55)],
@@ -75,7 +75,7 @@ StreamTable
 
 X, Xcall
 --------
-:doc:`X </lambda>` and :doc:`Xcall </lambda>` are function creators. Make your lambda function more readable and elegant. See examples above in Stream and StreamTable sections. 
+:doc:`X </lambda>` and :doc:`Xcall </lambda>` are function creators. Make your lambda function more readable and elegant. See examples above in Stream and StreamTable sections.
 
 Map, Array
 ----------
@@ -107,8 +107,8 @@ API References
    map
    array
    optional
-   
-   
+
+
 To Do
 ==========
 

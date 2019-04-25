@@ -1,14 +1,23 @@
 [tool.poetry]
 name = "carriage"
-version = "0.4.13"
+version = "0.4.14"
 description = "Enhanced collection classes for programming fluently"
 authors = ["顏孜羲 <joseph.yen@gmail.com>"]
 license = "apache-2.0"
+repository = "https://github.com/d2207197/carriage"
+homepage = "http://carriage.readthedocs.io/"
+documentation = "http://carriage.readthedocs.io/"
+
+keywords = ["pipeline", "functional"]
+
+classifiers = [
+    "Topic :: Software Development :: Libraries :: Python Modules"
+]
 
 [tool.poetry.dependencies]
 python = ">=3.6"
 tabulate = "^0.8.2"
-pandas = {version = "^0.23.3", extras = ["all"]}
+pandas = {version = "^0.24", optional = true}
 
 [tool.poetry.dev-dependencies]
 pytest = "^3.6"
@@ -21,6 +30,8 @@ json-rpc = "^1.11"
 service_factory = "^0.1.5"
 importmagic = "^0.1.7"
 ipython = "^6.5"
-anaconda-mode = "^0.1.11"
 epc = "^0.0.5"
 sexpdata = "^0.0.3"
+
+[tool.poetry.extras]
+all = ["pandas"]
