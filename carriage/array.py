@@ -1,6 +1,6 @@
 
 import builtins
-import collections
+import collections.abc
 import itertools as itt
 from collections import Counter, defaultdict, deque
 from copy import copy
@@ -46,7 +46,7 @@ class Array(Monad):
 
         if isinstance(items, list):
             pass
-        elif isinstance(items, collections.Iterable):
+        elif isinstance(items, collections.abc.Iterable):
             items = list(items)
         elif items is None:
             items = []
@@ -615,7 +615,7 @@ class Array(Monad):
 
         Pros:
 
-        * Elements don't need to be sorted by the key function first. 
+        * Elements don't need to be sorted by the key function first.
           You can call ``map_group_by`` anytime and correct grouping result.
 
         Cons:

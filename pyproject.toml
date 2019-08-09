@@ -32,6 +32,7 @@ importmagic = "^0.1.7"
 ipython = "^6.5"
 epc = "^0.0.5"
 sexpdata = "^0.0.3"
+pylint = "^2.3"
 
 [tool.poetry.extras]
 all = ["pandas"]

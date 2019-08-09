@@ -8,6 +8,8 @@ from carriage.row import CurrNext, CurrPrev, ValueIndex
 def test_init():
     alist = Array([1, 2, 3])
     assert alist == Array.range(1, 4)
+    alist = Array((1, 2, 3))
+    assert alist == Array.range(1, 4)
 
 
 def test_access():
